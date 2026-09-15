@@ -44,7 +44,7 @@ export const AnnouncementBanner: React.FC<AnnouncementBannerProps> = ({ text, cl
   const isDark = settings.theme === 'dark';
   const containerStyle = !settings.effectsEnabled
     ? `border shadow-md ${isDark ? 'bg-[#180c2e] text-amber-200 border-purple-500/50' : 'bg-purple-50 text-purple-900 border-purple-300'}`
-    : 'liquid-glass-bar text-purple-100';
+    : 'lg-surface rounded-2xl text-purple-100';
 
   return (
     <div

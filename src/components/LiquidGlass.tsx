@@ -209,11 +209,6 @@ export const LiquidGlass: React.FC<LiquidGlassProps> = ({
   // ─────────────────────────────────────────────────────────────────────────
   // Full Glass
   // ─────────────────────────────────────────────────────────────────────────
-  // Filter id — card/modal gets full displacement, bar/pill gets lighter refraction
-  const svgFilter = variant === 'card'
-    ? 'url(#liquid-glass)'
-    : 'url(#liquid-refraction)';
-
   const glassStyle: React.CSSProperties = {
     position: 'relative',
     isolation: 'isolate' as const,
@@ -229,7 +224,6 @@ export const LiquidGlass: React.FC<LiquidGlassProps> = ({
     height: currentHeight,
     WebkitMaskImage: '-webkit-radial-gradient(white, black)',
     cursor: expandable ? 'pointer' : onClick ? 'pointer' : 'default',
-    filter: svgFilter,
     ...style,
   };
 

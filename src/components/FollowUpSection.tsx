@@ -327,119 +327,151 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
       </div>
 
       {/* Interactive Clarification Card Drawer Modal */}
-      {drawModalOpen && (
-        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 overflow-y-auto">
-          <div
-            onClick={() => !loading && setDrawModalOpen(false)}
-            className="fixed inset-0 bg-black/75 backdrop-blur-md"
-          />
+      <AnimatePresence>
+        {drawModalOpen && (
+          <div className="fixed inset-0 z-[130] flex items-end sm:items-center justify-center">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !loading && setDrawModalOpen(false)}
+              className="fixed inset-0 liquid-glass-overlay"
+            />
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className={`relative w-full max-w-3xl rounded-3xl p-6 md:p-8 shadow-2xl border my-8 transition-colors max-h-[90vh] flex flex-col ${
-              settings.theme === 'dark' ? 'bg-zinc-900 border-white/10 text-white' : 'bg-white border-purple-200 text-gray-900'
-            }`}
-          >
-            <div className="text-center mb-6">
-              <span className="text-[11px] uppercase font-bold tracking-widest px-3 py-1 rounded-full bg-purple-600/20 text-purple-600 dark:text-purple-400">
-                Trải bài tiếp nối
-              </span>
-              <h3 className="text-2xl font-serif mt-2">
-                Chọn {cardsToDrawCount} lá bài cho câu hỏi của bạn
-              </h3>
-              <p className="text-xs opacity-75 mt-1 max-w-lg mx-auto italic">
-                "{questionInput}"
-              </p>
-              <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mt-2">
-                Đã chọn: {pickedCards.length}/{cardsToDrawCount} lá
-              </p>
-            </div>
-
-            {/* Revealed cards preview */}
-            {pickedCards.length > 0 && (
-              <div className="flex justify-center items-center gap-4 py-4 mb-4">
-                {pickedCards.map((p, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="flex flex-col items-center"
-                  >
-                    <TarotCard
-                      card={p.card}
-                      isReversed={p.isReversed}
-                      isFlipped={true}
-                      deckType={deckType}
-                      className="scale-75 md:scale-90"
-                    />
-                    <span className="text-xs font-semibold mt-2 text-purple-900 dark:text-purple-200 text-center">
-                      {p.card.name} {p.isReversed ? '(Ngược)' : '(Xuôi)'}
-                    </span>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-
-            {/* Interactive Card Selection Deck */}
-            {pickedCards.length < cardsToDrawCount && (
-              <div className="flex-1 overflow-x-auto py-6 px-2 flex items-center justify-center">
-                <div className="flex -space-x-8 md:-space-x-10 hover:space-x-1 transition-all duration-300 py-4">
-                  {availableCards.slice(0, 15).map((card, i) => (
-                    <motion.div
-                      key={card.id || i}
-                      whileHover={{ y: -16, scale: 1.08, zIndex: 50 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleSelectCard(card)}
-                      className="cursor-pointer transition-transform"
-                    >
-                      <TarotCard
-                        isFlipped={false}
-                        deckType={deckType}
-                        className="w-28 h-44 md:w-32 md:h-48 shadow-lg rounded-xl border border-purple-500/20"
-                      />
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Footer action buttons */}
-            <div className="flex items-center justify-between border-t border-purple-500/10 pt-4 mt-auto">
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => setDrawModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs opacity-70 hover:opacity-100 transition-opacity"
+            <motion.div
+              initial={{ opacity: 0, y: 60, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+              className="relative w-full max-w-2xl mx-4 mb-0 sm:mb-4"
+            >
+              <LiquidGlassCard
+                className="w-full rounded-[2rem] overflow-hidden"
+                contentClassName={`flex flex-col ${settings.theme === 'dark' ? 'text-white' : 'text-slate-900'}`}
               >
-                Hủy bỏ
-              </button>
+                <div className="p-6 md:p-8">
+                  {/* Header */}
+                  <div className="text-center mb-4">
+                    <span className="text-[11px] uppercase font-bold tracking-widest px-3 py-1 rounded-full bg-purple-600 text-white inline-block">
+                      Trải bài tiếp nối
+                    </span>
+                    <h3 className="text-xl sm:text-2xl font-serif mt-3">
+                      Chọn {cardsToDrawCount} lá bài cho câu hỏi của bạn
+                    </h3>
+                    <p className="text-xs opacity-60 mt-1 max-w-sm mx-auto italic">
+                      "{questionInput}"
+                    </p>
+                    <p className="text-xs text-purple-500 dark:text-purple-400 font-semibold mt-2">
+                      Đã chọn: {pickedCards.length}/{cardsToDrawCount} lá
+                    </p>
+                  </div>
 
-              {pickedCards.length === cardsToDrawCount && (
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={handleConfirmClarificationReading}
-                  className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-medium text-xs flex items-center space-x-2 shadow-lg shadow-purple-600/30 transition-all"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Đang giải mã thông điệp...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      <span>Hoàn tất & Luận giải bằng AI</span>
-                    </>
+                  {/* Revealed cards */}
+                  {pickedCards.length > 0 && (
+                    <div className="flex justify-center items-end gap-3 py-2 mb-2">
+                      {pickedCards.map((p, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ scale: 0.5, opacity: 0, y: 30 }}
+                          animate={{ scale: 1, opacity: 1, y: 0 }}
+                          transition={{ type: 'spring', stiffness: 200, damping: 18 }}
+                          className="flex flex-col items-center"
+                        >
+                          <TarotCard
+                            card={p.card}
+                            isReversed={p.isReversed}
+                            isFlipped={true}
+                            deckType={deckType}
+                            className="w-20 h-32 sm:w-24 sm:h-36 shadow-2xl"
+                          />
+                          <span className="text-[10px] font-semibold mt-1.5 text-purple-700 dark:text-purple-300 text-center max-w-[80px]">
+                            {p.card.name}
+                          </span>
+                          <span className="text-[9px] opacity-60 dark:text-purple-400">
+                            {p.isReversed ? 'Ngược' : 'Xuôi'}
+                          </span>
+                        </motion.div>
+                      ))}
+                    </div>
                   )}
-                </button>
-              )}
-            </div>
-          </motion.div>
-        </div>
-      )}
+
+                  {/* Fan deck — giống ShuffleDeck */}
+                  {pickedCards.length < cardsToDrawCount && (
+                    <div className="relative h-56 w-full flex items-center justify-center my-2">
+                      {settings.effectsEnabled && (
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full bg-purple-600/10 blur-2xl animate-pulse pointer-events-none" />
+                      )}
+                      {availableCards.slice(0, 13).map((card, i) => {
+                        const total = Math.min(availableCards.length, 13);
+                        const mid = (total - 1) / 2;
+                        const offset = i - mid;
+                        const fanX = offset * 20;
+                        const fanY = Math.abs(offset) * 4;
+                        const fanRotate = offset * 4;
+                        return (
+                          <motion.div
+                            key={card.id || i}
+                            className="absolute origin-bottom cursor-pointer"
+                            initial={{ x: fanX, y: fanY, rotate: fanRotate }}
+                            animate={{ x: fanX, y: fanY, rotate: fanRotate, zIndex: i }}
+                            whileHover={{ y: fanY - 20, scale: 1.1, zIndex: 50, rotate: fanRotate * 0.5 }}
+                            whileTap={{ scale: 0.95 }}
+                            transition={{ type: 'spring', stiffness: 200, damping: 18 }}
+                            onClick={() => handleSelectCard(card)}
+                          >
+                            <TarotCard
+                              isFlipped={false}
+                              deckType={deckType}
+                              className="w-24 h-36 sm:w-28 sm:h-44 shadow-2xl"
+                            />
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Confirm button */}
+                  {pickedCards.length === cardsToDrawCount && (
+                    <motion.button
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      type="button"
+                      disabled={loading}
+                      onClick={handleConfirmClarificationReading}
+                      className="w-full mt-4 px-6 py-3 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white font-bold tracking-widest uppercase text-xs shadow-xl shadow-purple-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Đang giải mã thông điệp...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 text-amber-300" />
+                          Hoàn tất & Luận giải bằng AI
+                        </>
+                      )}
+                    </motion.button>
+                  )}
+
+                  {/* Cancel */}
+                  <div className="mt-3 pt-3 border-t border-purple-500/10 flex justify-center">
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={() => setDrawModalOpen(false)}
+                      className="text-xs opacity-50 hover:opacity-80 transition-opacity px-4 py-1.5 cursor-pointer"
+                    >
+                      Hủy bỏ
+                    </button>
+                  </div>
+                </div>
+              </LiquidGlassCard>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

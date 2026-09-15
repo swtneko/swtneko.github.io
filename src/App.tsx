@@ -9,6 +9,7 @@ import HistoryModal from './components/HistoryModal';
 import { AdminPage } from './components/AdminPage';
 import { AnnouncementBanner } from './components/AnnouncementBanner';
 import { LiquidGlassCapsule } from './components/LiquidGlassCapsule';
+import { LiquidGlassFilter } from './components/LiquidGlassFilter';
 import { Sparkles, Settings, History, LogIn, LogOut, User as UserIcon, ShieldCheck, Bell, Lock } from 'lucide-react';
 import { DeckType, UserInfo, ReadingResult } from './types';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
@@ -47,6 +48,8 @@ function AppContent() {
     <div className={`relative min-h-screen selection:bg-purple-500/30 transition-colors duration-300 ${
       settings.theme === 'dark' ? 'bg-[#05020a] text-white' : 'bg-[#faf5ff] text-slate-900'
     }`}>
+      {/* SVG filters cho liquid glass displacement/specular */}
+      <LiquidGlassFilter />
       {/* CosmicBackground always rendered — backdrop-filter needs painted content behind glass elements */}
       <CosmicBackground />
       

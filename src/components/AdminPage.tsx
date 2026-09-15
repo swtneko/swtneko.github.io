@@ -1778,6 +1778,16 @@ VITE_FIREBASE_APP_ID=${firebaseConfigJson.appId || ''}`;
                   <p className="text-xs text-gray-400 mt-1">
                     Kiểm tra thông tin, chỉ định mô hình AI riêng biệt và quản lý vòng đời tài khoản người dùng
                   </p>
+                  {!usersLoading && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-[11px] text-purple-300 font-semibold bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-full">
+                        {usersList.length} thành viên đã đồng bộ
+                      </span>
+                      <span className="text-[10px] text-gray-600">
+                        · Chỉ hiện user đã đăng nhập vào app
+                      </span>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex items-center space-x-2">
@@ -1880,8 +1890,13 @@ VITE_FIREBASE_APP_ID=${firebaseConfigJson.appId || ''}`;
                         })}
                       {usersList.length === 0 && (
                         <tr>
-                          <td colSpan={4} className="p-8 text-center text-gray-500">
-                            Chưa có người dùng nào đăng ký hoặc đồng bộ.
+                          <td colSpan={4} className="p-8 text-center">
+                            <div className="flex flex-col items-center space-y-2">
+                              <span className="text-gray-400 text-xs">Chưa có thành viên nào đồng bộ.</span>
+                              <span className="text-gray-600 text-[11px] max-w-xs text-center leading-relaxed">
+                                💡 Danh sách chỉ hiển thị user đã <strong className="text-gray-400">đăng nhập vào app ít nhất 1 lần</strong>. User tạo thủ công trên Firebase Console chưa login vào app sẽ không xuất hiện ở đây.
+                              </span>
+                            </div>
                           </td>
                         </tr>
                       )}

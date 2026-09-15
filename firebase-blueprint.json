@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile document",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "assignedProvider": { "type": "string" },
+        "assignedModel": { "type": "string" },
+        "role": { "type": "string" }
+      },
+      "required": ["id", "createdAt"]
+    },
+    "Reading": {
+      "title": "Reading",
+      "description": "Tarot reading record with cards, AI interpretation, and follow-up conversations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "question": { "type": "string" },
+        "theme": { "type": "string" },
+        "spreadType": { "type": "string" },
+        "deckType": { "type": "string" },
+        "drawnCards": { "type": "string" },
+        "aiInterpretation": { "type": "string" },
+        "followUps": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "question", "createdAt"]
+    },
+    "SystemSettings": {
+      "title": "SystemSettings",
+      "description": "Global application configuration and admin controls",
+      "type": "object",
+      "properties": {
+        "announcement": { "type": "string" },
+        "announcementActive": { "type": "boolean" },
+        "globalAiProvider": { "type": "string" },
+        "enableGuestReadings": { "type": "boolean" },
+        "enableClarificationCards": { "type": "boolean" },
+        "enableCosmicEffects": { "type": "boolean" },
+        "maxGuestReadingsPerDay": { "type": "number" },
+        "customSystemPrompt": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "updatedBy": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document"
+    },
+    "/users/{userId}/readings/{readingId}": {
+      "schema": "Reading",
+      "description": "Tarot readings created by the user"
+    },
+    "/system/{docId}": {
+      "schema": "SystemSettings",
+      "description": "Global system configurations and announcements"
+    }
+  }
+}

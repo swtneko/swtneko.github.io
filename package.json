@@ -13,6 +13,15 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
   },
+  "browserslist": [
+    "> 0.2%",
+    "not dead",
+    "Chrome >= 80",
+    "Safari >= 12",
+    "iOS >= 12",
+    "Firefox >= 78",
+    "Android >= 80"
+  ],
   "dependencies": {
     "@google/genai": "^1.29.0",
     "@tailwindcss/vite": "^4.1.14",

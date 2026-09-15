@@ -204,14 +204,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onStart }) => {
               </motion.div>
             </motion.div>
 
-            {/* Tiêu đề Tarot Thiên Không - Lùi xuống dưới một cách tự nhiên */}
+            {/* Tiêu đề Tarot Thiên Không - Đảm bảo khoảng đệm để không bị cắt đuôi chữ g và hiệu ứng nảy chuẩn iOS 26 */}
             <motion.h1
-              initial={settings.effectsEnabled ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-              className={`text-4xl sm:text-5xl md:text-7xl font-serif mt-4 mb-4 tracking-tight bg-clip-text text-transparent transition-all duration-300 font-bold ${
+              initial={settings.effectsEnabled ? { opacity: 0, scale: 0.95, y: 16 } : { opacity: 1, y: 0 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: 0.2, type: 'spring', damping: 26, stiffness: 300 }}
+              className={`text-4xl sm:text-5xl md:text-7xl font-serif mt-4 mb-2 tracking-normal leading-[1.25] sm:leading-[1.3] pb-3 md:pb-4 px-2 inline-block bg-clip-text text-transparent transition-all duration-300 font-bold select-none ${
                 settings.theme === 'dark' 
-                  ? 'bg-gradient-to-b from-white via-purple-200 to-purple-400' 
+                  ? 'bg-gradient-to-b from-white via-purple-100 to-purple-400' 
                   : 'bg-gradient-to-r from-purple-950 via-indigo-950 to-purple-800 drop-shadow-sm'
               }`}
             >
@@ -266,7 +266,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onStart }) => {
                       ? (settings.theme === 'dark'
                           ? 'bg-purple-600 hover:bg-purple-700 border border-purple-500 text-white'
                           : 'bg-gradient-to-r from-purple-950 via-indigo-950 to-purple-900 text-white border border-purple-800 shadow-2xl shadow-purple-950/40 hover:from-purple-900 hover:to-indigo-900')
-                      : `lg-surface rounded-full border border-purple-300/40 shadow-purple-500/20 ${settings.theme === 'dark' ? 'text-white' : 'text-purple-950'}`
+                      : `liquid-glass-pill border border-purple-300/40 shadow-purple-500/20 ${settings.theme === 'dark' ? 'text-white' : 'text-purple-950'}`
                   }`}
                 >
                   {requiresAuth ? <Lock className="mr-2 w-4 h-4 text-amber-300" /> : null}
@@ -284,7 +284,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onStart }) => {
                       ? (settings.theme === 'dark'
                           ? 'bg-purple-600 hover:bg-purple-700 border border-purple-500 text-white'
                           : 'bg-gradient-to-r from-purple-900 via-indigo-950 to-purple-950 text-white border border-purple-800 shadow-2xl shadow-purple-950/40 hover:from-purple-800 hover:to-indigo-800')
-                      : `lg-surface rounded-full border border-white/30 shadow-indigo-500/20 ${settings.theme === 'dark' ? 'text-white' : 'text-purple-950'}`
+                      : `liquid-glass-pill border border-white/30 shadow-indigo-500/20 ${settings.theme === 'dark' ? 'text-white' : 'text-purple-950'}`
                   }`}
                 >
                   {requiresAuth ? <Lock className="mr-2 w-4 h-4 text-amber-300" /> : null}
@@ -459,7 +459,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onStart }) => {
                       ? (settings.theme === 'dark'
                           ? 'bg-purple-600 hover:bg-purple-700 border-purple-500 text-white'
                           : 'bg-purple-600 hover:bg-purple-700 border-purple-500 text-white shadow-purple-500/20')
-                      : `lg-surface rounded-full border-white/40 shadow-purple-500/20 ${settings.theme === 'dark' ? 'text-white' : 'text-purple-950'}`
+                      : `liquid-glass-pill border-white/40 shadow-purple-500/20 ${settings.theme === 'dark' ? 'text-white' : 'text-purple-950'}`
                   } disabled:opacity-45 disabled:cursor-not-allowed`}
                 >
                   {requiresAuth ? (

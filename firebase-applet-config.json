@@ -1,1 +1,12 @@
-{}
+{
+  "projectId": "caramel-lyceum-rzp2g",
+  "appId": "1:395387267719:web:3bc51d4c7ebfe8e36c2622",
+  "apiKey": "AIzaSyBpfhKrnp9zmP4WA6gq2vDxNmdftFjCRa4",
+  "authDomain": "caramel-lyceum-rzp2g.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-remixcelestialta-1c385191-1a6c-409b-8e21-16ddfe90a740",
+  "storageBucket": "caramel-lyceum-rzp2g.firebasestorage.app",
+  "messagingSenderId": "395387267719",
+  "measurementId": "",
+  "oAuthClientId": "395387267719-qrjo53jqdhu65co2c08f26637ja9u0ch.apps.googleusercontent.com",
+  "recaptchaSiteKey": ""
+}

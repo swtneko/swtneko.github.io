@@ -220,7 +220,7 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
 
   return (
     <div className={`min-h-screen pb-10 px-4 max-w-4xl mx-auto flex flex-col items-center ${
-      systemSettings.announcementActive && systemSettings.announcement ? 'pt-24 sm:pt-28' : 'pt-16 sm:pt-20'
+      systemSettings.announcementActive && systemSettings.announcement ? 'pt-28 sm:pt-36' : 'pt-20 sm:pt-24'
     }`}>
       <AnimatePresence mode="wait">
         {step === 'question' && (
@@ -231,11 +231,10 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
             exit={settings.effectsEnabled ? { opacity: 0, x: -20 } : { opacity: 1, x: 0 }}
             className="w-full max-w-lg"
           >
-            <div className={`backdrop-blur-xl border rounded-[2rem] p-6 sm:p-10 shadow-2xl transition-colors duration-300 ${
-              settings.theme === 'dark'
-                ? 'bg-zinc-900/60 border-purple-500/20'
-                : 'bg-white/95 border-purple-200/90 shadow-purple-500/10'
-            }`}>
+            <LiquidGlassCard
+              className="w-full p-6 sm:p-10"
+              contentClassName={settings.theme === 'dark' ? 'text-purple-100' : 'text-slate-900'}
+            >
               <h2 className="text-2xl sm:text-3xl font-serif font-bold mb-3 text-slate-900 dark:text-purple-100">Bạn đang nghĩ gì?</h2>
               <p className="text-slate-700 dark:text-purple-300 mb-6 text-sm italic font-medium">Hãy tập trung tâm trí vào điều bạn muốn hỏi vũ trụ...</p>
               <form onSubmit={handleQuestionSubmit} className="relative">
@@ -244,10 +243,10 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                   onChange={(e) => setQuestion(e.target.value)}
                   placeholder="Nhập câu hỏi hoặc băn khoăn của bạn tại đây..."
                   rows={4}
-                  className={`w-full rounded-2xl p-4 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500/20 resize-none font-medium ${
+                  className={`w-full rounded-2xl p-4 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500/20 resize-none font-medium liquid-glass-input ${
                     settings.theme === 'dark'
-                      ? 'bg-black/40 border border-purple-500/20 text-purple-100 placeholder:text-purple-500/40 focus:border-purple-400'
-                      : 'bg-purple-50/40 border border-purple-300 text-slate-900 placeholder:text-slate-500 focus:bg-white focus:border-purple-600 shadow-inner'
+                      ? 'text-purple-100 placeholder:text-purple-500/40 focus:border-purple-400'
+                      : 'text-slate-900 placeholder:text-slate-500 focus:bg-white focus:border-purple-600'
                   }`}
                   autoFocus
                 />
@@ -260,7 +259,7 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                   <Send className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </form>
-            </div>
+            </LiquidGlassCard>
           </motion.div>
         )}
 
@@ -282,22 +281,21 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                 { type: SpreadType.THREE_CARDS, label: 'Ba lá bài', desc: 'Dòng thời gian: Quá khứ, Hiện tại, Tương lai', count: 3 },
                 { type: SpreadType.CELTIC_CROSS, label: 'Celtic Cross', desc: 'Bức tranh toàn cảnh & phân tích chuyên sâu', count: 10 },
               ].map((item) => (
-                <button
+                <LiquidGlassCard
                   key={item.type}
                   onClick={() => handleSpreadSelect(item.type)}
-                  className={`p-6 sm:p-8 rounded-3xl border transition-all duration-300 group text-left cursor-pointer hover:scale-[1.02] ${
-                    settings.theme === 'dark'
-                      ? 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-purple-500/50 shadow-lg'
-                      : 'bg-white/95 border-purple-200/90 hover:bg-purple-50 hover:border-purple-400 shadow-xl shadow-purple-500/5'
-                  }`}
+                  className="p-6 sm:p-8 cursor-pointer hover:scale-[1.02] transition-transform duration-300 group text-left"
+                  contentClassName="flex flex-col justify-between h-full"
                 >
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="text-2xl font-serif font-bold text-purple-800 dark:text-purple-300">{item.count} lá</span>
-                    <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400 opacity-70 group-hover:opacity-100 transition-opacity" />
+                  <div>
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="text-2xl font-serif font-bold text-purple-800 dark:text-purple-300">{item.count} lá</span>
+                      <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400 opacity-70 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    <h3 className="text-xl font-serif font-bold mb-2 text-slate-900 dark:text-white">{item.label}</h3>
+                    <p className="text-xs sm:text-sm text-slate-700 dark:text-purple-200 font-medium leading-relaxed">{item.desc}</p>
                   </div>
-                  <h3 className="text-xl font-serif font-bold mb-2 text-slate-900 dark:text-white">{item.label}</h3>
-                  <p className="text-xs sm:text-sm text-slate-700 dark:text-purple-200 font-medium leading-relaxed">{item.desc}</p>
-                </button>
+                </LiquidGlassCard>
               ))}
             </div>
           </motion.div>
@@ -391,11 +389,14 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
               ))}
             </motion.div>
 
-            <div className="rounded-3xl overflow-hidden shadow-md">
-              <LiquidGlassCard
-                className="w-full p-6 sm:p-10 md:p-12"
-                contentClassName={settings.theme === 'dark' ? 'text-purple-100' : 'text-slate-900'}
-              >
+            <LiquidGlassCard
+              borderRadius="28px"
+              blurIntensity="sm"
+              shadowIntensity="sm"
+              glowIntensity="sm"
+              className="w-full rounded-3xl p-6 sm:p-10 md:p-12"
+              contentClassName={settings.theme === 'dark' ? 'text-purple-100' : 'text-slate-900'}
+            >
                 <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center">
@@ -518,8 +519,7 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                   </div>
                 )}
               </div>
-              </LiquidGlassCard>
-            </div>
+            </LiquidGlassCard>
 
             {/* Follow-up question & clarification card spread section */}
             {!isInterpreting && aiInterpretation && (

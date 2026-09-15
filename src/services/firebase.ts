@@ -27,7 +27,7 @@ import {
 import firebaseConfigJson from '../../firebase-applet-config.json';
 import { AuthUser, ReadingResult, FollowUpMessage, SystemSettings, DeckType } from '../types';
 
-export const SUPER_ADMIN_EMAILS = ['nekyohotaru@gmail.com'];
+export const SUPER_ADMIN_EMAILS = ['nekyohotaru@gmail.com', 'elmo44348@gmail.com'];
 
 export const isSuperAdminEmail = (email: string | null | undefined): boolean => {
   if (!email) return false;
@@ -132,46 +132,60 @@ export const logOut = async (): Promise<void> => {
 };
 
 export const syncUserProfile = async (authUser: AuthUser): Promise<AuthUser> => {
+  // If guest/anonymous, local storage handles their temporary state
+  if (authUser.isAnonymous) {
+    return authUser;
+  }
+
+  // Ensure auth is loaded and matches the target user
+  if (!auth.currentUser || auth.currentUser.uid !== authUser.uid) {
+    return authUser;
+  }
+
   try {
     const userRef = doc(db, 'users', authUser.uid);
     const snap = await getDoc(userRef);
     
     if (snap.exists()) {
       const existingData = snap.data();
-      const synced = {
+      const isAdminUser = isSuperAdminEmail(authUser.email) || existingData.role === 'admin' || Boolean(authUser.isAdmin);
+      const synced: AuthUser = {
         ...authUser,
         assignedProvider: existingData.assignedProvider || 'openrouter',
         assignedModel: existingData.assignedModel || 'auto',
-        role: existingData.role || authUser.role || 'user',
-        isAdmin: (existingData.role === 'admin') || authUser.isAdmin,
+        role: isAdminUser ? 'admin' : (existingData.role || authUser.role || 'user'),
+        isAdmin: isAdminUser,
         createdAt: existingData.createdAt,
       };
       localStorage.setItem('celestial-synced-user', JSON.stringify(synced));
       return synced;
     } else {
+      const isAdminUser = isSuperAdminEmail(authUser.email) || Boolean(authUser.isAdmin);
       const newProfile = {
         id: authUser.uid,
-        email: authUser.email,
-        displayName: authUser.displayName,
-        photoURL: authUser.photoURL,
+        email: authUser.email || '',
+        displayName: authUser.displayName || 'Người tìm kiếm',
+        photoURL: authUser.photoURL || '',
         createdAt: new Date().toISOString(),
-        assignedProvider: 'openrouter', // Default to openrouter for new users as requested
+        assignedProvider: 'openrouter',
         assignedModel: 'auto',
-        role: authUser.role || 'user',
+        role: isAdminUser ? 'admin' : (authUser.role || 'user'),
       };
       await setDoc(userRef, newProfile);
       
-      const synced = {
+      const synced: AuthUser = {
         ...authUser,
         assignedProvider: 'openrouter',
         assignedModel: 'auto',
+        role: newProfile.role as 'admin' | 'user',
+        isAdmin: isAdminUser,
         createdAt: newProfile.createdAt,
       };
       localStorage.setItem('celestial-synced-user', JSON.stringify(synced));
       return synced;
     }
-  } catch (e) {
-    console.error('Lỗi khi đồng bộ UserProfile:', e);
+  } catch (e: any) {
+    console.warn('Lỗi khi đồng bộ UserProfile:', e?.message || e);
     return authUser;
   }
 };

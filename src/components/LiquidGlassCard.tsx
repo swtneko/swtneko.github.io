@@ -1,3 +1,3 @@
-// Re-export from unified LiquidGlass — full backwards compatibility
-export { LiquidGlassCard, LiquidGlass, LiquidGlassCapsule } from './LiquidGlass';
-export type { BlurIntensity, GlowIntensity, ShadowIntensity, GlassVariant } from './LiquidGlass';
+export { LiquidGlassCard } from './ui/liquid-glass';
+export type { LiquidGlassCardProps } from './ui/liquid-glass';
+export { default } from './ui/liquid-glass';

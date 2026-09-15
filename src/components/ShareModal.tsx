@@ -156,10 +156,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-md">
       <motion.div
-        initial={{ opacity: 0, scale: 0.92, y: 10 }}
+        initial={{ opacity: 0, scale: 0.94, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.92, y: 10 }}
-        className="relative w-full max-w-[460px] h-full max-h-[90vh] my-auto flex flex-col rounded-3xl overflow-hidden shadow-2xl z-[120]"
+        exit={{ opacity: 0, scale: 0.94, y: 12 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 320, mass: 0.8 }}
+        className="relative w-full max-w-[460px] h-full max-h-[90vh] my-auto flex flex-col z-[120]"
       >
         <LiquidGlassCard
           className="w-full flex flex-col h-full max-h-[90vh]"

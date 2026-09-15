@@ -11,14 +11,17 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() && (
-        request.auth.token.email == 'nekyohotaru@gmail.com' ||
+        ('email' in request.auth.token && (
+          request.auth.token.email == 'nekyohotaru@gmail.com' ||
+          request.auth.token.email == 'elmo44348@gmail.com'
+        )) ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid))
       );
     }
 
     // Allow test connection
-    match /test/connection {
-      allow read: if true;
+    match /test/{docId} {
+      allow read, write: if true;
     }
 
     // System configurations & announcements (Anyone can read, only admin can write)
@@ -36,7 +39,8 @@ service cloud.firestore {
     // User profile document
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isOwner(userId) || isAdmin();
+      allow create, update: if isOwner(userId) || isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
 
       // User saved readings and follow-ups
       match /readings/{readingId} {
@@ -45,3 +49,4 @@ service cloud.firestore {
     }
   }
 }
+

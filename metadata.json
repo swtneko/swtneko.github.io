@@ -1,6 +1,8 @@
 {
-  "name": "Celestial Tarot",
+  "name": "Remix Celestial Tarot",
   "description": "A mystical Tarot reading application with AI interpretations and cosmic animations.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

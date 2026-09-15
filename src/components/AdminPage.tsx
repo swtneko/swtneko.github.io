@@ -40,6 +40,7 @@ import { AIProvider, DeckType, TarotDeckStyle, AuthUser } from '../types';
 import { PROVIDER_MODELS } from '../services/geminiService';
 import { getAllUsers, deleteUserAccount, updateUserAIModel } from '../services/firebase';
 import { AnnouncementBanner } from './AnnouncementBanner';
+import { LiquidGlassCard } from './LiquidGlassCard';
 import firebaseConfigJson from '../../firebase-applet-config.json';
 
 interface UserRowProps {
@@ -618,7 +619,7 @@ VITE_FIREBASE_APP_ID=${firebaseConfigJson.appId || ''}`;
         {/* KPI / Status Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           {/* Card 1: AI Provider */}
-          <div className="p-4 rounded-2xl bg-zinc-900/60 border border-purple-500/20 backdrop-blur-md">
+          <LiquidGlassCard className="p-4" contentClassName="text-white">
             <div className="flex items-center justify-between text-xs text-gray-400">
               <span className="flex items-center font-medium">
                 <Cpu className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
@@ -632,14 +633,10 @@ VITE_FIREBASE_APP_ID=${firebaseConfigJson.appId || ''}`;
             <div className="text-[11px] text-purple-300/70 mt-0.5 truncate">
               {geminiKey ? 'Đã nạp Gemini Key' : 'Sử dụng hệ thống dự phòng'}
             </div>
-          </div>
+          </LiquidGlassCard>
 
           {/* Card 2: Guest Mode */}
-          <div className={`p-4 rounded-2xl border backdrop-blur-md transition-all ${
-            enableGuestReadings
-              ? 'bg-zinc-900/60 border-white/10'
-              : 'bg-amber-950/20 border-amber-500/40 shadow-lg shadow-amber-500/5'
-          }`}>
+          <LiquidGlassCard className="p-4" contentClassName="text-white">
             <div className="flex items-center justify-between text-xs text-gray-400">
               <span className="flex items-center font-medium">
                 <Lock className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
@@ -657,10 +654,10 @@ VITE_FIREBASE_APP_ID=${firebaseConfigJson.appId || ''}`;
             <div className="text-[11px] text-gray-400 mt-0.5">
               {enableGuestReadings ? 'Không giới hạn truy cập' : 'Bảo vệ quyền lợi thành viên'}
             </div>
-          </div>
+          </LiquidGlassCard>
 
           {/* Card 3: Announcement */}
-          <div className="p-4 rounded-2xl bg-zinc-900/60 border border-white/10 backdrop-blur-md">
+          <LiquidGlassCard className="p-4" contentClassName="text-white">
             <div className="flex items-center justify-between text-xs text-gray-400">
               <span className="flex items-center font-medium">
                 <Bell className="w-3.5 h-3.5 mr-1.5 text-blue-400" />
@@ -678,10 +675,10 @@ VITE_FIREBASE_APP_ID=${firebaseConfigJson.appId || ''}`;
             <div className="text-[11px] text-gray-400 mt-0.5 truncate">
               Ghim nổi bật trên đầu trang
             </div>
-          </div>
+          </LiquidGlassCard>
 
           {/* Card 4: Database & Total Readings */}
-          <div className="p-4 rounded-2xl bg-zinc-900/60 border border-white/10 backdrop-blur-md">
+          <LiquidGlassCard className="p-4" contentClassName="text-white">
             <div className="flex items-center justify-between text-xs text-gray-400">
               <span className="flex items-center font-medium">
                 <Database className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
@@ -697,7 +694,7 @@ VITE_FIREBASE_APP_ID=${firebaseConfigJson.appId || ''}`;
             <div className="text-[11px] text-emerald-300/80 mt-0.5 font-mono truncate">
               celestial-tarot-cb063
             </div>
-          </div>
+          </LiquidGlassCard>
         </div>
 
         {/* Tab Navigation */}
@@ -1778,16 +1775,6 @@ VITE_FIREBASE_APP_ID=${firebaseConfigJson.appId || ''}`;
                   <p className="text-xs text-gray-400 mt-1">
                     Kiểm tra thông tin, chỉ định mô hình AI riêng biệt và quản lý vòng đời tài khoản người dùng
                   </p>
-                  {!usersLoading && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className="text-[11px] text-purple-300 font-semibold bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-full">
-                        {usersList.length} thành viên đã đồng bộ
-                      </span>
-                      <span className="text-[10px] text-gray-600">
-                        · Chỉ hiện user đã đăng nhập vào app
-                      </span>
-                    </div>
-                  )}
                 </div>
                 
                 <div className="flex items-center space-x-2">
@@ -1890,13 +1877,8 @@ VITE_FIREBASE_APP_ID=${firebaseConfigJson.appId || ''}`;
                         })}
                       {usersList.length === 0 && (
                         <tr>
-                          <td colSpan={4} className="p-8 text-center">
-                            <div className="flex flex-col items-center space-y-2">
-                              <span className="text-gray-400 text-xs">Chưa có thành viên nào đồng bộ.</span>
-                              <span className="text-gray-600 text-[11px] max-w-xs text-center leading-relaxed">
-                                💡 Danh sách chỉ hiển thị user đã <strong className="text-gray-400">đăng nhập vào app ít nhất 1 lần</strong>. User tạo thủ công trên Firebase Console chưa login vào app sẽ không xuất hiện ở đây.
-                              </span>
-                            </div>
+                          <td colSpan={4} className="p-8 text-center text-gray-500">
+                            Chưa có người dùng nào đăng ký hoặc đồng bộ.
                           </td>
                         </tr>
                       )}

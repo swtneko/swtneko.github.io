@@ -164,7 +164,9 @@ const TarotCard: React.FC<TarotCardProps> = ({
 
           {card && (
             <>
-              <div className="w-full h-full relative overflow-hidden rounded-xl bg-zinc-900 shadow-inner">
+              <div className={`w-full h-full relative overflow-hidden rounded-xl shadow-inner ${
+                isPlayingCard ? 'bg-white' : 'bg-zinc-900'
+              }`}>
                 {(() => {
                   let imgSrc = card.image;
                   if (!isPlayingCard) {

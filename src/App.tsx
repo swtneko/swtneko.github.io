@@ -9,6 +9,7 @@ import HistoryModal from './components/HistoryModal';
 import { AdminPage } from './components/AdminPage';
 import { AnnouncementBanner } from './components/AnnouncementBanner';
 import { LiquidGlassCapsule } from './components/LiquidGlassCapsule';
+import { LiquidGlassFilter } from './components/LiquidGlassFilter';
 import { Sparkles, Settings, History, LogIn, LogOut, User as UserIcon, ShieldCheck, Bell, Lock } from 'lucide-react';
 import { DeckType, UserInfo, ReadingResult } from './types';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
@@ -45,10 +46,12 @@ function AppContent() {
 
   return (
     <div className={`relative min-h-screen selection:bg-purple-500/30 transition-colors duration-300 ${
-      settings.theme === 'dark' ? 'bg-[#05020a] text-white' : 'bg-[#faf5ff] text-slate-900'
-    }`}>
-      {/* CosmicBackground always rendered — backdrop-filter needs painted content behind glass elements */}
-      <CosmicBackground />
+      settings.effectsEnabled 
+        ? 'bg-transparent' 
+        : (settings.theme === 'dark' ? 'bg-[#05020a]' : 'bg-gradient-to-b from-[#faf5ff] via-[#fdfbf7] to-[#f5f3ff]')
+    } ${settings.theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+      <LiquidGlassFilter />
+      {settings.effectsEnabled && <CosmicBackground />}
       
       {/* Fixed Top Header (Liquid Glass Floating Capsule) */}
       {view !== 'admin' && (
@@ -106,7 +109,7 @@ function AppContent() {
                         ? (settings.theme === 'dark'
                             ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30'
                             : 'bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 shadow-sm shadow-amber-100/50')
-                        : `lg-surface rounded-full ${settings.theme === 'dark' ? 'text-amber-300' : 'text-amber-800'}`
+                        : `liquid-glass-pill ${settings.theme === 'dark' ? 'text-amber-300' : 'text-amber-800'}`
                     }`}
                     title="Mở Trang Quản Trị Hệ Thống"
                   >
@@ -125,7 +128,7 @@ function AppContent() {
                       ? (settings.theme === 'dark'
                           ? 'bg-purple-950/60 hover:bg-purple-900 border border-purple-500/30 text-purple-100'
                           : 'bg-purple-100 hover:bg-purple-200 text-purple-950 border border-purple-300 shadow-sm shadow-purple-100/50')
-                      : `lg-surface rounded-full ${settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'}`
+                      : `liquid-glass-pill ${settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'}`
                   }`}
                   title="Xem lịch sử các quẻ bài đã hỏi"
                 >
@@ -147,7 +150,7 @@ function AppContent() {
                           ? (settings.theme === 'dark'
                               ? 'bg-purple-950/60 border border-purple-500/30 text-purple-100'
                               : 'bg-purple-100 text-purple-950 border border-purple-300 shadow-sm')
-                          : `lg-surface rounded-full ${settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'}`
+                          : `liquid-glass-pill ${settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'}`
                       }`}
                       title={currentUser.displayName || currentUser.email || 'Tài khoản'}
                     >
@@ -190,7 +193,7 @@ function AppContent() {
                         ? (settings.theme === 'dark'
                             ? 'bg-purple-600 hover:bg-purple-700 text-white border border-purple-500 shadow-md'
                             : 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-200')
-                        : `lg-surface rounded-full ${settings.theme === 'dark' ? 'text-white bg-purple-600/80 hover:bg-purple-600' : 'text-purple-950 bg-purple-100/60 hover:bg-purple-200/80'}`
+                        : `liquid-glass-pill ${settings.theme === 'dark' ? 'text-white bg-purple-600/80 hover:bg-purple-600' : 'text-purple-950 bg-purple-100/60 hover:bg-purple-200/80'}`
                     }`}
                     title="Đăng nhập để lưu lịch sử đám mây"
                   >
@@ -209,7 +212,7 @@ function AppContent() {
                       ? (settings.theme === 'dark'
                           ? 'bg-purple-950/60 hover:bg-purple-900 border border-purple-500/30 text-purple-200 hover:text-white'
                           : 'bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 shadow-sm shadow-purple-100/50')
-                      : `lg-surface rounded-full ${settings.theme === 'dark' ? 'text-purple-200 hover:text-white' : 'text-purple-900 hover:text-purple-950'}`
+                      : `liquid-glass-pill ${settings.theme === 'dark' ? 'text-purple-200 hover:text-white' : 'text-purple-900 hover:text-purple-950'}`
                   }`}
                   title="Cài đặt hệ thống & API"
                 >

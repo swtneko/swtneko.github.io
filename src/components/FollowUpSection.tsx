@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageSquarePlus, Sparkles, Send, Loader2, PlusCircle, HelpCircle, Layers, CheckCircle2, RefreshCw } from 'lucide-react';
+import { MessageSquarePlus, Sparkles, Send, Loader2, PlusCircle, HelpCircle, Layers, CheckCircle2, RefreshCw, X, RotateCcw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { DrawnCard, FollowUpMessage, ReadingTheme, SpreadType, UserInfo, DeckType, TarotCard as TarotCardType } from '../types';
 import TarotCard from './TarotCard';
+import ShuffleDeck from './ShuffleDeck';
 import { tarotCards } from '../data/tarotCards';
 import { playingCards } from '../data/playingCards';
 import { interpretFollowUp, interpretFollowUpWithNewCards } from '../services/geminiService';
@@ -39,10 +40,10 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
   const [drawModalOpen, setDrawModalOpen] = useState(false);
   const [cardsToDrawCount, setCardsToDrawCount] = useState<number>(1);
   const [pickedCards, setPickedCards] = useState<DrawnCard[]>([]);
-  const [availableCards, setAvailableCards] = useState<TarotCardType[]>([]);
+  const [isShuffling, setIsShuffling] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
 
-  // Filter out already drawn cards across original & follow-ups
+  // Filter out already drawn cards across original reading & previous follow-ups
   const getUnusedCards = (countToExclude: number): TarotCardType[] => {
     const usedIds = new Set<string>();
     originalCards.forEach((c) => usedIds.add(c.card.id));
@@ -52,7 +53,6 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
 
     const fullDeck = deckType === DeckType.TAROT ? tarotCards : playingCards;
     const remaining = fullDeck.filter((c) => !usedIds.has(c.id));
-    // If remaining is low, use shuffled full deck
     return (remaining.length >= countToExclude ? remaining : fullDeck).sort(() => Math.random() - 0.5);
   };
 
@@ -97,34 +97,36 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
       return;
     }
     setCardsToDrawCount(count);
-    const unused = getUnusedCards(count);
-    setAvailableCards(unused);
     setPickedCards([]);
     setIsRevealed(false);
+    setIsShuffling(true);
     setDrawModalOpen(true);
+    setTimeout(() => {
+      setIsShuffling(false);
+    }, 1000);
   };
 
-  // Pick a card from the deck fan
-  const handleSelectCard = (card: TarotCardType) => {
-    if (pickedCards.length >= cardsToDrawCount) return;
-
-    const isReversed = Math.random() > 0.7;
-    const newDrawn: DrawnCard = {
+  // Perform card draw using the exact ShuffleDeck flow from the main reading
+  const handleDeckDraw = (count: number) => {
+    const unused = getUnusedCards(count);
+    const selected = unused.slice(0, count).map((card, idx) => ({
       card,
-      isReversed,
-      positionName: cardsToDrawCount === 1 ? 'Lời khuyên làm rõ' : `Lá ${pickedCards.length + 1}`,
-    };
-
-    const updated = [...pickedCards, newDrawn];
-    setPickedCards(updated);
-
-    // If reached count, reveal and start AI interpretation
-    if (updated.length === cardsToDrawCount) {
-      setIsRevealed(true);
-    }
+      isReversed: Math.random() > 0.65,
+      positionName: count === 1 ? 'Lời khuyên làm rõ' : `Lá ${idx + 1}`,
+    }));
+    setPickedCards(selected);
+    setIsRevealed(true);
   };
 
-  // Complete the clarification reading
+  // Reset to draw again
+  const handleRedraw = () => {
+    setPickedCards([]);
+    setIsRevealed(false);
+    setIsShuffling(true);
+    setTimeout(() => setIsShuffling(false), 800);
+  };
+
+  // Complete the clarification reading and start AI interpretation
   const handleConfirmClarificationReading = async () => {
     if (pickedCards.length === 0 || loading) return;
 
@@ -155,12 +157,15 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
       onAddFollowUp(newFollowUp);
       setQuestionInput('');
       setPickedCards([]);
+      setIsRevealed(false);
     } catch (err: any) {
       console.error('Clarification reading error:', err);
     } finally {
       setLoading(false);
     }
   };
+
+  const isDark = settings.theme === 'dark';
 
   return (
     <div className="w-full mt-12 space-y-8">
@@ -176,14 +181,14 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
             {followUps.map((fu, idx) => (
               <motion.div
                 key={fu.id}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className="rounded-3xl overflow-hidden shadow-md"
+                initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: 'spring', damping: 28, stiffness: 320, mass: 0.8 }}
+                className="w-full"
               >
                 <LiquidGlassCard
                   className="w-full p-6 md:p-8"
-                  contentClassName={settings.theme === 'dark' ? 'text-white' : 'text-gray-900'}
+                  contentClassName={isDark ? 'text-white' : 'text-slate-900'}
                 >
                   {/* Question badge & title */}
                   <div className="flex items-start justify-between gap-3 mb-4">
@@ -191,18 +196,18 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
                       <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-purple-600 text-white inline-block">
                         Câu hỏi #{idx + 1}
                       </span>
-                      <h4 className="text-lg font-serif text-purple-900 dark:text-purple-200 mt-1">
+                      <h4 className="text-lg font-serif text-purple-900 dark:text-purple-200 mt-1 font-bold">
                         "{fu.question}"
                       </h4>
                     </div>
-                    <span className="text-[11px] opacity-50 shrink-0">
+                    <span className="text-[11px] opacity-60 shrink-0 font-mono">
                       {new Date(fu.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })}
                     </span>
                   </div>
 
                   {/* Newly drawn clarification cards if any */}
                   {fu.newCards && fu.newCards.length > 0 && (
-                    <div className="my-6 p-4 rounded-2xl bg-purple-500/5 border border-purple-500/20">
+                    <div className="my-6 p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20">
                       <div className="text-xs font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400 mb-3 flex items-center">
                         <Sparkles className="w-3.5 h-3.5 mr-1.5" />
                         Lá bài trải thêm cho câu hỏi này:
@@ -221,8 +226,8 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
                               <p className="text-xs font-semibold text-purple-900 dark:text-purple-100">
                                 {c.card.name}
                               </p>
-                              <span className="text-[10px] text-purple-700 dark:text-purple-300 opacity-80">
-                                {c.isReversed ? 'Ý nghĩa ngược' : 'Ý nghĩa xuôi'}
+                              <span className="text-[10px] text-purple-700 dark:text-purple-300 font-medium">
+                                {c.isReversed ? '⚠️ Ý nghĩa ngược' : '✨ Ý nghĩa xuôi'}
                               </span>
                             </div>
                           </div>
@@ -243,11 +248,10 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
       )}
 
       {/* Follow-up Question Composer Box */}
-      <div className="rounded-3xl overflow-hidden shadow-md">
-        <LiquidGlassCard
-          className="w-full p-6 md:p-8"
-          contentClassName={settings.theme === 'dark' ? 'text-white' : 'text-slate-900'}
-        >
+      <LiquidGlassCard
+        className="w-full p-6 md:p-8"
+        contentClassName={isDark ? 'text-white' : 'text-slate-900'}
+      >
         <div className="flex items-center space-x-2.5 mb-2 text-slate-900 dark:text-purple-300">
           <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
           <h3 className="text-xl sm:text-2xl font-serif font-bold">Đặt câu hỏi tiếp nối</h3>
@@ -264,7 +268,7 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
               disabled={loading}
               placeholder="Nhập điều bạn muốn hỏi thêm (ví dụ: 'Lời khuyên cụ thể cho tuần tới là gì?', 'Có tín hiệu nào cần đặc biệt lưu tâm?')..."
               className={`w-full h-24 p-4 text-sm rounded-2xl transition-all resize-none disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-500/30 font-medium liquid-glass-input ${
-                settings.theme === 'dark'
+                isDark
                   ? 'text-purple-100 placeholder:text-purple-400/50 focus:border-purple-300'
                   : 'text-slate-900 placeholder:text-slate-500 focus:border-purple-600'
               }`}
@@ -279,7 +283,7 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
                 disabled={loading || !questionInput.trim()}
                 onClick={() => handleOpenClarificationDraw(1)}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
-                  settings.theme === 'dark'
+                  isDark
                     ? 'border-purple-500/30 hover:border-purple-500 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300'
                     : 'border-purple-300 hover:border-purple-600 bg-purple-50 hover:bg-purple-100 text-purple-950'
                 }`}
@@ -293,7 +297,7 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
                 disabled={loading || !questionInput.trim()}
                 onClick={() => handleOpenClarificationDraw(3)}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
-                  settings.theme === 'dark'
+                  isDark
                     ? 'border-purple-500/30 hover:border-purple-500 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300'
                     : 'border-purple-300 hover:border-purple-600 bg-purple-50 hover:bg-purple-100 text-purple-950'
                 }`}
@@ -323,123 +327,142 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
             </button>
           </div>
         </form>
-        </LiquidGlassCard>
-      </div>
+      </LiquidGlassCard>
 
-      {/* Interactive Clarification Card Drawer Modal */}
-      {drawModalOpen && (
-        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 overflow-y-auto">
-          <div
-            onClick={() => !loading && setDrawModalOpen(false)}
-            className="fixed inset-0 bg-black/75 backdrop-blur-md"
-          />
+      {/* Interactive Clarification Card Drawer Modal - Powered by LiquidGlassCard & ShuffleDeck */}
+      <AnimatePresence>
+        {drawModalOpen && (
+          <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !loading && setDrawModalOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            />
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className={`relative w-full max-w-3xl rounded-3xl p-6 md:p-8 shadow-2xl border my-8 transition-colors max-h-[90vh] flex flex-col ${
-              settings.theme === 'dark' ? 'bg-zinc-900 border-white/10 text-white' : 'bg-white border-purple-200 text-gray-900'
-            }`}
-          >
-            <div className="text-center mb-6">
-              <span className="text-[11px] uppercase font-bold tracking-widest px-3 py-1 rounded-full bg-purple-600/20 text-purple-600 dark:text-purple-400">
-                Trải bài tiếp nối
-              </span>
-              <h3 className="text-2xl font-serif mt-2">
-                Chọn {cardsToDrawCount} lá bài cho câu hỏi của bạn
-              </h3>
-              <p className="text-xs opacity-75 mt-1 max-w-lg mx-auto italic">
-                "{questionInput}"
-              </p>
-              <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mt-2">
-                Đã chọn: {pickedCards.length}/{cardsToDrawCount} lá
-              </p>
-            </div>
-
-            {/* Revealed cards preview */}
-            {pickedCards.length > 0 && (
-              <div className="flex justify-center items-center gap-4 py-4 mb-4">
-                {pickedCards.map((p, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="flex flex-col items-center"
-                  >
-                    <TarotCard
-                      card={p.card}
-                      isReversed={p.isReversed}
-                      isFlipped={true}
-                      deckType={deckType}
-                      className="scale-75 md:scale-90"
-                    />
-                    <span className="text-xs font-semibold mt-2 text-purple-900 dark:text-purple-200 text-center">
-                      {p.card.name} {p.isReversed ? '(Ngược)' : '(Xuôi)'}
-                    </span>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-
-            {/* Interactive Card Selection Deck */}
-            {pickedCards.length < cardsToDrawCount && (
-              <div className="flex-1 overflow-x-auto py-6 px-2 flex items-center justify-center">
-                <div className="flex -space-x-8 md:-space-x-10 hover:space-x-1 transition-all duration-300 py-4">
-                  {availableCards.slice(0, 15).map((card, i) => (
-                    <motion.div
-                      key={card.id || i}
-                      whileHover={{ y: -16, scale: 1.08, zIndex: 50 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleSelectCard(card)}
-                      className="cursor-pointer transition-transform"
-                    >
-                      <TarotCard
-                        isFlipped={false}
-                        deckType={deckType}
-                        className="w-28 h-44 md:w-32 md:h-48 shadow-lg rounded-xl border border-purple-500/20"
-                      />
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Footer action buttons */}
-            <div className="flex items-center justify-between border-t border-purple-500/10 pt-4 mt-auto">
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => setDrawModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs opacity-70 hover:opacity-100 transition-opacity"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-2xl my-8 z-50 flex flex-col rounded-3xl overflow-hidden"
+            >
+              <LiquidGlassCard
+                className="w-full p-6 sm:p-8 flex flex-col items-center"
+                contentClassName={isDark ? 'text-white' : 'text-slate-900'}
               >
-                Hủy bỏ
-              </button>
+                {/* Header with Close Button */}
+                <div className="w-full flex items-center justify-between mb-4">
+                  <span className="text-[11px] uppercase font-bold tracking-widest px-3 py-1 rounded-full bg-purple-600 text-white">
+                    Trải bài tiếp nối
+                  </span>
+                  <button
+                    onClick={() => !loading && setDrawModalOpen(false)}
+                    className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-slate-500 dark:text-purple-300"
+                    title="Đóng"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
 
-              {pickedCards.length === cardsToDrawCount && (
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={handleConfirmClarificationReading}
-                  className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-medium text-xs flex items-center space-x-2 shadow-lg shadow-purple-600/30 transition-all"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Đang giải mã thông điệp...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      <span>Hoàn tất & Luận giải bằng AI</span>
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-          </motion.div>
-        </div>
-      )}
+                <div className="text-center mb-6">
+                  <h3 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 dark:text-purple-100">
+                    {isRevealed
+                      ? `Thông điệp ${cardsToDrawCount} lá bài đã được chọn`
+                      : 'Các lá bài đang kết nối...'}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-purple-200 mt-1 italic max-w-md mx-auto">
+                    "{questionInput}"
+                  </p>
+                </div>
+
+                {/* ShuffleDeck View: The exact same experience as the main reading screen */}
+                {!isRevealed ? (
+                  <div className="w-full flex flex-col items-center">
+                    <p className="text-xs text-slate-600 dark:text-purple-300 mb-4 font-semibold italic text-center">
+                      Hãy thả lỏng tâm trí và tập trung vào năng lượng của bạn.
+                    </p>
+                    <ShuffleDeck
+                      isShuffling={isShuffling}
+                      count={cardsToDrawCount}
+                      onDraw={handleDeckDraw}
+                      deckType={deckType}
+                    />
+                  </div>
+                ) : (
+                  /* Revealed Cards Display */
+                  <div className="w-full flex flex-col items-center space-y-6">
+                    <div className="flex flex-wrap justify-center items-center gap-6 py-4">
+                      {pickedCards.map((drawn, idx) => (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          transition={{ delay: idx * 0.15, type: 'spring', damping: 18 }}
+                          className="flex flex-col items-center"
+                        >
+                          <span className="text-[11px] uppercase tracking-widest text-purple-700 dark:text-purple-300 font-bold mb-2">
+                            {drawn.positionName}
+                          </span>
+                          <TarotCard
+                            card={drawn.card}
+                            isReversed={drawn.isReversed}
+                            isFlipped={true}
+                            deckType={deckType}
+                            className="scale-90 sm:scale-100 shadow-2xl"
+                          />
+                          <div className="mt-3 text-center max-w-[180px]">
+                            <h4 className="text-sm font-serif font-bold text-slate-900 dark:text-purple-100">
+                              {drawn.card.name}
+                            </h4>
+                            <p className="text-[11px] text-purple-700 dark:text-purple-300 font-medium">
+                              {drawn.isReversed ? '⚠️ Chiều Ngược (Reversed)' : '✨ Chiều Xuôi (Upright)'}
+                            </p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    {/* Action Bar */}
+                    <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 border-t border-purple-500/15">
+                      <button
+                        type="button"
+                        onClick={handleRedraw}
+                        disabled={loading}
+                        className="px-4 py-2.5 rounded-full border border-purple-300 dark:border-purple-500/40 text-xs font-bold text-slate-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-all flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Xào lại & Chọn lại</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={handleConfirmClarificationReading}
+                        className="px-6 py-3 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs sm:text-sm tracking-wider uppercase shadow-xl shadow-purple-600/30 flex items-center gap-2 cursor-pointer transition-all"
+                      >
+                        {loading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
+                            <span>Đang giải mã thông điệp...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 text-amber-300" />
+                            <span>Tiến hành luận giải bằng AI</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </LiquidGlassCard>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
+
+export default FollowUpSection;

@@ -266,7 +266,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onStart }) => {
                       ? (settings.theme === 'dark'
                           ? 'bg-purple-600 hover:bg-purple-700 border border-purple-500 text-white'
                           : 'bg-gradient-to-r from-purple-950 via-indigo-950 to-purple-900 text-white border border-purple-800 shadow-2xl shadow-purple-950/40 hover:from-purple-900 hover:to-indigo-900')
-                      : `lg-surface rounded-full border border-purple-300/40 shadow-purple-500/20 ${settings.theme === 'dark' ? 'text-white' : 'text-purple-950'}`
+                      : `liquid-glass-pill border border-purple-300/40 shadow-purple-500/20 ${settings.theme === 'dark' ? 'text-white' : 'text-purple-950'}`
                   }`}
                 >
                   {requiresAuth ? <Lock className="mr-2 w-4 h-4 text-amber-300" /> : null}
@@ -284,7 +284,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onStart }) => {
                       ? (settings.theme === 'dark'
                           ? 'bg-purple-600 hover:bg-purple-700 border border-purple-500 text-white'
                           : 'bg-gradient-to-r from-purple-900 via-indigo-950 to-purple-950 text-white border border-purple-800 shadow-2xl shadow-purple-950/40 hover:from-purple-800 hover:to-indigo-800')
-                      : `lg-surface rounded-full border border-white/30 shadow-indigo-500/20 ${settings.theme === 'dark' ? 'text-white' : 'text-purple-950'}`
+                      : `liquid-glass-pill border border-white/30 shadow-indigo-500/20 ${settings.theme === 'dark' ? 'text-white' : 'text-purple-950'}`
                   }`}
                 >
                   {requiresAuth ? <Lock className="mr-2 w-4 h-4 text-amber-300" /> : null}
@@ -459,7 +459,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onStart }) => {
                       ? (settings.theme === 'dark'
                           ? 'bg-purple-600 hover:bg-purple-700 border-purple-500 text-white'
                           : 'bg-purple-600 hover:bg-purple-700 border-purple-500 text-white shadow-purple-500/20')
-                      : `lg-surface rounded-full border-white/40 shadow-purple-500/20 ${settings.theme === 'dark' ? 'text-white' : 'text-purple-950'}`
+                      : `liquid-glass-pill border-white/40 shadow-purple-500/20 ${settings.theme === 'dark' ? 'text-white' : 'text-purple-950'}`
                   } disabled:opacity-45 disabled:cursor-not-allowed`}
                 >
                   {requiresAuth ? (

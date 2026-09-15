@@ -220,7 +220,7 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
 
   return (
     <div className={`min-h-screen pb-10 px-4 max-w-4xl mx-auto flex flex-col items-center ${
-      systemSettings.announcementActive && systemSettings.announcement ? 'pt-36 sm:pt-40' : 'pt-24 sm:pt-28'
+      systemSettings.announcementActive && systemSettings.announcement ? 'pt-24 sm:pt-28' : 'pt-16 sm:pt-20'
     }`}>
       <AnimatePresence mode="wait">
         {step === 'question' && (

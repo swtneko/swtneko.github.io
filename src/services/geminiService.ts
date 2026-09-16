@@ -39,6 +39,9 @@ export const PROVIDER_MODELS: Record<AIProvider, ModelOption[]> = {
     { id: 'openrouter/free', name: 'OpenRouter Free Router (openrouter/free)', desc: 'Tự động định tuyến các mô hình AI hoàn toàn miễn phí trên OpenRouter', tag: 'Miễn phí 100%' },
     { id: 'openrouter/auto', name: 'OpenRouter Auto Router (openrouter/auto)', desc: 'Tự động lựa chọn mô hình tối ưu nhất trong hệ thống OpenRouter', tag: 'Tự động' },
   ],
+  '9router': [
+    { id: 'auto', name: '9Router VPS (Tự động)', desc: 'Tự động gọi 9Router VPS OpenAI-compatible Router trên server của bạn', tag: 'VPS Self-Hosted' },
+  ],
 };
 
 // Helper to retrieve all active Gemini keys (split by comma, newline, or space)
@@ -99,15 +102,44 @@ export const getGeminiKeys = (): string[] => {
   return Array.from(keysSet);
 };
 
+// Helper to get Base URL for 9Router VPS
+export const getNineRouterBaseUrl = (): string => {
+  try {
+    const saved = localStorage.getItem('celestial-settings');
+    if (saved) {
+      const parsed: AppSettings = JSON.parse(saved);
+      const customUrl = parsed.customKeys?.ninerouterBaseUrl?.trim();
+      if (customUrl && customUrl.length > 3) return customUrl.replace(/\/+$/, '');
+    }
+  } catch (e) {}
+
+  const envUrl = (process.env as any).NINEROUTER_API_BASE || (import.meta as any).env?.VITE_NINEROUTER_API_BASE;
+  if (typeof envUrl === 'string' && envUrl.length > 3 && envUrl !== 'undefined') {
+    return envUrl.trim().replace(/\/+$/, '');
+  }
+
+  try {
+    const sys = localStorage.getItem('celestial-system-settings');
+    if (sys) {
+      const parsedSys = JSON.parse(sys);
+      if (parsedSys.systemApiKeys?.ninerouterBaseUrl?.trim()) {
+        return parsedSys.systemApiKeys.ninerouterBaseUrl.trim().replace(/\/+$/, '');
+      }
+    }
+  } catch (e) {}
+
+  return '';
+};
+
 // Helper to get key for other providers
-export const getProviderKey = (provider: 'deepseek' | 'groq' | 'openai' | 'openrouter'): string => {
+export const getProviderKey = (provider: 'deepseek' | 'groq' | 'openai' | 'openrouter' | '9router'): string => {
   // 1. Check custom keys from user settings
   try {
     const saved = localStorage.getItem('celestial-settings');
     if (saved) {
       const parsed: AppSettings = JSON.parse(saved);
-      const customKey = parsed.customKeys?.[provider]?.trim();
-      if (customKey && customKey.length > 5) return customKey;
+      const customKey = (parsed.customKeys as any)?.[provider === '9router' ? 'ninerouter' : provider]?.trim();
+      if (customKey && customKey.length > 2) return customKey;
     }
   } catch (e) {}
 
@@ -124,6 +156,9 @@ export const getProviderKey = (provider: 'deepseek' | 'groq' | 'openai' | 'openr
   } else if (provider === 'openrouter') {
     const k = (process.env as any).OPENROUTER_API_KEY || (import.meta as any).env?.VITE_OPENROUTER_API_KEY;
     if (typeof k === 'string' && k.length > 5 && k !== 'undefined') return k.trim();
+  } else if (provider === '9router') {
+    const k = (process.env as any).NINEROUTER_API_KEY || (import.meta as any).env?.VITE_NINEROUTER_API_KEY;
+    if (typeof k === 'string' && k.length > 2 && k !== 'undefined') return k.trim();
   }
 
   // Check admin global system keys if user didn't provide their own
@@ -131,9 +166,8 @@ export const getProviderKey = (provider: 'deepseek' | 'groq' | 'openai' | 'openr
     const sys = localStorage.getItem('celestial-system-settings');
     if (sys) {
       const parsedSys = JSON.parse(sys);
-      if (parsedSys.systemApiKeys?.[provider]?.trim()) {
-        return parsedSys.systemApiKeys[provider].trim();
-      }
+      const sysKey = parsedSys.systemApiKeys?.[provider === '9router' ? 'ninerouter' : provider]?.trim();
+      if (sysKey) return sysKey;
     }
   } catch (e) {}
 
@@ -147,6 +181,8 @@ export const getProviderStatus = () => {
   const groq = getProviderKey('groq');
   const openai = getProviderKey('openai');
   const openrouter = getProviderKey('openrouter');
+  const ninerouterKey = getProviderKey('9router');
+  const ninerouterBase = getNineRouterBaseUrl();
 
   return {
     gemini: { configured: geminiKeys.length > 0, count: geminiKeys.length },
@@ -154,6 +190,7 @@ export const getProviderStatus = () => {
     groq: { configured: !!groq },
     openai: { configured: !!openai },
     openrouter: { configured: !!openrouter },
+    '9router': { configured: !!ninerouterBase },
   };
 };
 
@@ -232,6 +269,15 @@ const OPENAI_DEFAULT_TIERS = [
   'gpt-4o',
   'gpt-4o-mini',
   'o3-mini',
+];
+
+const NINEROUTER_DEFAULT_TIERS = [
+  'auto',
+  'gemini-2.5-flash',
+  'gemini-2.5-pro',
+  'gpt-4o-mini',
+  'gpt-4o',
+  'llama-3.3-70b',
 ];
 
 // In-memory model discovery cache with 30-minute expiration
@@ -405,6 +451,47 @@ export const fetchDynamicOpenAIModels = async (apiKey?: string): Promise<string[
   return OPENAI_DEFAULT_TIERS;
 };
 
+// Dynamic model fetcher from 9Router VPS Endpoint (/v1/models)
+export const fetchDynamicNineRouterModels = async (apiKey?: string, baseUrlOverride?: string): Promise<string[]> => {
+  const key = apiKey || getProviderKey('9router');
+  const baseUrl = baseUrlOverride || getNineRouterBaseUrl();
+  if (!baseUrl) return NINEROUTER_DEFAULT_TIERS;
+
+  const cacheKey = `ninerouter_${baseUrl}`;
+  const cached = modelCache[cacheKey];
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.models;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const modelsEndpoint = baseUrl.endsWith('/v1') ? `${baseUrl}/models` : `${baseUrl}/v1/models`;
+    const headers: Record<string, string> = {};
+    if (key) headers['Authorization'] = `Bearer ${key}`;
+
+    const res = await fetch(modelsEndpoint, { headers, signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const data = await res.json();
+      const list = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
+      if (list.length > 0) {
+        const fetched = list.map((m: any) => m.id || m.name).filter(Boolean);
+        if (fetched.length > 0) {
+          modelCache[cacheKey] = { models: fetched, timestamp: Date.now() };
+          console.info(`[Auto-Fetch] Đã tự động nhận diện ${fetched.length} model từ 9Router VPS:`, fetched);
+          return fetched;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[Auto-Fetch] Không thể kết nối /models trên 9Router VPS:', e);
+  }
+
+  return NINEROUTER_DEFAULT_TIERS;
+};
+
 // Gemini generation with dynamic auto-fetched descending smart model tiers + multi-key rotation
 const callGeminiWithRotation = async (prompt: string, requestedModel?: string): Promise<string> => {
   const keys = getGeminiKeys();
@@ -486,7 +573,7 @@ export const dispatchAiPrompt = async (
   let globalModel: string = 'auto';
   let globalAllowFallback = true;
   let customSystemPrompt = '';
-  let aiProviderPriority: AIProvider[] = ['groq', 'gemini', 'deepseek', 'openai', 'openrouter'];
+  let aiProviderPriority: AIProvider[] = ['groq', 'gemini', 'deepseek', 'openai', 'openrouter', '9router'];
   let enabledAiProviders: Partial<Record<AIProvider, boolean>> = {};
 
   try {
@@ -562,6 +649,7 @@ export const dispatchAiPrompt = async (
     deepseek: 'DeepSeek',
     openai: 'OpenAI GPT',
     openrouter: 'OpenRouter',
+    '9router': '9Router VPS',
   };
 
   // Helper to execute a single provider call
@@ -663,6 +751,35 @@ export const dispatchAiPrompt = async (
         }
       );
       return `${res}\n\n*🌌 Diễn giải bởi OpenRouter (${model})*`;
+    }
+
+    if (provider === '9router') {
+      const key = getProviderKey('9router');
+      const baseUrl = getNineRouterBaseUrl();
+      if (!baseUrl) {
+        throw new Error("Chưa cấu hình Endpoint Base URL cho 9Router VPS (NINEROUTER_API_BASE)");
+      }
+      const endpoint = baseUrl.endsWith('/v1') ? `${baseUrl}/chat/completions` : `${baseUrl}/v1/chat/completions`;
+      const dynamicModels = await fetchDynamicNineRouterModels(key, baseUrl);
+      const models = (modelToUse && modelToUse !== 'auto')
+        ? [modelToUse, ...dynamicModels.filter(m => m !== modelToUse)]
+        : dynamicModels;
+      let lastErr: any = null;
+      for (const m of models) {
+        try {
+          const res = await callOpenAICompatible(
+            endpoint,
+            key || 'dummy-key',
+            m,
+            finalPrompt
+          );
+          return `${res}\n\n*🌐 Diễn giải bởi 9Router VPS (${m})*`;
+        } catch (err: any) {
+          lastErr = err;
+          console.warn(`[9Router VPS Fallback] Model ${m} gặp lỗi:`, err?.message || err);
+        }
+      }
+      throw lastErr || new Error("Không thể nhận phản hồi từ 9Router VPS");
     }
 
     throw new Error(`Nhà cung cấp AI không xác định: ${provider}`);

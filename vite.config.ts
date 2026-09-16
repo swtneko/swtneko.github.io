@@ -10,6 +10,8 @@ export default defineConfig(({mode}) => {
   const groqKey = env.GROQ_API_KEY || process.env.GROQ_API_KEY || env.VITE_GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || '';
   const openaiKey = env.OPENAI_API_KEY || process.env.OPENAI_API_KEY || env.VITE_OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY || '';
   const openrouterKey = env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY || env.VITE_OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY || '';
+  const ninerouterKey = env.NINEROUTER_API_KEY || process.env.NINEROUTER_API_KEY || env.VITE_NINEROUTER_API_KEY || process.env.VITE_NINEROUTER_API_KEY || env['9ROUTER_API_KEY'] || process.env['9ROUTER_API_KEY'] || '';
+  const ninerouterBase = env.NINEROUTER_API_BASE || process.env.NINEROUTER_API_BASE || env.VITE_NINEROUTER_API_BASE || process.env.VITE_NINEROUTER_API_BASE || env.NINEROUTER_BASE_URL || process.env.NINEROUTER_BASE_URL || env['9ROUTER_API_BASE'] || process.env['9ROUTER_API_BASE'] || '';
 
   return {
     base: '/',
@@ -21,6 +23,8 @@ export default defineConfig(({mode}) => {
       'process.env.GROQ_API_KEY': JSON.stringify(groqKey),
       'process.env.OPENAI_API_KEY': JSON.stringify(openaiKey),
       'process.env.OPENROUTER_API_KEY': JSON.stringify(openrouterKey),
+      'process.env.NINEROUTER_API_KEY': JSON.stringify(ninerouterKey),
+      'process.env.NINEROUTER_API_BASE': JSON.stringify(ninerouterBase),
       'process.env.VITE_APP_URL': JSON.stringify(env.VITE_APP_URL || process.env.VITE_APP_URL || ''),
     },
     resolve: {

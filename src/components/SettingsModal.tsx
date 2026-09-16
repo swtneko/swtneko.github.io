@@ -28,6 +28,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
   const [groqInput, setGroqInput] = useState(settings.customKeys?.groq || '');
   const [openaiInput, setOpenaiInput] = useState(settings.customKeys?.openai || '');
   const [openrouterInput, setOpenrouterInput] = useState(settings.customKeys?.openrouter || '');
+  const [ninerouterInput, setNinerouterInput] = useState(settings.customKeys?.ninerouter || '');
+  const [ninerouterBaseUrlInput, setNinerouterBaseUrlInput] = useState(settings.customKeys?.ninerouterBaseUrl || '');
 
   if (!isOpen) return null;
 
@@ -59,6 +61,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
     setCustomKey('groq', groqInput);
     setCustomKey('openai', openaiInput);
     setCustomKey('openrouter', openrouterInput);
+    setCustomKey('ninerouter', ninerouterInput);
+    setCustomKey('ninerouterBaseUrl', ninerouterBaseUrlInput);
 
     setSavedNotice(true);
     setTimeout(() => setSavedNotice(false), 2500);
@@ -100,6 +104,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
       label: 'OpenRouter Free',
       desc: 'Router AI miễn phí (openrouter/free) - Kết nối nhanh và hoàn toàn miễn phí',
       badge: status.openrouter.configured ? 'Đã cấu hình' : 'Miễn phí',
+    },
+    {
+      id: '9router',
+      label: '9Router VPS',
+      desc: 'Router AI cá nhân kết nối VPS riêng qua OpenAI-compatible API',
+      badge: status['9router'].configured ? 'Đã cấu hình' : undefined,
     },
   ];
 
@@ -407,6 +417,30 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
                   <span className="text-[10px] text-purple-600 dark:text-purple-300 block">
                     ✨ Tự động kết nối qua <strong>openrouter/free</strong> hoàn toàn miễn phí.
                   </span>
+                </div>
+
+                {/* 9Router Config */}
+                <div className="space-y-3 border-t border-gray-100 dark:border-white/10 pt-3">
+                  <div className="space-y-1">
+                    <span className="text-xs font-medium block">9Router Base URL (VPS Endpoint):</span>
+                    <input
+                      type="text"
+                      value={ninerouterBaseUrlInput}
+                      onChange={(e) => setNinerouterBaseUrlInput(e.target.value)}
+                      placeholder="http://vps-ip:8000/v1"
+                      className="w-full text-xs p-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent focus:outline-none focus:border-purple-500 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-medium block">9Router API Key (Tùy chọn):</span>
+                    <input
+                      type="password"
+                      value={ninerouterInput}
+                      onChange={(e) => setNinerouterInput(e.target.value)}
+                      placeholder="sk-9router-..."
+                      className="w-full text-xs p-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent focus:outline-none focus:border-purple-500 font-mono"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-2">

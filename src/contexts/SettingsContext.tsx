@@ -20,6 +20,7 @@ const getDefaultModelForProvider = (provider: AIProvider): string => {
     case 'deepseek': return 'deepseek-chat';
     case 'openai': return 'gpt-4o-mini';
     case 'openrouter': return 'openrouter/free';
+    case '9router': return 'auto';
     default: return 'auto';
   }
 };

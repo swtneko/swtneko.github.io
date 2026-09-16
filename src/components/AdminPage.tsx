@@ -166,6 +166,7 @@ const UserRow: React.FC<UserRowProps> = ({
             <option value="groq">Groq Cloud</option>
             <option value="deepseek">DeepSeek API</option>
             <option value="openai">OpenAI GPT</option>
+            <option value="9router">9Router VPS (Self-Hosted)</option>
           </select>
 
           {selectedProvider !== user.assignedProvider && (
@@ -285,6 +286,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
   const [showDeepseek, setShowDeepseek] = useState(false);
   const [showOpenai, setShowOpenai] = useState(false);
   const [showOpenrouter, setShowOpenrouter] = useState(false);
+  const [showNinerouter, setShowNinerouter] = useState(false);
 
   // Form states for System Settings
   const [geminiKey, setGeminiKey] = useState(systemSettings.systemApiKeys?.gemini || '');
@@ -292,6 +294,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
   const [deepseekKey, setDeepseekKey] = useState(systemSettings.systemApiKeys?.deepseek || '');
   const [openaiKey, setOpenaiKey] = useState(systemSettings.systemApiKeys?.openai || '');
   const [openrouterKey, setOpenrouterKey] = useState(systemSettings.systemApiKeys?.openrouter || '');
+  const [ninerouterKey, setNinerouterKey] = useState(systemSettings.systemApiKeys?.ninerouter || '');
+  const [ninerouterBaseUrl, setNinerouterBaseUrl] = useState(systemSettings.systemApiKeys?.ninerouterBaseUrl || '');
   const [globalProvider, setGlobalProvider] = useState<AIProvider>(systemSettings.globalAiProvider || 'auto');
   const [globalModel, setGlobalModel] = useState<string>(systemSettings.globalAiModel || 'auto');
   const [allowFallback, setAllowFallback] = useState<boolean>(systemSettings.allowFallback ?? true);
@@ -299,7 +303,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
   const [aiProviderPriority, setAiProviderPriority] = useState<AIProvider[]>(
     systemSettings.aiProviderPriority && systemSettings.aiProviderPriority.length > 0
       ? systemSettings.aiProviderPriority
-      : ['groq', 'gemini', 'deepseek', 'openai', 'openrouter']
+      : ['groq', 'gemini', 'deepseek', 'openai', 'openrouter', '9router']
   );
 
   const [announcement, setAnnouncement] = useState(systemSettings.announcement || '');
@@ -317,6 +321,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
       deepseek: true,
       openai: true,
       openrouter: true,
+      '9router': true,
     }
   );
 
@@ -342,12 +347,14 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
     setDeepseekKey(systemSettings.systemApiKeys?.deepseek || '');
     setOpenaiKey(systemSettings.systemApiKeys?.openai || '');
     setOpenrouterKey(systemSettings.systemApiKeys?.openrouter || '');
+    setNinerouterKey(systemSettings.systemApiKeys?.ninerouter || '');
+    setNinerouterBaseUrl(systemSettings.systemApiKeys?.ninerouterBaseUrl || '');
     setGlobalProvider(systemSettings.globalAiProvider || 'auto');
     setGlobalModel(systemSettings.globalAiModel || 'auto');
     setAiProviderPriority(
       systemSettings.aiProviderPriority && systemSettings.aiProviderPriority.length > 0
         ? systemSettings.aiProviderPriority
-        : ['groq', 'gemini', 'deepseek', 'openai', 'openrouter']
+        : ['groq', 'gemini', 'deepseek', 'openai', 'openrouter', '9router']
     );
     setAllowFallback(systemSettings.allowFallback ?? true);
     setSystemPrompt(systemSettings.customSystemPrompt || '');
@@ -365,6 +372,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
         deepseek: true,
         openai: true,
         openrouter: true,
+        '9router': true,
       }
     );
     setEnabledDeckTypes(
@@ -407,6 +415,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
           deepseek: deepseekKey.trim(),
           openai: openaiKey.trim(),
           openrouter: openrouterKey.trim(),
+          ninerouter: ninerouterKey.trim(),
+          ninerouterBaseUrl: ninerouterBaseUrl.trim(),
         },
         enabledAiProviders,
         enabledDeckTypes,
@@ -773,6 +783,12 @@ VITE_FIREBASE_APP_ID=`;
                     desc: 'Router AI miễn phí (openrouter/free) - Kết nối hàng loạt model miễn phí tốc độ cao',
                     badge: 'Miễn phí 100%',
                   },
+                  {
+                    id: '9router',
+                    title: '9Router VPS (Self-Hosted)',
+                    desc: 'Router AI cá nhân kết nối VPS riêng của bạn qua giao thức OpenAI-compatible API',
+                    badge: 'VPS Cá Nhân',
+                  },
                 ].map((p) => {
                   const isSelected = globalProvider === p.id;
                   return (
@@ -909,6 +925,7 @@ VITE_FIREBASE_APP_ID=`;
                       deepseek: { name: 'DeepSeek Chat', tag: 'deepseek-chat / R1', desc: 'Tư duy triết lý và huyền học đỉnh cao' },
                       openai: { name: 'OpenAI GPT', tag: 'GPT-4o / mini', desc: 'Chuẩn mực, lời khuyên thực tế & thông thái' },
                       openrouter: { name: 'OpenRouter Router', tag: 'openrouter/free', desc: 'Cổng đa mô hình AI miễn phí' },
+                      '9router': { name: '9Router VPS', tag: 'VPS Self-Hosted', desc: 'Router AI cá nhân trên VPS (OpenAI-compatible)' },
                     };
 
                     const info = providerInfo[providerId] || { name: providerId, tag: 'AI', desc: '' };
@@ -1010,6 +1027,7 @@ VITE_FIREBASE_APP_ID=`;
                     { id: 'deepseek' as AIProvider, name: 'DeepSeek', desc: 'deepseek-chat / R1' },
                     { id: 'openai' as AIProvider, name: 'OpenAI GPT', desc: 'GPT-4o / mini' },
                     { id: 'openrouter' as AIProvider, name: 'OpenRouter Free', desc: 'openrouter/free & auto' },
+                    { id: '9router' as AIProvider, name: '9Router VPS', desc: 'VPS Router OpenAI-compatible' },
                   ].map((p) => {
                     const isEnabled = enabledAiProviders[p.id] ?? true;
                     return (
@@ -1204,6 +1222,42 @@ VITE_FIREBASE_APP_ID=`;
                   />
                   <p className="text-[10px] text-purple-300/80">
                     ✨ Tự động kết nối qua <strong>openrouter/free</strong> miễn phí mà không cần cấu hình danh sách model phức tạp.
+                  </p>
+                </div>
+              </div>
+
+              {/* 9Router VPS Config */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-white">9Router Base URL (VPS Endpoint):</span>
+                    <span className="text-[10px] text-gray-400">VD: http://vps-ip:8000/v1</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={ninerouterBaseUrl}
+                    onChange={(e) => setNinerouterBaseUrl(e.target.value)}
+                    placeholder="http://my-vps-ip:8000/v1 hoặc https://9router.my-domain.com/v1"
+                    className="w-full text-xs p-3.5 rounded-2xl border border-white/10 bg-black/50 focus:outline-none focus:border-purple-500 font-mono text-white"
+                  />
+                  <p className="text-[10px] text-gray-400">
+                    Endpoint của 9Router VPS chạy trên VPS cá nhân của bạn.
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-white">9Router API Key (Tùy chọn):</span>
+                    <span className="text-[10px] text-gray-400">NINEROUTER_API_KEY</span>
+                  </div>
+                  <input
+                    type={showNinerouter ? 'text' : 'password'}
+                    value={ninerouterKey}
+                    onChange={(e) => setNinerouterKey(e.target.value)}
+                    placeholder="sk-9router-..."
+                    className="w-full text-xs p-3.5 rounded-2xl border border-white/10 bg-black/50 focus:outline-none focus:border-purple-500 font-mono text-white"
+                  />
+                  <p className="text-[10px] text-gray-400">
+                    Khóa xác thực nếu 9Router VPS của bạn yêu cầu Bearer token.
                   </p>
                 </div>
               </div>

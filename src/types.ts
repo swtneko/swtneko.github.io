@@ -69,7 +69,7 @@ export interface UserInfo {
   request?: string;
 }
 
-export type AIProvider = 'auto' | 'gemini' | 'deepseek' | 'groq' | 'openai' | 'openrouter';
+export type AIProvider = 'auto' | 'gemini' | 'deepseek' | 'groq' | 'openai' | 'openrouter' | '9router';
 
 export interface CustomApiKeys {
   gemini?: string;
@@ -77,6 +77,8 @@ export interface CustomApiKeys {
   groq?: string;
   openai?: string;
   openrouter?: string;
+  ninerouter?: string;
+  ninerouterBaseUrl?: string;
 }
 
 export interface AppSettings {

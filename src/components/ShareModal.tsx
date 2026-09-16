@@ -3,8 +3,9 @@ import { motion } from 'motion/react';
 import { toPng } from 'html-to-image';
 import ReactMarkdown from 'react-markdown';
 import { DrawnCard, UserInfo, DeckType, SpreadType, LaSoTuViData } from '../types';
-import { Sparkles, Download, Share2, Copy, Check, X, Image as ImageIcon, MessageCircle, Compass, FileText } from 'lucide-react';
+import { Sparkles, Download, Share2, Copy, Check, X, Image as ImageIcon, MessageCircle, Compass, FileText, FileDown, Loader2 } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
+import { exportReadingToPdf } from '../services/pdfExport';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -34,9 +35,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const { settings } = useSettings();
   const cardRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedSummary, setCopiedSummary] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [pdfSuccess, setPdfSuccess] = useState(false);
 
   if (!isOpen) return null;
 
@@ -53,6 +56,28 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   const cleanFullInterpretation = aiInterpretation || 'Kết quả mang lại năng lượng định hướng và trí tuệ từ Vũ Trụ.';
 
+  const handleExportPdf = async () => {
+    try {
+      setIsExportingPdf(true);
+      await exportReadingToPdf({
+        userInfo,
+        deckType,
+        spreadType,
+        question,
+        drawnCards,
+        aiInterpretation: cleanFullInterpretation,
+        tuViData,
+        timestamp,
+      });
+      setPdfSuccess(true);
+      setTimeout(() => setPdfSuccess(false), 3000);
+    } catch (err) {
+      console.error('Lỗi khi xuất PDF:', err);
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   const handleDownload = async () => {
     if (!cardRef.current) return;
     try {
@@ -61,9 +86,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         quality: 1,
         cacheBust: true,
         pixelRatio: 2.5, // High resolution full card
+        skipFonts: true,
         fontEmbedCSS: '',
         filter: (node) => {
-          if (node && (node as HTMLElement).tagName === 'LINK' && (node as HTMLLinkElement).rel === 'stylesheet') {
+          if (node && (node as HTMLElement).tagName === 'LINK') {
             return false;
           }
           return true;
@@ -93,9 +119,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         quality: 1,
         cacheBust: true,
         pixelRatio: 2.5,
+        skipFonts: true,
         fontEmbedCSS: '',
         filter: (node) => {
-          if (node && (node as HTMLElement).tagName === 'LINK' && (node as HTMLLinkElement).rel === 'stylesheet') {
+          if (node && (node as HTMLElement).tagName === 'LINK') {
             return false;
           }
           return true;
@@ -446,21 +473,38 @@ ${cleanFullInterpretation}
         <div className="p-3 sm:p-4 border-t border-purple-500/20 bg-purple-950/70 flex flex-col gap-2 shrink-0">
           <div className="flex items-center space-x-2 w-full">
             <button
+              onClick={handleExportPdf}
+              disabled={isExportingPdf || isGenerating}
+              className="flex-1 flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white font-bold text-xs shadow-lg shadow-red-600/30 transition-all cursor-pointer disabled:opacity-50"
+              title="Xuất tài liệu PDF khổ A4 chất lượng cao, chuẩn trang, không bị lỗi dòng"
+            >
+              {isExportingPdf ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : pdfSuccess ? (
+                <Check className="w-3.5 h-3.5 text-emerald-200" />
+              ) : (
+                <FileDown className="w-3.5 h-3.5" />
+              )}
+              <span>{isExportingPdf ? 'Đang tạo PDF...' : pdfSuccess ? 'Đã tải file PDF!' : 'Xuất File PDF (A4)'}</span>
+            </button>
+
+            <button
               onClick={handleDownload}
-              disabled={isGenerating}
-              className="flex-1 flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all cursor-pointer disabled:opacity-50"
+              disabled={isGenerating || isExportingPdf}
+              className="flex-1 flex items-center justify-center space-x-1.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all cursor-pointer disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>{isGenerating ? 'Đang tạo...' : downloadSuccess ? 'Đã tải ảnh full!' : 'Tải ảnh Full HD'}</span>
+              <span>{isGenerating ? 'Đang tạo ảnh...' : downloadSuccess ? 'Đã tải ảnh!' : 'Tải Ảnh Full HD'}</span>
             </button>
 
             <button
               onClick={handleNativeShare}
-              disabled={isGenerating}
-              className="flex-1 flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs shadow-lg shadow-amber-500/25 transition-all cursor-pointer disabled:opacity-50"
+              disabled={isGenerating || isExportingPdf}
+              className="px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs shadow-lg shadow-amber-500/25 transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center space-x-1"
+              title="Chia sẻ nhanh"
             >
               <Share2 className="w-3.5 h-3.5" />
-              <span>Chia sẻ ảnh full</span>
+              <span className="hidden sm:inline">Chia sẻ</span>
             </button>
           </div>
 

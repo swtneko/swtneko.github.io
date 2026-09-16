@@ -6,13 +6,14 @@ import { playingCards } from '../data/playingCards';
 import ShuffleDeck from './ShuffleDeck';
 import TarotCard from './TarotCard';
 import { interpretReading } from '../services/geminiService';
-import { Sparkles, ArrowLeft, Send, RefreshCw, BookmarkCheck, Lock, LogIn, Share2, AlertCircle, Settings } from 'lucide-react';
+import { Sparkles, ArrowLeft, Send, RefreshCw, BookmarkCheck, Lock, LogIn, Share2, AlertCircle, Settings, FileDown, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { FollowUpSection } from './FollowUpSection';
 import { ShareModal } from './ShareModal';
 import { LiquidGlassCard } from './LiquidGlassCard';
+import { exportReadingToPdf } from '../services/pdfExport';
 
 interface ReadingScreenProps {
   userInfo: UserInfo;
@@ -48,6 +49,27 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
   const [isSaved, setIsSaved] = useState(!!initialReading);
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
+  const handleExportPdfDirect = async () => {
+    if (!drawnCards || drawnCards.length === 0) return;
+    try {
+      setIsExportingPdf(true);
+      await exportReadingToPdf({
+        userInfo,
+        deckType,
+        spreadType,
+        question,
+        drawnCards,
+        aiInterpretation,
+        timestamp: initialReading ? initialReading.timestamp : Date.now(),
+      });
+    } catch (err) {
+      console.error('Lỗi khi xuất PDF Tarot:', err);
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
 
   useEffect(() => {
     if (!isInterpreting) {
@@ -338,16 +360,28 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
           >
             <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
               <h2 className="text-2xl sm:text-4xl font-serif font-bold text-slate-900 dark:text-purple-100">Kết quả trải bài</h2>
-              <div className="flex items-center space-x-2.5">
+              <div className="flex items-center space-x-2.5 flex-wrap gap-y-2">
                 {!isInterpreting && drawnCards.length > 0 && (
-                  <button
-                    onClick={() => setIsShareModalOpen(true)}
-                    className="flex items-center space-x-1.5 text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold px-4 py-2 rounded-full shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
-                    title="Tạo ảnh tóm tắt kết quả quẻ bài để chia sẻ mạng xã hội"
-                  >
-                    <Share2 className="w-4 h-4" />
-                    <span>Chia sẻ kết quả</span>
-                  </button>
+                  <>
+                    <button
+                      onClick={handleExportPdfDirect}
+                      disabled={isExportingPdf}
+                      className="flex items-center space-x-1.5 text-xs sm:text-sm bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white font-bold px-4 py-2 rounded-full shadow-lg shadow-red-600/20 transition-all cursor-pointer disabled:opacity-50"
+                      title="Xuất kết quả quẻ bài và lời giải đoán ra file PDF chuẩn A4"
+                    >
+                      {isExportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                      <span>{isExportingPdf ? 'Đang tạo PDF...' : 'Xuất PDF (A4)'}</span>
+                    </button>
+
+                    <button
+                      onClick={() => setIsShareModalOpen(true)}
+                      className="flex items-center space-x-1.5 text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold px-4 py-2 rounded-full shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+                      title="Tạo ảnh tóm tắt kết quả quẻ bài để chia sẻ mạng xã hội"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      <span>Chia sẻ kết quả</span>
+                    </button>
+                  </>
                 )}
                 <button onClick={reset} className="text-xs sm:text-sm text-purple-900 dark:text-purple-300 hover:text-purple-950 dark:hover:text-purple-100 uppercase tracking-widest font-bold px-4 py-2 rounded-full border border-purple-300 dark:border-white/10 hover:bg-purple-50 dark:hover:bg-white/5 transition-all cursor-pointer">
                   Trải bài mới

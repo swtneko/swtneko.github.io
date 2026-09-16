@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { TuViChart } from './TuViChart';
 import { ShareModal } from './ShareModal';
 import { LiquidGlassCard } from './LiquidGlassCard';
+import { exportReadingToPdf } from '../services/pdfExport';
 import ReactMarkdown from 'react-markdown';
 import {
   Sparkles,
@@ -34,6 +35,8 @@ import {
   Square,
   Flame,
   Info,
+  FileDown,
+  Loader2,
 } from 'lucide-react';
 
 interface TuViScreenProps {
@@ -129,9 +132,34 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
   const [followUpQuestion, setFollowUpQuestion] = useState('');
   const [isAnsweringFollowUp, setIsAnsweringFollowUp] = useState(false);
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   // Live parsed time preview
   const parsedTimePreview = parseBirthTime(birthTime);
+
+  const handleExportPdfDirect = async () => {
+    if (!laSoData) return;
+    try {
+      setIsExportingPdf(true);
+      await exportReadingToPdf({
+        userInfo: {
+          fullName: laSoData.chuSo.fullName || fullName,
+          gender: laSoData.chuSo.amDuongNamNu,
+          birthDate: laSoData.chuSo.solarDate || birthDate,
+          birthTime: laSoData.chuSo.birthTimeStr || birthTime,
+        },
+        deckType: DeckType.TU_VI,
+        question: question || 'Luận giải toàn diện Lá số Tử Vi Đẩu Số',
+        aiInterpretation: interpretation,
+        tuViData: laSoData,
+        timestamp: Date.now(),
+      });
+    } catch (err) {
+      console.error('Lỗi xuất PDF tử vi:', err);
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
 
   useEffect(() => {
     if (initialReading) {
@@ -848,7 +876,19 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleExportPdfDirect}
+                  disabled={isExportingPdf}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white shadow-md flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                  title="Xuất trọn bộ Lá số & Luận giải chi tiết ra file PDF A4 chuẩn đẹp"
+                >
+                  {isExportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                  <span>{isExportingPdf ? 'Đang tạo PDF...' : 'Xuất PDF'}</span>
+                </motion.button>
+
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}

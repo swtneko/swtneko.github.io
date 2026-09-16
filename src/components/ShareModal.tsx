@@ -1,10 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { toPng } from 'html-to-image';
+import ReactMarkdown from 'react-markdown';
 import { DrawnCard, UserInfo, DeckType, SpreadType, LaSoTuViData } from '../types';
 import { Sparkles, Download, Share2, Copy, Check, X, Image as ImageIcon, MessageCircle, Compass, FileText } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
-import { LiquidGlassCard } from './LiquidGlassCard';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -51,26 +51,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     hour12: false,
   });
 
-  // Extract clean structured summary text without cutting off mid-sentence
-  const parseAIInterpretation = (text: string | null) => {
-    if (!text) return { bodyText: 'Kết quả mang lại năng lượng định hướng và trí tuệ từ Vũ Trụ.', modelCredit: '' };
-    let body = text
-      .replace(/#{1,6}\s?/g, '')
-      .replace(/[*_~`]/g, '')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      .trim();
-
-    let modelCredit = '';
-    const creditMatch = body.match(/(✨?\s*Diễn giải bởi\s+.*)/i);
-    if (creditMatch) {
-      modelCredit = creditMatch[1].trim();
-      body = body.replace(creditMatch[0], '').trim();
-    }
-
-    return { bodyText: body, modelCredit };
-  };
-
-  const { bodyText, modelCredit } = parseAIInterpretation(aiInterpretation);
+  const cleanFullInterpretation = aiInterpretation || 'Kết quả mang lại năng lượng định hướng và trí tuệ từ Vũ Trụ.';
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
@@ -79,7 +60,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       const dataUrl = await toPng(cardRef.current, {
         quality: 1,
         cacheBust: true,
-        pixelRatio: 3, // Ultra High 3K resolution
+        pixelRatio: 2.5, // High resolution full card
         fontEmbedCSS: '',
         filter: (node) => {
           if (node && (node as HTMLElement).tagName === 'LINK' && (node as HTMLLinkElement).rel === 'stylesheet') {
@@ -111,7 +92,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       const dataUrl = await toPng(cardRef.current, {
         quality: 1,
         cacheBust: true,
-        pixelRatio: 3,
+        pixelRatio: 2.5,
         fontEmbedCSS: '',
         filter: (node) => {
           if (node && (node as HTMLElement).tagName === 'LINK' && (node as HTMLLinkElement).rel === 'stylesheet') {
@@ -129,8 +110,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         await navigator.share({
           title: isTuVi ? 'Lá Số Tử Vi Đẩu Số Thiên Không' : 'Kết Quả Trải Bài Tarot Thiên Không',
           text: isTuVi 
-            ? `✦ Lá số Tử Vi của ${userInfo.fullName || 'Tín chủ'} tại Thiên Không!`
-            : `🌌 Trải bài Tarot cho câu hỏi: "${question}" tại Thiên Không!`,
+            ? `✦ Toàn bộ luận giải Lá số Tử Vi của ${userInfo.fullName || 'Tín chủ'} tại Thiên Không!`
+            : `🌌 Toàn bộ luận giải trải bài Tarot cho câu hỏi: "${question}" tại Thiên Không!`,
           files: [file],
         });
       } else {
@@ -158,22 +139,22 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 ✦ Cân Xương Tính Số: ${tuViData.chuSo.canLuongChi || 'Đang cập nhật'}
 ✦ Năm xem hạn: Năm ${tuViData.chuSo.viewingYear} (${tuViData.chuSo.viewingYearCanChi})
 
---- TỔNG KẾT LUẬN GIẢI ---
-${bodyText}
+--- TOÀN BỘ LUẬN GIẢI CHI TIẾT ---
+${cleanFullInterpretation}
 
 ✦ Xem chi tiết tại: ${window.location.href}`;
     } else {
       const cardsSummary = drawnCards.map(d => `- ${d.card.name} (${d.isReversed ? 'Ngược' : 'Xuôi'})`).join('\n');
-      text = `=== KẾT QUẢ TRẢI BÀI THIÊN KHÔNG ===
+      text = `=== TOÀN BỘ KẾT QUẢ TRẢI BÀI THIÊN KHÔNG ===
 ✦ Khách hàng: ${userInfo.fullName || 'Tín chủ'}
 ✦ Câu hỏi: ${question || 'Hỏi chung về vận mệnh'}
 ✦ Ngày xem: ${dateFormatted}
 
---- CÁC LÁ BÀI ---
+--- CÁC LÁ BÀI ĐÃ RÚT ---
 ${cardsSummary}
 
---- LUẬN GIẢI ---
-${bodyText}
+--- TOÀN BỘ LUẬN GIẢI CHI TIẾT ---
+${cleanFullInterpretation}
 
 ✦ Xem chi tiết tại: ${window.location.href}`;
     }
@@ -203,21 +184,21 @@ ${bodyText}
   ].filter(Boolean) : [];
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-md">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md">
       <motion.div
         initial={{ opacity: 0, scale: 0.94, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.94, y: 12 }}
         transition={{ type: 'spring', damping: 28, stiffness: 320, mass: 0.8 }}
-        className="relative w-full max-w-[480px] h-full max-h-[90vh] my-auto flex flex-col z-[120]"
+        className="relative w-full max-w-[540px] sm:max-w-[580px] h-full max-h-[92vh] my-auto flex flex-col z-[120]"
       >
-        <div className="w-full flex flex-col h-full max-h-[90vh] rounded-3xl overflow-hidden border border-purple-500/30 bg-[#120822] shadow-2xl text-purple-100">
+        <div className="w-full flex flex-col h-full max-h-[92vh] rounded-3xl overflow-hidden border border-purple-500/30 bg-[#120822] shadow-2xl text-purple-100">
         {/* Header bar */}
         <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-purple-500/20 bg-purple-950/70 sticky top-0 z-20 shrink-0">
           <div className="flex items-center space-x-2">
             {isTuVi ? <Compass className="w-4 h-4 text-amber-300" /> : <ImageIcon className="w-4 h-4 text-amber-300" />}
             <h3 className="font-serif font-bold text-base text-purple-100">
-              {isTuVi ? 'Chia sẻ Lá Số Tử Vi' : 'Chia sẻ kết quả quẻ'}
+              {isTuVi ? 'Chia sẻ toàn bộ Lá Số & Luận Giải Tử Vi' : 'Chia sẻ toàn bộ kết quả quẻ bài'}
             </h3>
           </div>
           <button
@@ -233,15 +214,15 @@ ${bodyText}
         <div className="flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto flex flex-col items-center">
           <p className="text-[11px] text-purple-300 mb-2.5 text-center">
             {isTuVi 
-              ? 'Ảnh lá số định dạng HD 3K, đầy đủ Bát Tự, Mệnh Cục và Lời giải đoán!' 
-              : 'Hình ảnh hiển thị đầy đủ các lá bài và lời phán từ Vũ Trụ!'}
+              ? '✨ Ảnh lá số HD hiển thị đầy đủ 100% Bát Tự, Mệnh Cục, Tứ Chính và toàn văn Lời giải đoán!' 
+              : '✨ Ảnh chụp hiển thị đầy đủ 100% các lá bài và toàn văn thông điệp từ Vũ Trụ!'}
           </p>
 
           {/* THE CAPTURABLE CARD IMAGE CANVAS AREA */}
           <div className="w-full flex justify-center">
             <div
               ref={cardRef}
-              className="w-full max-w-[430px] p-5 sm:p-6 pb-7 rounded-3xl relative overflow-hidden text-left shadow-2xl bg-gradient-to-b from-[#1c0c38] via-[#0d051e] to-[#17052e] text-purple-100 border border-amber-400/40"
+              className="w-full max-w-[480px] p-5 sm:p-6 pb-7 rounded-3xl relative overflow-hidden text-left shadow-2xl bg-gradient-to-b from-[#1c0c38] via-[#0d051e] to-[#17052e] text-purple-100 border border-amber-400/40"
               style={{ fontFamily: "'Lora', Georgia, serif" }}
             >
               {/* Decorative Cosmic background effects inside card */}
@@ -260,7 +241,7 @@ ${bodyText}
                       {isTuVi ? 'Tử Vi Đẩu Số Thiên Không' : 'Tarot Thiên Không'}
                     </h4>
                     <p className="text-[10px] text-purple-300 font-sans tracking-wide">
-                      {isTuVi ? 'Mệnh Bàn & Luận Giải Tinh Hoa' : 'Trí Tuệ Vũ Trụ & Huyền Học'}
+                      {isTuVi ? 'Mệnh Bàn & Luận Giải Toàn Thư' : 'Trí Tuệ Vũ Trụ & Huyền Học'}
                     </p>
                   </div>
                 </div>
@@ -373,7 +354,7 @@ ${bodyText}
                             {palace.isTuan && <span className="text-[9px] text-red-300 bg-red-950/60 px-1 rounded">Tuần</span>}
                             {palace.isTriet && <span className="text-[9px] text-blue-300 bg-blue-950/60 px-1 rounded">Triệt</span>}
                           </div>
-                          <div className="text-[10px] text-purple-100 line-clamp-2 leading-tight">
+                          <div className="text-[10px] text-purple-100 leading-tight">
                             {mainStars}
                           </div>
                         </div>
@@ -394,8 +375,6 @@ ${bodyText}
                       ? 'grid-cols-1' 
                       : drawnCards.length === 3 
                       ? 'grid-cols-3' 
-                      : drawnCards.length <= 5 
-                      ? 'grid-cols-5' 
                       : 'grid-cols-5'
                   }`}>
                     {drawnCards.map((drawn, idx) => (
@@ -425,20 +404,29 @@ ${bodyText}
                 </div>
               ) : null}
 
-              {/* Complete AI Cosmic Interpretation Box */}
-              <div className="mb-4 bg-gradient-to-b from-purple-900/40 to-indigo-950/60 border border-amber-400/30 rounded-2xl p-3 sm:p-3.5 relative z-10">
-                <div className="text-[10px] sm:text-[11px] font-sans uppercase tracking-widest font-bold text-amber-300 mb-1.5 flex items-center">
-                  <Sparkles className="w-3 h-3 mr-1.5 text-amber-300" />
-                  {isTuVi ? 'Lời Luận Giải Tinh Hoa Từ Thầy Tử Vi AI' : 'Thấu thị từ Vũ Trụ'}
+              {/* Complete FULL AI Interpretation Box (NO TRUNCATION, FULL MARKDOWN) */}
+              <div className="mb-4 bg-gradient-to-b from-purple-900/40 to-indigo-950/60 border border-amber-400/30 rounded-2xl p-3.5 sm:p-4 relative z-10">
+                <div className="text-[10px] sm:text-[11px] font-sans uppercase tracking-widest font-bold text-amber-300 mb-2 flex items-center">
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5 text-amber-300" />
+                  {isTuVi ? 'Lời Luận Giải Toàn Diện Từ Thầy Tử Vi AI' : 'Toàn Văn Luận Giải Từ Vũ Trụ'}
                 </div>
-                <div className="text-[11px] leading-relaxed text-purple-100 font-serif whitespace-pre-line line-clamp-6">
-                  {bodyText}
+                <div className="text-[11.5px] leading-relaxed text-purple-100/95 font-serif space-y-2">
+                  <ReactMarkdown
+                    components={{
+                      h1: ({ children }) => <h1 className="text-sm font-bold text-amber-200 mt-2.5 mb-1">{children}</h1>,
+                      h2: ({ children }) => <h2 className="text-xs font-bold text-amber-200 mt-2 mb-1">{children}</h2>,
+                      h3: ({ children }) => <h3 className="text-xs font-bold text-amber-300 mt-1.5 mb-0.5">{children}</h3>,
+                      p: ({ children }) => <p className="mb-1.5 leading-relaxed">{children}</p>,
+                      ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-1 pl-1">{children}</ul>,
+                      ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 my-1 pl-1">{children}</ol>,
+                      li: ({ children }) => <li className="text-[11px] leading-relaxed">{children}</li>,
+                      strong: ({ children }) => <strong className="font-bold text-amber-200">{children}</strong>,
+                      blockquote: ({ children }) => <blockquote className="border-l-2 border-amber-400/50 pl-2 italic my-1 text-purple-200">{children}</blockquote>,
+                    }}
+                  >
+                    {cleanFullInterpretation}
+                  </ReactMarkdown>
                 </div>
-                {modelCredit && (
-                  <div className="pt-2 mt-2 border-t border-purple-400/20 text-[10px] text-purple-300/80 font-sans italic">
-                    {modelCredit}
-                  </div>
-                )}
               </div>
 
               {/* Watermark Footer */}
@@ -463,7 +451,7 @@ ${bodyText}
               className="flex-1 flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs shadow-lg shadow-purple-600/30 transition-all cursor-pointer disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>{isGenerating ? 'Đang tạo...' : downloadSuccess ? 'Đã tải!' : 'Tải ảnh PNG 3K'}</span>
+              <span>{isGenerating ? 'Đang tạo...' : downloadSuccess ? 'Đã tải ảnh full!' : 'Tải ảnh Full HD'}</span>
             </button>
 
             <button
@@ -472,7 +460,7 @@ ${bodyText}
               className="flex-1 flex items-center justify-center space-x-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs shadow-lg shadow-amber-500/25 transition-all cursor-pointer disabled:opacity-50"
             >
               <Share2 className="w-3.5 h-3.5" />
-              <span>Chia sẻ ảnh</span>
+              <span>Chia sẻ ảnh full</span>
             </button>
           </div>
 
@@ -480,10 +468,10 @@ ${bodyText}
             <button
               onClick={handleCopySummaryText}
               className="flex-1 flex items-center justify-center space-x-1 px-2.5 py-2 rounded-lg border border-amber-400/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 text-xs font-semibold transition-all cursor-pointer truncate"
-              title="Sao chép toàn bộ tóm tắt lá số & lời bình giải"
+              title="Sao chép toàn bộ kết quả và luận giải chi tiết"
             >
               {copiedSummary ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <FileText className="w-3.5 h-3.5 shrink-0" />}
-              <span className="truncate">{copiedSummary ? 'Đã chép tóm tắt' : 'Chép tóm tắt'}</span>
+              <span className="truncate">{copiedSummary ? 'Đã chép toàn bộ' : 'Chép toàn bộ kết quả'}</span>
             </button>
 
             <button
@@ -515,3 +503,4 @@ ${bodyText}
     </div>
   );
 };
+

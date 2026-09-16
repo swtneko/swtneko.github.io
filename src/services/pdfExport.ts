@@ -299,7 +299,7 @@ export async function exportReadingToPdf(params: ExportPdfParams): Promise<void>
 
     <!-- Professional Footer Watermark -->
     <div class="pdf-card-block" style="margin-top: 30px; border-top: 1px solid rgba(245, 158, 11, 0.4); padding-top: 14px; display: flex; justify-content: space-between; align-items: center; font-family: sans-serif; font-size: 10.5px; color: #c084fc;">
-      <div>Thiên Không Huyền Học & Tử Vi • https://thienkhong.app</div>
+      <div>Thiên Không Huyền Học & Tử Vi • https://swtneko-tarot.vercel.app</div>
       <div style="color: #f59e0b; font-weight: bold;">✦ TRÍ TUỆ TÂM LINH & ĐỊNH HƯỚNG VẬN MỆNH ✦</div>
     </div>
   `;

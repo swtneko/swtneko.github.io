@@ -206,32 +206,233 @@ const callOpenAICompatible = async (
   return content;
 };
 
-// Gemini generation with key rotation
+// Ranked descending model hierarchies for automatic cascading fallback (Fallback base)
+const GEMINI_DEFAULT_TIERS = [
+  "gemini-3.8-flash",       // Bậc 1: Flagship mới nhất, phân tích biểu tượng sâu và nhanh
+  "gemini-3.1-pro-preview", // Bậc 2: Bậc thầy suy luận Pro đa tầng
+  "gemini-2.5-pro",         // Bậc 3: Pro ổn định cao cấp
+  "gemini-2.5-flash",       // Bậc 4: Flash tốc độ cao cân bằng
+  "gemini-3.1-flash-lite",  // Bậc 5: Flash-Lite siêu nhẹ tiết kiệm quota
+  "gemini-flash-latest",    // Bậc 6: Mặc định dự phòng chung
+];
+
+const GROQ_DEFAULT_TIERS = [
+  'llama-3.3-70b-versatile',
+  'deepseek-r1-distill-llama-70b',
+  'qwen-2.5-32b',
+  'llama-3.1-8b-instant',
+];
+
+const DEEPSEEK_DEFAULT_TIERS = [
+  'deepseek-chat',
+  'deepseek-reasoner',
+];
+
+const OPENAI_DEFAULT_TIERS = [
+  'gpt-4o',
+  'gpt-4o-mini',
+  'o3-mini',
+];
+
+// In-memory model discovery cache with 30-minute expiration
+const modelCache: Record<string, { models: string[]; timestamp: number }> = {};
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 phút
+
+// Helper to extract numeric version from model string (e.g., 'gemini-3.8-flash' -> 3.8, 'gemini-2.5-pro' -> 2.5)
+const extractVersion = (modelName: string): number => {
+  const match = modelName.match(/(\d+(?:\.\d+)?)/);
+  return match ? parseFloat(match[1]) : 0;
+};
+
+// Smart model sorter: Newest version first -> Pro > Flash > Lite > Others
+const sortGeminiModels = (models: string[]): string[] => {
+  return [...models].sort((a, b) => {
+    const verA = extractVersion(a);
+    const verB = extractVersion(b);
+    if (verB !== verA) return verB - verA; // Phiên bản lớn hơn (mới hơn) đứng trước
+
+    // Cùng phiên bản: Pro ưu tiên hơn Flash, Flash ưu tiên hơn Flash-Lite
+    const getTierWeight = (name: string): number => {
+      const lower = name.toLowerCase();
+      if (lower.includes('pro')) return 4;
+      if (lower.includes('flash-lite') || lower.includes('lite')) return 2;
+      if (lower.includes('flash')) return 3;
+      return 1;
+    };
+    return getTierWeight(b) - getTierWeight(a);
+  });
+};
+
+// Dynamic model fetcher from Google Gemini API
+export const fetchDynamicGeminiModels = async (apiKey?: string): Promise<string[]> => {
+  const key = apiKey || getGeminiKeys()[0];
+  if (!key) return GEMINI_DEFAULT_TIERS;
+
+  const cacheKey = `gemini_${key.slice(0, 8)}`;
+  const cached = modelCache[cacheKey];
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.models;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000); // 4s timeout
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.models)) {
+        const fetched = data.models
+          .filter((m: any) => {
+            const name = (m.name || '').toLowerCase();
+            const methods = m.supportedGenerationMethods || [];
+            return (
+              name.includes('gemini') &&
+              methods.includes('generateContent') &&
+              !name.includes('embedding') &&
+              !name.includes('aqa') &&
+              !name.includes('imagen') &&
+              !name.includes('computer')
+            );
+          })
+          .map((m: any) => m.name.replace(/^models\//, ''));
+
+        if (fetched.length > 0) {
+          const sorted = sortGeminiModels(Array.from(new Set([...fetched, ...GEMINI_DEFAULT_TIERS])));
+          modelCache[cacheKey] = { models: sorted, timestamp: Date.now() };
+          console.info(`[Auto-Fetch] Đã tự động cập nhật ${sorted.length} model mới nhất từ Google Gemini:`, sorted);
+          return sorted;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[Auto-Fetch] Không thể fetch danh sách model Gemini tự động, sử dụng danh sách mặc định thông minh:', e);
+  }
+
+  return GEMINI_DEFAULT_TIERS;
+};
+
+// Dynamic model fetcher from Groq API
+export const fetchDynamicGroqModels = async (apiKey?: string): Promise<string[]> => {
+  const key = apiKey || getProviderKey('groq');
+  if (!key) return GROQ_DEFAULT_TIERS;
+
+  const cacheKey = `groq_${key.slice(0, 8)}`;
+  const cached = modelCache[cacheKey];
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.models;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch('https://api.groq.com/openai/v1/models', {
+      headers: { Authorization: `Bearer ${key}` },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.data)) {
+        const fetched = data.data
+          .map((m: any) => m.id)
+          .filter((id: string) => {
+            const lower = id.toLowerCase();
+            return (
+              (lower.includes('llama') || lower.includes('deepseek') || lower.includes('qwen') || lower.includes('gemma') || lower.includes('mixtral')) &&
+              !lower.includes('whisper') &&
+              !lower.includes('guard') &&
+              !lower.includes('embedding')
+            );
+          });
+
+        if (fetched.length > 0) {
+          const combined = Array.from(new Set([...fetched, ...GROQ_DEFAULT_TIERS]));
+          modelCache[cacheKey] = { models: combined, timestamp: Date.now() };
+          console.info(`[Auto-Fetch] Đã tự động cập nhật ${combined.length} model mới từ Groq:`, combined);
+          return combined;
+        }
+      }
+    }
+  } catch (e) {}
+
+  return GROQ_DEFAULT_TIERS;
+};
+
+// Dynamic model fetcher from OpenAI API
+export const fetchDynamicOpenAIModels = async (apiKey?: string): Promise<string[]> => {
+  const key = apiKey || getProviderKey('openai');
+  if (!key) return OPENAI_DEFAULT_TIERS;
+
+  const cacheKey = `openai_${key.slice(0, 8)}`;
+  const cached = modelCache[cacheKey];
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.models;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch('https://api.openai.com/v1/models', {
+      headers: { Authorization: `Bearer ${key}` },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.data)) {
+        const fetched = data.data
+          .map((m: any) => m.id)
+          .filter((id: string) => {
+            const lower = id.toLowerCase();
+            return (lower.startsWith('gpt-4') || lower.startsWith('o1') || lower.startsWith('o3') || lower.startsWith('gpt-5') || lower.startsWith('chatgpt')) && !lower.includes('audio') && !lower.includes('realtime') && !lower.includes('embed');
+          });
+
+        if (fetched.length > 0) {
+          const combined = Array.from(new Set([...fetched, ...OPENAI_DEFAULT_TIERS]));
+          modelCache[cacheKey] = { models: combined, timestamp: Date.now() };
+          return combined;
+        }
+      }
+    }
+  } catch (e) {}
+
+  return OPENAI_DEFAULT_TIERS;
+};
+
+// Gemini generation with dynamic auto-fetched descending smart model tiers + multi-key rotation
 const callGeminiWithRotation = async (prompt: string, requestedModel?: string): Promise<string> => {
   const keys = getGeminiKeys();
   if (keys.length === 0) {
     throw new Error("MISSING_GEMINI_KEY");
   }
 
-  const defaultGeminiModels = [
-    "gemini-3.8-flash",
-    "gemini-3.1-pro-preview",
-    "gemini-2.5-pro",
-    "gemini-2.5-flash",
-    "gemini-3.1-flash-lite",
-  ];
+  // Auto-fetch latest dynamic models from Google API (using first key) or fallback gracefully
+  const dynamicModels = await fetchDynamicGeminiModels(keys[0]);
+
+  // Model hierarchy: If a specific model was requested and is not 'auto', place it first, followed by descending tiers
   const models = requestedModel && requestedModel !== 'auto'
-    ? [requestedModel, ...defaultGeminiModels.filter(m => m !== requestedModel)]
-    : defaultGeminiModels;
+    ? [requestedModel, ...dynamicModels.filter(m => m !== requestedModel)]
+    : dynamicModels;
 
   let lastError: any = null;
 
-  for (let keyIndex = 0; keyIndex < keys.length; keyIndex++) {
-    const currentKey = keys[keyIndex];
-    const ai = new GoogleGenAI({ apiKey: currentKey });
+  // STEP DOWN TIER BY TIER:
+  // Try the best/newest model across ALL available API keys first.
+  // If all keys run out of quota on that model, step down to the 2nd model and try all keys, then 3rd, etc.
+  for (let modelIndex = 0; modelIndex < models.length; modelIndex++) {
+    const model = models[modelIndex];
+    let quotaErrorCount = 0;
 
-    for (const model of models) {
+    for (let keyIndex = 0; keyIndex < keys.length; keyIndex++) {
+      const currentKey = keys[keyIndex];
       try {
+        const ai = new GoogleGenAI({ apiKey: currentKey });
         const response = await ai.models.generateContent({
           model,
           contents: prompt,
@@ -239,21 +440,26 @@ const callGeminiWithRotation = async (prompt: string, requestedModel?: string): 
 
         if (response.text) {
           const rotationNote = keys.length > 1 ? ` *(Khóa ${keyIndex + 1}/${keys.length})*` : '';
-          return `${response.text}\n\n*✨ Diễn giải bởi Google Gemini (${model})${rotationNote}*`;
+          const fallbackNote = modelIndex > 0 ? ` *(Tự hạ bậc ${model})*` : '';
+          return `${response.text}\n\n*✨ Diễn giải bởi Google Gemini (${model})${rotationNote}${fallbackNote}*`;
         }
       } catch (err: any) {
-        console.warn(`Gemini key #${keyIndex + 1} with model ${model} failed:`, err);
         lastError = err;
-        // If it's a rate limit (429) or quota or key error, break to next key
         const msg = String(err?.message || "").toLowerCase();
-        if (msg.includes("429") || msg.includes("quota") || msg.includes("limit") || msg.includes("key")) {
-          break; // move to next key immediately
+        console.warn(`[Gemini Fallback] Model ${model} (Key #${keyIndex + 1}/${keys.length}) gặp lỗi:`, err?.message || err);
+
+        // If rate limited or quota exceeded, try next key
+        if (msg.includes('429') || msg.includes('quota') || msg.includes('resource exhausted') || msg.includes('limit')) {
+          quotaErrorCount++;
         }
       }
     }
+
+    // If all keys failed on this model, loop automatically steps down to the next lower model in the hierarchy
+    console.info(`[Gemini Fallback] Đã thử hết ${keys.length} key trên model [${model}] -> Tự động chuyển xuống bậc thấp hơn: [${models[modelIndex + 1] || 'Hết bậc'}]`);
   }
 
-  throw lastError || new Error("Tất cả khóa Gemini đều không phản hồi");
+  throw lastError || new Error("Tất cả khóa và mô hình Gemini đều đã hết hạn mức (Quota Exceeded)");
 };
 
 // Core multi-provider dispatcher with fallback & rotation
@@ -371,40 +577,75 @@ export const dispatchAiPrompt = async (
     if (provider === 'groq') {
       const key = getProviderKey('groq');
       if (!key) throw new Error("Chưa cấu hình Groq API Key");
-      const model = (modelToUse && modelToUse !== 'auto') ? modelToUse : 'llama-3.3-70b-versatile';
-      const res = await callOpenAICompatible(
-        'https://api.groq.com/openai/v1/chat/completions',
-        key,
-        model,
-        finalPrompt
-      );
-      return `${res}\n\n*⚡ Diễn giải bởi Groq (${model})*`;
+      const dynamicGroq = await fetchDynamicGroqModels(key);
+      const models = (modelToUse && modelToUse !== 'auto')
+        ? [modelToUse, ...dynamicGroq.filter(m => m !== modelToUse)]
+        : dynamicGroq;
+      let lastErr: any = null;
+      for (const m of models) {
+        try {
+          const res = await callOpenAICompatible(
+            'https://api.groq.com/openai/v1/chat/completions',
+            key,
+            m,
+            finalPrompt
+          );
+          return `${res}\n\n*⚡ Diễn giải bởi Groq (${m})*`;
+        } catch (err: any) {
+          lastErr = err;
+          console.warn(`[Groq Fallback] Model ${m} gặp lỗi:`, err?.message || err);
+        }
+      }
+      throw lastErr || new Error("Tất cả mô hình Groq đều không phản hồi");
     }
 
     if (provider === 'deepseek') {
       const key = getProviderKey('deepseek');
       if (!key) throw new Error("Chưa cấu hình DeepSeek API Key");
-      const model = (modelToUse && modelToUse !== 'auto') ? modelToUse : 'deepseek-chat';
-      const res = await callOpenAICompatible(
-        'https://api.deepseek.com/chat/completions',
-        key,
-        model,
-        finalPrompt
-      );
-      return `${res}\n\n*✨ Diễn giải bởi DeepSeek (${model})*`;
+      const models = (modelToUse && modelToUse !== 'auto')
+        ? [modelToUse, ...DEEPSEEK_DEFAULT_TIERS.filter(m => m !== modelToUse)]
+        : DEEPSEEK_DEFAULT_TIERS;
+      let lastErr: any = null;
+      for (const m of models) {
+        try {
+          const res = await callOpenAICompatible(
+            'https://api.deepseek.com/chat/completions',
+            key,
+            m,
+            finalPrompt
+          );
+          return `${res}\n\n*✨ Diễn giải bởi DeepSeek (${m})*`;
+        } catch (err: any) {
+          lastErr = err;
+          console.warn(`[DeepSeek Fallback] Model ${m} gặp lỗi:`, err?.message || err);
+        }
+      }
+      throw lastErr || new Error("Tất cả mô hình DeepSeek đều không phản hồi");
     }
 
     if (provider === 'openai') {
       const key = getProviderKey('openai');
       if (!key) throw new Error("Chưa cấu hình OpenAI API Key");
-      const model = (modelToUse && modelToUse !== 'auto') ? modelToUse : 'gpt-4o-mini';
-      const res = await callOpenAICompatible(
-        'https://api.openai.com/v1/chat/completions',
-        key,
-        model,
-        finalPrompt
-      );
-      return `${res}\n\n*🌟 Diễn giải bởi OpenAI (${model})*`;
+      const dynamicOpenAI = await fetchDynamicOpenAIModels(key);
+      const models = (modelToUse && modelToUse !== 'auto')
+        ? [modelToUse, ...dynamicOpenAI.filter(m => m !== modelToUse)]
+        : dynamicOpenAI;
+      let lastErr: any = null;
+      for (const m of models) {
+        try {
+          const res = await callOpenAICompatible(
+            'https://api.openai.com/v1/chat/completions',
+            key,
+            m,
+            finalPrompt
+          );
+          return `${res}\n\n*🌟 Diễn giải bởi OpenAI (${m})*`;
+        } catch (err: any) {
+          lastErr = err;
+          console.warn(`[OpenAI Fallback] Model ${m} gặp lỗi:`, err?.message || err);
+        }
+      }
+      throw lastErr || new Error("Tất cả mô hình OpenAI đều không phản hồi");
     }
 
     if (provider === 'openrouter') {

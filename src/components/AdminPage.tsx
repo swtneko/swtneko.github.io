@@ -160,31 +160,17 @@ const UserRow: React.FC<UserRowProps> = ({
             }}
             className="text-[11px] p-2 rounded-xl bg-black/60 border border-white/10 text-white focus:outline-none focus:border-purple-500"
           >
-            <option value="openrouter">OpenRouter (Mặc định)</option>
-            <option value="gemini">Google Gemini</option>
+            <option value="auto">Tự động xoay tua & hạ cấp (Mặc định)</option>
+            <option value="gemini">Google Gemini (Tự động bậc thang)</option>
+            <option value="openrouter">OpenRouter Free</option>
             <option value="groq">Groq Cloud</option>
             <option value="deepseek">DeepSeek API</option>
             <option value="openai">OpenAI GPT</option>
-            <option value="auto">Xoay tua tự động</option>
           </select>
 
-          {selectedProvider !== 'auto' && (
-            <select
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              className="text-[11px] p-2 rounded-xl bg-black/60 border border-white/10 text-white focus:outline-none focus:border-purple-500"
-            >
-              {getModelsForProvider(selectedProvider).map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {(selectedProvider !== user.assignedProvider || selectedModel !== user.assignedModel) && (
+          {selectedProvider !== user.assignedProvider && (
             <button
-              onClick={() => onUpdateModel(selectedProvider, selectedModel)}
+              onClick={() => onUpdateModel(selectedProvider, 'auto')}
               className="px-2.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] transition-all flex items-center gap-1 cursor-pointer shrink-0"
             >
               <Check className="w-3.5 h-3.5" />
@@ -830,64 +816,54 @@ VITE_FIREBASE_APP_ID=`;
                 })}
               </div>
 
-              {/* Model Picker for Global Provider */}
-              <div className="p-5 rounded-2xl bg-zinc-900/60 border border-white/10 space-y-3 mt-4">
+              {/* Smart Auto-Descending Model Hierarchy */}
+              <div className="p-5 rounded-2xl bg-zinc-900/60 border border-purple-500/20 space-y-4 mt-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center">
-                      <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Mô Hình AI Cụ Thể ({globalProvider.toUpperCase()})
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Cơ Chế Bậc Thang Tự Động (Auto-Descending Hierarchy)
                     </span>
                     <p className="text-[11px] text-gray-400 mt-0.5">
-                      Chọn phiên bản model bạn muốn AI sử dụng để diễn giải quẻ bài Tarot:
+                      Hệ thống tự động dùng mô hình mới nhất, nếu hết quota sẽ tự động trượt xuống bậc thấp nhì, thấp ba, rồi mới chuyển nhà cung cấp:
                     </p>
                   </div>
-                  <span className="text-xs font-mono text-purple-300 bg-purple-950/60 border border-purple-500/30 px-2.5 py-1 rounded-lg self-start">
-                    Đang chọn: {globalModel}
+                  <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full self-start flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Tự động tối ưu 100%
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1">
-                  {(PROVIDER_MODELS[globalProvider] || []).map((m) => {
-                    const isModelActive = globalModel === m.id;
-                    return (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => setGlobalModel(m.id)}
-                        className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
-                          isModelActive
-                            ? 'bg-purple-900/30 border-purple-500 text-white ring-1 ring-purple-500/40'
-                            : 'bg-black/30 border-white/10 text-gray-400 hover:border-white/20 hover:text-white'
-                        }`}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <span className="font-semibold text-xs text-white truncate">{m.name}</span>
-                            {m.tag && (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-medium">
-                                {m.tag}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[10px] text-gray-400 line-clamp-2">{m.desc}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1">
+                  {[
+                    { tier: 'Bậc 1 (Ưu tiên cao nhất)', name: 'Gemini 3.8 Flash / 3.1 Pro', desc: 'Mới nhất Google - Phân tích Tarot sâu sắc, trí tuệ đỉnh cao', tag: 'Khởi đầu' },
+                    { tier: 'Bậc 2 (Hạ cấp tự động)', name: 'Gemini 2.5 Pro', desc: 'Sử dụng khi tất cả key của Bậc 1 chạm ngưỡng Quota', tag: 'Dự phòng 1' },
+                    { tier: 'Bậc 3 (Hạ cấp tiếp)', name: 'Gemini 2.5 Flash', desc: 'Cân bằng tốc độ cao, giữ mạch kết nối người dùng', tag: 'Dự phòng 2' },
+                    { tier: 'Bậc 4 (Cứu cánh Quota)', name: 'Gemini 3.1 Flash-Lite', desc: 'Siêu nhẹ, phản hồi tức thì, tối ưu hóa quota triệt để', tag: 'Dự phòng 3' },
+                  ].map((step, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-xl border border-white/10 bg-black/40 flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-[10px] font-bold text-amber-400 uppercase font-mono">{step.tier}</span>
+                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-semibold">{step.tag}</span>
                         </div>
-                        <div className="mt-2 flex items-center justify-between text-[10px] pt-1 border-t border-white/5 font-mono text-gray-500">
-                          <span>ID: {m.id}</span>
-                          {isModelActive && <Check className="w-3 h-3 text-purple-400 ml-1 shrink-0" />}
-                        </div>
-                      </button>
-                    );
-                  })}
+                        <h5 className="font-bold text-xs text-white mb-0.5">{step.name}</h5>
+                        <p className="text-[10px] text-gray-400 leading-tight">{step.desc}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Auto-Fallback Toggle */}
                 <div className="pt-3 border-t border-white/10 flex items-center justify-between">
                   <div className="space-y-0.5 pr-4">
                     <div className="text-xs font-semibold text-white flex items-center">
-                      Tự động chuyển sang nhà cung cấp dự phòng khi lỗi (Auto-Fallback)
+                      Tự động chuyển sang nhà cung cấp dự phòng khi hết sạch các bậc (Auto-Fallback)
                     </div>
                     <p className="text-[11px] text-gray-400">
-                      Nếu mô hình đã chọn hết quota hoặc gặp sự cố mạng, hệ thống sẽ tự động dùng Gemini/Groq/DeepSeek dự phòng để quẻ bài luôn được hoàn thành.
+                      Khi tất cả các bậc của Gemini đều cạn quota, hệ thống sẽ tự động chuyển sang Groq / DeepSeek / OpenAI / OpenRouter để không bao giờ bị gián đoạn.
                     </p>
                   </div>
                   <button

@@ -12,7 +12,7 @@ import {
   User,
 } from 'firebase/auth';
 import {
-  getFirestore,
+  initializeFirestore,
   doc,
   getDoc,
   getDocFromServer,
@@ -46,9 +46,11 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
 
-// Use specified databaseId or default
+// Use specified databaseId or default with auto-detect long polling for reliable connection in iframes
 const dbId = (import.meta as any).env?.VITE_FIREBASE_DATABASE_ID || firebaseConfigJson.firestoreDatabaseId || '(default)';
-export const db = getFirestore(app, dbId);
+export const db = initializeFirestore(app, {
+  experimentalAutoDetectLongPolling: true,
+}, dbId);
 
 // Test connection as required by skill guidelines
 async function testFirestoreConnection() {

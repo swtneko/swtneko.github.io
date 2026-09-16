@@ -19,19 +19,49 @@
     backface-visibility: hidden;
   }
 
-  /* Pure Colorless Liquid Glass Design System (ui-layouts specification) */
+  /* Universal Cross-Browser Backdrop Blur for Production (Safari, iOS WebKit, Chrome) */
+  .backdrop-blur-none {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .backdrop-blur-xs, [class*="backdrop-blur-[2px]"] {
+    -webkit-backdrop-filter: blur(2px) !important;
+    backdrop-filter: blur(2px) !important;
+  }
+  .backdrop-blur-sm, [class*="backdrop-blur-[4px]"] {
+    -webkit-backdrop-filter: blur(4px) !important;
+    backdrop-filter: blur(4px) !important;
+  }
+  .backdrop-blur, .backdrop-blur-md, [class*="backdrop-blur-[12px]"] {
+    -webkit-backdrop-filter: blur(12px) !important;
+    backdrop-filter: blur(12px) !important;
+  }
+  .backdrop-blur-lg, [class*="backdrop-blur-[16px]"], [class*="backdrop-blur-[18px]"] {
+    -webkit-backdrop-filter: blur(18px) !important;
+    backdrop-filter: blur(18px) !important;
+  }
+  .backdrop-blur-xl, [class*="backdrop-blur-[20px]"], [class*="backdrop-blur-[24px]"] {
+    -webkit-backdrop-filter: blur(24px) !important;
+    backdrop-filter: blur(24px) !important;
+  }
+  .backdrop-blur-2xl, .backdrop-blur-3xl, [class*="backdrop-blur-[36px]"] {
+    -webkit-backdrop-filter: blur(36px) !important;
+    backdrop-filter: blur(36px) !important;
+  }
+
+  /* Pure Colorless Liquid Glass Design System */
   .liquid-glass-bar {
     position: relative;
     isolation: isolate;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
-    background: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.4);
     --tw-backdrop-blur: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.5);
     box-shadow: 
-      inset 0 1px 1px 0 rgba(255, 255, 255, 0.8),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.7),
       0 10px 30px rgba(0, 0, 0, 0.05);
   }
 
@@ -40,13 +70,13 @@
     isolation: isolate;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.06);
     --tw-backdrop-blur: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 
-      inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.18),
       0 12px 32px rgba(0, 0, 0, 0.4);
   }
 
@@ -55,22 +85,22 @@
     isolation: isolate;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.45);
     --tw-backdrop-blur: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.6);
     box-shadow: 
-      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.9),
+      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.85),
       0 6px 16px rgba(0, 0, 0, 0.06);
     transition: all 0.25s ease;
   }
 
   .liquid-glass-pill:hover {
-    background: rgba(255, 255, 255, 0.7);
-    border-color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.65);
+    border-color: rgba(255, 255, 255, 0.85);
     box-shadow: 
-      inset 0 1.5px 1px 0 rgba(255, 255, 255, 1),
+      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.95),
       0 8px 24px rgba(0, 0, 0, 0.1);
   }
 
@@ -83,16 +113,16 @@
     --tw-backdrop-blur: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.16);
     box-shadow: 
-      inset 0 1px 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.25),
       0 8px 20px rgba(0, 0, 0, 0.35);
     transition: all 0.25s ease;
   }
 
   .dark .liquid-glass-pill:hover {
     background: rgba(255, 255, 255, 0.14);
-    border-color: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.28);
   }
 
   .liquid-glass-card {
@@ -100,14 +130,14 @@
     isolation: isolate;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.35);
     --tw-backdrop-blur: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.5);
     box-shadow: 
-      inset 0 1px 1px 0 rgba(255, 255, 255, 0.8),
-      0 12px 30px rgba(0, 0, 0, 0.06);
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.75),
+      0 12px 30px rgba(0, 0, 0, 0.05);
   }
 
   .dark .liquid-glass-card {
@@ -115,85 +145,36 @@
     isolation: isolate;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
     --tw-backdrop-blur: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 
-      inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
-      0 16px 40px rgba(0, 0, 0, 0.4);
-  }
-
-  /* Physics-Based Squircle + Snell's Law Colorless Glass */
-  .liquid-glass-card-physics-light {
-    position: relative;
-    isolation: isolate;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    background: rgba(255, 255, 255, 0.5);
-  }
-
-  .liquid-glass-card-physics-dark {
-    position: relative;
-    isolation: isolate;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .liquid-glass-bar-light {
-    position: relative;
-    isolation: isolate;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    background: rgba(255, 255, 255, 0.45);
-  }
-
-  .liquid-glass-bar-dark {
-    position: relative;
-    isolation: isolate;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    background: rgba(255, 255, 255, 0.07);
-  }
-
-  .liquid-glass-pill-light {
-    position: relative;
-    isolation: isolate;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    background: rgba(255, 255, 255, 0.5);
-    box-shadow: inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.9), 0 6px 16px rgba(0, 0, 0, 0.06);
-  }
-
-  .liquid-glass-pill-dark {
-    position: relative;
-    isolation: isolate;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    background: rgba(255, 255, 255, 0.08);
-    box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.3), 0 8px 20px rgba(0, 0, 0, 0.35);
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.18),
+      0 16px 40px rgba(0, 0, 0, 0.35);
   }
 
   .liquid-glass-input {
-    background: rgba(255, 255, 255, 0.45);
-    --tw-backdrop-blur: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+    background: rgba(255, 255, 255, 0.4);
+    --tw-backdrop-blur: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(147, 51, 234, 0.25);
+    box-shadow: 
+      inset 0 1px 2px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
   }
 
   .dark .liquid-glass-input {
-    background: rgba(255, 255, 255, 0.06);
-    --tw-backdrop-blur: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(18, 10, 32, 0.35);
+    --tw-backdrop-blur: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(168, 85, 247, 0.25);
     box-shadow: 
-      inset 0 1px 3px rgba(0, 0, 0, 0.25),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      inset 0 1.5px 3px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
   }
 }
 

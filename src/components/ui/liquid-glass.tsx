@@ -4,8 +4,8 @@ import { cn } from '../../lib/utils';
 
 export interface LiquidGlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
   children?: React.ReactNode;
-  shadowIntensity?: 'none' | 'xs' | 'sm' | 'md' | 'lg';
-  glowIntensity?: 'none' | 'xs' | 'sm' | 'md' | 'lg';
+  shadowIntensity?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  glowIntensity?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   blurIntensity?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   borderIntensity?: 'none' | 'xs' | 'sm' | 'md' | 'lg';
   borderRadius?: string;
@@ -21,6 +21,7 @@ const shadowStyles: Record<string, string> = {
   sm: 'shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_1px_rgba(255,255,255,0.25)]',
   md: 'shadow-[0_8px_24px_rgba(0,0,0,0.12),inset_0_1.5px_1px_rgba(255,255,255,0.3)]',
   lg: 'shadow-[0_16px_40px_rgba(0,0,0,0.2),inset_0_2px_1.5px_rgba(255,255,255,0.4)]',
+  xl: 'shadow-[0_24px_48px_rgba(0,0,0,0.28),inset_0_2.5px_2px_rgba(255,255,255,0.45)]',
 };
 
 const glowStyles: Record<string, string> = {
@@ -29,15 +30,16 @@ const glowStyles: Record<string, string> = {
   sm: 'drop-shadow-[0_0_18px_rgba(255,255,255,0.14)]',
   md: 'drop-shadow-[0_0_28px_rgba(255,255,255,0.22)]',
   lg: 'drop-shadow-[0_0_40px_rgba(255,255,255,0.32)]',
+  xl: 'drop-shadow-[0_0_55px_rgba(255,255,255,0.45)]',
 };
 
-const blurStyles: Record<string, string> = {
-  none: 'backdrop-blur-none',
-  xs: 'backdrop-blur-[2px]',
-  sm: 'backdrop-blur-sm',     // 4px - very clear
-  md: 'backdrop-blur-md',     // 12px - clean & crisp
-  lg: 'backdrop-blur-lg',     // 16px
-  xl: 'backdrop-blur-xl',     // 24px
+const blurStyles: Record<string, { className: string; px: string }> = {
+  none: { className: 'backdrop-blur-none', px: '0px' },
+  xs: { className: 'backdrop-blur-[4px]', px: '4px' },
+  sm: { className: 'backdrop-blur-md', px: '12px' },
+  md: { className: 'backdrop-blur-lg', px: '18px' },
+  lg: { className: 'backdrop-blur-xl', px: '24px' },
+  xl: { className: 'backdrop-blur-2xl', px: '36px' },
 };
 
 const borderStyles: Record<string, string> = {
@@ -54,7 +56,7 @@ export const LiquidGlassCard = React.forwardRef<HTMLDivElement, LiquidGlassCardP
       children,
       shadowIntensity = 'sm',
       glowIntensity = 'none',
-      blurIntensity = 'sm',
+      blurIntensity = 'md',
       borderIntensity = 'sm',
       borderRadius,
       className = '',
@@ -113,7 +115,7 @@ export const LiquidGlassCard = React.forwardRef<HTMLDivElement, LiquidGlassCardP
 
     const shadowClass = shadowStyles[shadowIntensity] || shadowStyles.sm;
     const glowClass = glowStyles[glowIntensity] || '';
-    const blurClass = blurStyles[blurIntensity] || blurStyles.sm;
+    const blurConfig = blurStyles[blurIntensity] || blurStyles.md;
     const borderClass = borderStyles[borderIntensity] || borderStyles.sm;
 
     // Has user supplied their own background in className?
@@ -126,19 +128,21 @@ export const LiquidGlassCard = React.forwardRef<HTMLDivElement, LiquidGlassCardP
         draggable={draggable}
         style={{
           borderRadius: effectiveBorderRadius,
+          WebkitBackdropFilter: `blur(${blurConfig.px})`,
+          backdropFilter: `blur(${blurConfig.px})`,
           ...style,
         }}
         className={cn(
-          'relative isolate overflow-hidden transition-all duration-300',
+          'liquid-glass-card relative isolate overflow-hidden transition-all duration-300',
           !hasRoundedInClass && !borderRadius && 'rounded-3xl',
-          blurClass,
+          blurConfig.className,
           borderClass,
           shadowClass,
           glowClass,
           // Crystal Clear, Completely Non-Milky Glass Background:
-          // Light Mode: Subtle 18% translucent white (transparent, crisp)
-          // Dark Mode: Ultra-transparent 4% white / subtle black tint
-          !hasCustomBg && 'bg-white/20 dark:bg-white/[0.04] text-slate-900 dark:text-white',
+          // Light Mode: Subtle 25% translucent white (transparent, crisp)
+          // Dark Mode: Ultra-transparent 6% white / subtle black tint
+          !hasCustomBg && 'bg-white/25 dark:bg-white/[0.06] text-slate-900 dark:text-white',
           className
         )}
         {...rest}

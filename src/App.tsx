@@ -3,20 +3,20 @@ import { motion, AnimatePresence } from 'motion/react';
 import CosmicBackground from './components/CosmicBackground';
 import HomeScreen from './components/HomeScreen';
 import ReadingScreen from './components/ReadingScreen';
+import { TuViScreen } from './components/TuViScreen';
 import SettingsModal from './components/SettingsModal';
 import AuthModal from './components/AuthModal';
 import HistoryModal from './components/HistoryModal';
 import { AdminPage } from './components/AdminPage';
 import { AnnouncementBanner } from './components/AnnouncementBanner';
-import { LiquidGlassCapsule } from './components/LiquidGlassCapsule';
-import { LiquidGlassFilter } from './components/LiquidGlassFilter';
+import { LiquidGlassCard } from './components/LiquidGlassCard';
 import { Sparkles, Settings, History, LogIn, LogOut, User as UserIcon, ShieldCheck, Bell, Lock } from 'lucide-react';
 import { DeckType, UserInfo, ReadingResult } from './types';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function AppContent() {
-  const [view, setView] = useState<'home' | 'reading' | 'admin'>('home');
+  const [view, setView] = useState<'home' | 'reading' | 'tuvi' | 'admin'>('home');
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [deckType, setDeckType] = useState<DeckType>(DeckType.TAROT);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -34,14 +34,33 @@ function AppContent() {
     setSelectedReading(null);
     setUserInfo(info);
     setDeckType(type);
-    setView('reading');
+    if (type === DeckType.TU_VI) {
+      setView('tuvi');
+    } else {
+      setView('reading');
+    }
+  };
+
+  const handleStartTuVi = (info?: UserInfo) => {
+    if (!systemSettings.enableGuestReadings && !currentUser) {
+      openAuthModal();
+      return;
+    }
+    setSelectedReading(null);
+    if (info) setUserInfo(info);
+    setDeckType(DeckType.TU_VI);
+    setView('tuvi');
   };
 
   const handleSelectHistoricalReading = (reading: ReadingResult) => {
     setSelectedReading(reading);
     setUserInfo(reading.userInfo);
     setDeckType(reading.deckType);
-    setView('reading');
+    if (reading.deckType === DeckType.TU_VI) {
+      setView('tuvi');
+    } else {
+      setView('reading');
+    }
   };
 
   return (
@@ -50,10 +69,9 @@ function AppContent() {
         ? 'bg-transparent' 
         : (settings.theme === 'dark' ? 'bg-[#05020a]' : 'bg-gradient-to-b from-[#faf5ff] via-[#fdfbf7] to-[#f5f3ff]')
     } ${settings.theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-      <LiquidGlassFilter />
       {settings.effectsEnabled && <CosmicBackground />}
       
-      {/* Fixed Top Header (Liquid Glass Floating Capsule) */}
+      {/* Fixed Top Header (Liquid Glass Floating Bar) */}
       {view !== 'admin' && (
         <header className="fixed top-2 sm:top-3 left-2 sm:left-4 right-2 sm:right-4 z-40 max-w-7xl mx-auto pointer-events-none">
           <div className="pointer-events-auto">
@@ -63,16 +81,17 @@ function AppContent() {
             )}
 
             {/* Liquid Glass Navbar */}
-            <LiquidGlassCapsule
-              variant="bar"
-              className={`transition-all duration-300 ${
+            <LiquidGlassCard
+              borderRadius="9999px"
+              blurIntensity="lg"
+              borderIntensity="sm"
+              shadowIntensity="md"
+              glowIntensity="sm"
+              className={`liquid-glass-card transition-all duration-300 w-full ${
                 settings.theme === 'dark' ? 'text-white' : 'text-purple-950 shadow-purple-900/10'
               }`}
               contentClassName="px-3 sm:px-6 py-2 sm:py-2.5 flex justify-between items-center w-full min-w-0"
             >
-              {/* Glossy Sheen Overlay */}
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-80" />
-
               {/* Brand */}
               <div 
                 className="flex items-center cursor-pointer group shrink-0 mr-1 sm:mr-3 relative z-10"
@@ -100,57 +119,67 @@ function AppContent() {
               <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0 relative z-10">
                 {/* Admin Dashboard Button (Only for admin) */}
                 {isAdmin && (
-                  <motion.button
+                  <motion.div
                     whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
                     whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
                     onClick={() => setView('admin')}
-                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-full text-xs font-bold shrink-0 cursor-pointer transition-all ${
-                      !settings.effectsEnabled
-                        ? (settings.theme === 'dark'
-                            ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            : 'bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 shadow-sm shadow-amber-100/50')
-                        : `liquid-glass-pill ${settings.theme === 'dark' ? 'text-amber-300' : 'text-amber-800'}`
-                    }`}
+                    className="shrink-0 cursor-pointer"
                     title="Mở Trang Quản Trị Hệ Thống"
                   >
-                    <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 shrink-0" />
-                    <span className="hidden sm:inline">Quản Trị</span>
-                  </motion.button>
+                    <LiquidGlassCard
+                      borderRadius="9999px"
+                      blurIntensity="md"
+                      borderIntensity="xs"
+                      shadowIntensity="xs"
+                      className="cursor-pointer"
+                      contentClassName={`flex items-center space-x-1 px-3 py-1.5 text-xs font-bold ${
+                        settings.theme === 'dark' ? 'text-amber-300' : 'text-amber-800'
+                      }`}
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 shrink-0" />
+                      <span className="hidden sm:inline">Quản Trị</span>
+                    </LiquidGlassCard>
+                  </motion.div>
                 )}
 
                 {/* History Button */}
-                <motion.button
+                <motion.div
                   whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
                   whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
                   onClick={() => setIsHistoryOpen(true)}
-                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-bold shrink-0 cursor-pointer transition-all ${
-                    !settings.effectsEnabled
-                      ? (settings.theme === 'dark'
-                          ? 'bg-purple-950/60 hover:bg-purple-900 border border-purple-500/30 text-purple-100'
-                          : 'bg-purple-100 hover:bg-purple-200 text-purple-950 border border-purple-300 shadow-sm shadow-purple-100/50')
-                      : `liquid-glass-pill ${settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'}`
-                  }`}
+                  className="shrink-0 cursor-pointer"
                   title="Xem lịch sử các quẻ bài đã hỏi"
                 >
-                  <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-600 dark:text-purple-400 shrink-0" />
-                  <span className="hidden md:inline">Lịch sử</span>
-                  {readings.length > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-full bg-purple-600/90 text-white text-[10px] font-bold shrink-0 shadow-sm">
-                      {readings.length}
-                    </span>
-                  )}
-                </motion.button>
+                  <LiquidGlassCard
+                    borderRadius="9999px"
+                    blurIntensity="md"
+                    borderIntensity="xs"
+                    shadowIntensity="xs"
+                    className="cursor-pointer"
+                    contentClassName={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold ${
+                      settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'
+                    }`}
+                  >
+                    <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                    <span className="hidden md:inline">Lịch sử</span>
+                    {readings.length > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-purple-600/90 text-white text-[10px] font-bold shrink-0 shadow-sm">
+                        {readings.length}
+                      </span>
+                    )}
+                  </LiquidGlassCard>
+                </motion.div>
 
                 {/* User / Login Button */}
                 {currentUser ? (
                   <div className="flex items-center space-x-1 shrink-0">
-                    <div
-                      className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all ${
-                        !settings.effectsEnabled
-                          ? (settings.theme === 'dark'
-                              ? 'bg-purple-950/60 border border-purple-500/30 text-purple-100'
-                              : 'bg-purple-100 text-purple-950 border border-purple-300 shadow-sm')
-                          : `liquid-glass-pill ${settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'}`
+                    <LiquidGlassCard
+                      borderRadius="9999px"
+                      blurIntensity="md"
+                      borderIntensity="xs"
+                      shadowIntensity="xs"
+                      contentClassName={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold ${
+                        settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'
                       }`}
                       title={currentUser.displayName || currentUser.email || 'Tài khoản'}
                     >
@@ -168,11 +197,11 @@ function AppContent() {
                         {currentUser.displayName || 'Tài khoản'}
                       </span>
                       {currentUser.isAdmin && (
-                        <span className="hidden md:inline text-[9px] bg-amber-400/20 text-amber-800 border border-amber-400/30 px-1.5 py-0.2 rounded font-bold uppercase">
+                        <span className="hidden md:inline text-[9px] bg-amber-400/20 text-amber-800 dark:text-amber-300 border border-amber-400/30 px-1.5 py-0.2 rounded font-bold uppercase">
                           Admin
                         </span>
                       )}
-                    </div>
+                    </LiquidGlassCard>
                     <motion.button
                       whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
                       whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
@@ -184,47 +213,53 @@ function AppContent() {
                     </motion.button>
                   </div>
                 ) : (
-                  <motion.button
+                  <motion.div
                     whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
                     whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
                     onClick={openAuthModal}
-                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-bold shrink-0 cursor-pointer transition-all ${
-                      !settings.effectsEnabled
-                        ? (settings.theme === 'dark'
-                            ? 'bg-purple-600 hover:bg-purple-700 text-white border border-purple-500 shadow-md'
-                            : 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-200')
-                        : `liquid-glass-pill ${settings.theme === 'dark' ? 'text-white bg-purple-600/80 hover:bg-purple-600' : 'text-purple-950 bg-purple-100/60 hover:bg-purple-200/80'}`
-                    }`}
+                    className="shrink-0 cursor-pointer"
                     title="Đăng nhập để lưu lịch sử đám mây"
                   >
-                    <LogIn className="w-3.5 h-3.5 shrink-0" />
-                    <span className="hidden xs:inline">Đăng nhập</span>
-                  </motion.button>
+                    <LiquidGlassCard
+                      borderRadius="9999px"
+                      blurIntensity="md"
+                      borderIntensity="xs"
+                      shadowIntensity="sm"
+                      className="cursor-pointer bg-purple-600/80 hover:bg-purple-600 text-white"
+                      contentClassName="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold text-white"
+                    >
+                      <LogIn className="w-3.5 h-3.5 shrink-0" />
+                      <span className="hidden xs:inline">Đăng nhập</span>
+                    </LiquidGlassCard>
+                  </motion.div>
                 )}
 
                 {/* Settings Button */}
-                <motion.button 
+                <motion.div 
                   whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
                   whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
                   onClick={() => setIsSettingsOpen(true)}
-                  className={`p-2 rounded-full transition-all shrink-0 flex items-center justify-center cursor-pointer ${
-                    !settings.effectsEnabled
-                      ? (settings.theme === 'dark'
-                          ? 'bg-purple-950/60 hover:bg-purple-900 border border-purple-500/30 text-purple-200 hover:text-white'
-                          : 'bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 shadow-sm shadow-purple-100/50')
-                      : `liquid-glass-pill ${settings.theme === 'dark' ? 'text-purple-200 hover:text-white' : 'text-purple-900 hover:text-purple-950'}`
-                  }`}
+                  className="shrink-0 cursor-pointer"
                   title="Cài đặt hệ thống & API"
                 >
-                  <Settings className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-purple-600 dark:text-purple-300" />
-                </motion.button>
+                  <LiquidGlassCard
+                    borderRadius="9999px"
+                    blurIntensity="md"
+                    borderIntensity="xs"
+                    shadowIntensity="xs"
+                    className="cursor-pointer"
+                    contentClassName="p-2 flex items-center justify-center text-purple-600 dark:text-purple-300"
+                  >
+                    <Settings className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+                  </LiquidGlassCard>
+                </motion.div>
               </div>
-            </LiquidGlassCapsule>
+            </LiquidGlassCard>
           </div>
         </header>
       )}
 
-      <main className="relative">
+      <main className="relative min-h-screen">
         <AnimatePresence mode="wait">
           {view === 'home' && (
             <motion.div
@@ -232,8 +267,9 @@ function AppContent() {
               initial={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
               animate={{ opacity: 1 }}
               exit={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
+              className="liquid-glass-card-wrapper w-full"
             >
-              <HomeScreen onStart={handleStart} />
+              <HomeScreen onStart={handleStart} onStartTuVi={handleStartTuVi} />
             </motion.div>
           )}
 
@@ -243,6 +279,7 @@ function AppContent() {
               initial={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
               animate={{ opacity: 1 }}
               exit={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
+              className="liquid-glass-card-wrapper w-full"
             >
               <ReadingScreen 
                 userInfo={userInfo || selectedReading!.userInfo} 
@@ -256,12 +293,32 @@ function AppContent() {
             </motion.div>
           )}
 
+          {view === 'tuvi' && (
+            <motion.div
+              key={selectedReading ? selectedReading.id : 'tuvi'}
+              initial={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
+              animate={{ opacity: 1 }}
+              exit={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
+              className="liquid-glass-card-wrapper w-full"
+            >
+              <TuViScreen
+                initialUserInfo={userInfo}
+                initialReading={selectedReading}
+                onBack={() => {
+                  setSelectedReading(null);
+                  setView('home');
+                }}
+              />
+            </motion.div>
+          )}
+
           {view === 'admin' && (
             <motion.div
               key="admin"
               initial={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
               animate={{ opacity: 1 }}
               exit={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
+              className="liquid-glass-card-wrapper w-full"
             >
               <AdminPage onBack={() => setView('home')} />
             </motion.div>

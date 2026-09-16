@@ -162,10 +162,18 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, onSelectRe
                   <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-purple-600 text-white">
-                        {themeLabels[reading.theme] || 'Quẻ'}
+                        {reading.deckType === DeckType.TU_VI ? 'Lá Số' : (themeLabels[reading.theme] || 'Quẻ')}
                       </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 font-medium">
-                        {reading.deckType === DeckType.PLAYING_CARDS ? 'Bài Tây (52 lá)' : 'Bài Tarot'}
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                        reading.deckType === DeckType.TU_VI
+                          ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30'
+                          : 'bg-black/5 dark:bg-white/10'
+                      }`}>
+                        {reading.deckType === DeckType.TU_VI
+                          ? 'Tử Vi Đẩu Số'
+                          : reading.deckType === DeckType.PLAYING_CARDS
+                          ? 'Bài Tây (52 lá)'
+                          : 'Bài Tarot'}
                       </span>
                       <span className="text-[10px] opacity-60 flex items-center">
                         <Calendar className="w-3 h-3 mr-1" /> {dateStr}
@@ -182,16 +190,30 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, onSelectRe
                       "{reading.question}"
                     </h4>
 
-                    {/* Cards preview thumbnails */}
-                    <div className="flex items-center gap-1 pt-1">
-                      {reading.drawnCards.map((c, i) => (
-                        <span
-                          key={i}
-                          className="text-[10px] px-2 py-0.5 rounded-md border border-purple-500/20 bg-purple-500/5 text-purple-700 dark:text-purple-300 font-mono truncate max-w-[140px]"
-                        >
-                          {c.card.name} {c.isReversed ? '(Ngược)' : ''}
-                        </span>
-                      ))}
+                    {/* Cards or TuVi preview */}
+                    <div className="flex items-center gap-1 pt-1 flex-wrap">
+                      {reading.deckType === DeckType.TU_VI && reading.tuViData ? (
+                        <>
+                          <span className="text-[10px] px-2 py-0.5 rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-300 font-mono">
+                            Mệnh: {reading.tuViData.chuSo.banMenhNapAm}
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-300 font-mono">
+                            Cục: {reading.tuViData.chuSo.cuc}
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-300 font-mono">
+                            Cung Mệnh: {reading.tuViData.chuSo.menhCungChi}
+                          </span>
+                        </>
+                      ) : (
+                        reading.drawnCards.map((c, i) => (
+                          <span
+                            key={i}
+                            className="text-[10px] px-2 py-0.5 rounded-md border border-purple-500/20 bg-purple-500/5 text-purple-700 dark:text-purple-300 font-mono truncate max-w-[140px]"
+                          >
+                            {c.card.name} {c.isReversed ? '(Ngược)' : ''}
+                          </span>
+                        ))
+                      )}
                     </div>
                   </div>
 
@@ -241,6 +263,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, onSelectRe
           deckType={sharingReading.deckType}
           spreadType={sharingReading.spreadType}
           timestamp={sharingReading.timestamp}
+          tuViData={sharingReading.tuViData}
         />
       )}
     </div>

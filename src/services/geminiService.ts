@@ -648,3 +648,102 @@ export const interpretFollowUpWithNewCards = async (
 
   return await dispatchAiPrompt(prompt);
 };
+
+// Tử Vi Đẩu Số Master interpretation
+export const interpretTuViReading = async (
+  laSoData: import('../types').LaSoTuViData,
+  customQuestion?: string
+): Promise<string> => {
+  const { chuSo, cungList } = laSoData;
+  const jsonString = JSON.stringify(laSoData, null, 2);
+
+  const prompt = `
+Bạn là một bậc thầy chuyên gia Tử Vi Đẩu Số truyền thống kết hợp tư duy tâm lý học hiện đại. Nhiệm vụ của bạn là tiếp nhận dữ liệu JSON lá số Tử Vi (gồm 12 cung, các tinh hệ, vòng tràng sinh, tứ hóa, tuần triệt, thân cư, cân lượng) và yêu cầu của đương số để đưa ra bài luận giải sâu sắc, chính xác, mang tính định hướng xây dựng cao nhất.
+
+=== THÔNG TIN ĐƯƠNG SỐ & LÁ SỐ TỬ VI ===
+- Đương số: ${chuSo.fullName} (${chuSo.gender}, ${chuSo.amDuongNamNu})
+- Dương lịch: ${chuSo.solarDate} | Âm lịch: ${chuSo.lunarDateStr} (Tiết khí: ${chuSo.tietKhi || 'Bình thường'})
+- Nơi sinh: ${chuSo.noiSinh || 'Việt Nam'}
+- Can Chi: Năm ${chuSo.yearCanChi} - Tháng ${chuSo.monthCanChi} - Ngày ${chuSo.dayCanChi} - Giờ ${chuSo.hourCanChi} (${chuSo.canhGio}, ${chuSo.canhGioTime})
+- Giờ sinh nhập: ${chuSo.birthTimeStr || chuSo.canhGioTime}
+- Bản Mệnh: ${chuSo.banMenhNapAm} (Hành ${chuSo.banMenhElement}) | Cục: ${chuSo.cuc} (Số ${chuSo.cucNumber})
+- Tương quan Mệnh - Cục: ${chuSo.tuongQuanMenhCuc}
+- Chủ Mệnh: ${chuSo.chuMenh || 'Tham lang'} | Chủ Thân: ${chuSo.chuThan || 'Hỏa tinh'}
+- Thân Cư: ${chuSo.thanCu || 'Quan lộc'} | Cung Lai Nhân: ${chuSo.cungLaiNhan || 'Cung Mệnh'}
+- Cân Xương Tính Số: ${chuSo.canLuongChi || 'Đang tính'}
+- Tuần Không tại: ${chuSo.tuanKhong?.join(', ') || 'Không'} | Triệt Không tại: ${chuSo.trietKhong?.join(', ') || 'Không'}
+- Năm xem hạn: Năm ${chuSo.viewingYear} (${chuSo.viewingYearCanChi})
+- Các nội dung trọng tâm muốn xem: ${chuSo.selectedTopics?.join(', ') || chuSo.selectedFocus || 'Tổng quan vận mệnh'}
+${customQuestion ? `- Câu hỏi / Thắc mắc cụ thể của đương số: "${customQuestion}"` : '- Câu hỏi cụ thể: Không có câu hỏi riêng, yêu cầu luận giải toàn diện theo các nội dung đã chọn.'}
+
+=== DỮ LIỆU CẤU TRÚC JSON LÁ SỐ (12 CUNG & TINH HỆ) ===
+\`\`\`json
+${jsonString}
+\`\`\`
+
+=== NGUYÊN TẮC LUẬN GIẢI QUAN TRỌNG ===
+1. Tính logic và thuật toán:
+- Luôn bám sát tương quan ngũ hành giữa Cục và Bản Mệnh (sinh, khắc, hòa).
+- Đánh giá đắc/hãm của các Chính tinh tọa thủ, tam phương tứ chính hội chiếu.
+- Đánh giá ảnh hưởng của Tuần / Triệt đến các cung và sao tọa thủ (đặc biệt nếu đóng tại Mệnh, Thân, Tài, Quan, Di).
+- Chú ý vị trí của Tứ Hóa (**Hóa Lộc**, **Hóa Quyền**, **Hóa Khoa**, **Hóa Kỵ**) và sự giao thoa của Cát tinh / Sát tinh (**Kình Dương**, **Đà La**, **Hỏa Tinh**, **Linh Tinh**, **Địa Không**, **Địa Kiếp**).
+- Vòng Tràng Sinh (Tràng Sinh, Đế Vượng, Tử, Tuyệt...) ảnh hưởng tới thế vượng suy của cung.
+- Đánh giá Thân Cư (${chuSo.thanCu}) và các chủ đề đương số yêu cầu: ${chuSo.selectedTopics?.join(', ') || 'Toàn diện'}.
+
+2. CẤU TRÚC BÀI LUẬN GIẢI BẮT BUỘC (Trình bày đúng 5 phần):
+### **Phần 1: Tổng quan Bản Mệnh & Cục**
+- Đánh giá tính cách cốt lõi, tư chất thiên bẩm, Cân lượng chỉ, Chủ Mệnh / Chủ Thân, Thân Cư và ưu thế tự nhiên.
+- Bám sát tương quan ngũ hành giữa Cục (${chuSo.cuc}) và Bản Mệnh (${chuSo.banMenhNapAm}) để phân tích môi trường sống, cơ duyên và độ thuận lợi của đương số trên đường đời.
+
+### **Phần 2: Luận giải 3 cung then chốt & Các nội dung đương số yêu cầu**
+- Luận giải **Cung Mệnh** - **Cung Quan Lộc** - **Cung Tài Bạch** - **Cung Phu Thê** và các cung liên quan trực tiếp đến chủ đề đã chọn (${chuSo.selectedTopics?.join(', ') || 'Tổng quan'}).
+- Chỉ rõ chính tinh đắc hãm, tam hợp hội chiếu và các phụ tinh cát/hung, ảnh hưởng của Tuần/Triệt.
+
+### **Phần 3: Vận hạn năm hiện tại (Lưu niên năm ${chuSo.viewingYear} - ${chuSo.viewingYearCanChi}) & Tiểu vận**
+- Phân tích vị trí Cung Tiểu Hạn năm ${chuSo.viewingYear} (${chuSo.viewingYearCanChi}), các sao Lưu Niên (L.Thái Tuế, L.Kình Dương, L.Đà La, L.Tang Môn...).
+- Cơ hội bứt phá, những biến động cần lưu tâm trong năm. Các tháng âm lịch cần đề phòng rủi ro hoặc nắm bắt thời cơ.
+
+### **Phần 4: Trả lời trực diện câu hỏi của đương số**
+- Dựa vào cấu trúc lá số và các cung chức liên quan để trả lời trực tiếp câu hỏi: "${customQuestion || 'Định hướng phát triển bản thân và nắm bắt vận hội'}".
+- Đưa ra lời khuyên hành động thực tế, lộ trình rõ ràng, dứt khoát; tuyệt đối không trả lời mập mờ, nước đôi hay chung chung.
+
+### **Phần 5: Lời khuyên hành thiện & Tu tâm**
+- Nhấn mạnh nguyên lý kinh điển **"Đức năng thắng số"**.
+- Chỉ ra cách chuyển hóa vận hạn, hóa hung vi cát bằng lối sống, tư duy tích cực và hành động thiện lành cụ thể.
+
+=== VĂN PHONG & GIỚI HẠN ===
+- Hành văn trang nhã, uyên bác, giàu chiều sâu triết lý phương Đông, không gieo rắc nỗi sợ hãi hoặc mê tín dị đoan.
+- Trình bày dạng Markdown với tiêu đề rõ ràng, gạch đầu dòng mạch lạc, in đậm các thuật ngữ sao quan trọng.
+`;
+
+  return await dispatchAiPrompt(prompt);
+};
+
+// Follow-up consultation for Tử Vi
+export const interpretTuViFollowUp = async (
+  laSoData: import('../types').LaSoTuViData,
+  originalInterpretation: string,
+  followUpQuestion: string
+): Promise<string> => {
+  const { chuSo } = laSoData;
+
+  const prompt = `
+Bạn là một Bậc Thầy Tử Vi Đẩu Số thông thái và giàu lòng trắc ẩn.
+Đương số: ${chuSo.fullName} (${chuSo.amDuongNamNu}, sinh năm ${chuSo.yearCanChi} - Mệnh ${chuSo.banMenhNapAm}, Cục ${chuSo.cuc}).
+
+Tóm tắt bài giải lá số trước đó:
+${originalInterpretation.substring(0, 400)}...
+
+---
+CÂU HỎI / THẮC MẮC TIẾP THEO CỦA ĐƯƠNG SỐ:
+"${followUpQuestion}"
+
+YÊU CẦU LUẬN GIẢI:
+1. Trực tiếp giải đáp thắc mắc "${followUpQuestion}" căn cứ vào quy luật sao Tử Vi, Cung chức liên quan và tương tác ngũ hành.
+2. Đưa ra hướng giải quyết thực tế, thời điểm phù hợp để tiến hành hoặc phương pháp phòng tránh rủi ro.
+3. Giọng văn từ tốn, thông tuệ, mang tính khích lệ và an lòng.
+4. Trình bày Markdown gọn gàng, súc tích (khoảng 250-350 từ).
+`;
+
+  return await dispatchAiPrompt(prompt);
+};

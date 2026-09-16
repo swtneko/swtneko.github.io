@@ -284,12 +284,12 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
                 onClick={() => handleOpenClarificationDraw(1)}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
                   isDark
-                    ? 'border-purple-500/30 hover:border-purple-500 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300'
+                    ? 'liquid-glass-btn-subtle text-purple-200'
                     : 'border-purple-300 hover:border-purple-600 bg-purple-50 hover:bg-purple-100 text-purple-950'
                 }`}
                 title="Rút 1 lá bài lời khuyên làm rõ cho câu hỏi này"
               >
-                <PlusCircle className="w-3.5 h-3.5 mr-1.5 text-purple-600 dark:text-purple-400" />
+                <PlusCircle className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
                 Rút 1 lá làm rõ
               </button>
               <button
@@ -298,12 +298,12 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
                 onClick={() => handleOpenClarificationDraw(3)}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
                   isDark
-                    ? 'border-purple-500/30 hover:border-purple-500 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300'
+                    ? 'liquid-glass-btn-subtle text-purple-200'
                     : 'border-purple-300 hover:border-purple-600 bg-purple-50 hover:bg-purple-100 text-purple-950'
                 }`}
                 title="Rút 3 lá bài chi tiết cho câu hỏi này"
               >
-                <Layers className="w-3.5 h-3.5 mr-1.5 text-purple-600 dark:text-purple-400" />
+                <Layers className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
                 Trải 3 lá chi tiết
               </button>
             </div>
@@ -311,7 +311,7 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
             <button
               type="submit"
               disabled={loading || !questionInput.trim()}
-              className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center space-x-2 transition-all shadow-md shadow-purple-600/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="px-5 py-2.5 rounded-xl liquid-glass-btn-action text-white font-bold text-xs flex items-center justify-center space-x-2 transition-all shadow-md shadow-purple-600/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? (
                 <>

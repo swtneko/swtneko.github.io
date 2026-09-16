@@ -1,16 +1,41 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Moon, Star, Sun, User, Calendar, MessageSquare, ChevronRight, Lock, Clock } from 'lucide-react';
+import { motion, AnimatePresence, type Variants } from 'motion/react';
+import { Sparkles, Moon, Star, Sun, User, Calendar, MessageSquare, ChevronRight, Lock, Clock, Compass } from 'lucide-react';
 import { DeckType, UserInfo } from '../types';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
-import { LiquidGlassCapsule } from './LiquidGlassCapsule';
+import { LiquidGlassCard } from './LiquidGlassCard';
 
 interface HomeScreenProps {
   onStart: (userInfo: UserInfo, deckType: DeckType) => void;
+  onStartTuVi: (userInfo?: UserInfo) => void;
 }
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ onStart }) => {
+const formContainerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+const formItemVariants: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: 'spring',
+      stiffness: 350,
+      damping: 26,
+    },
+  },
+};
+
+const HomeScreen: React.FC<HomeScreenProps> = ({ onStart, onStartTuVi }) => {
   const [step, setStep] = useState<'welcome' | 'form'>('welcome');
   const [deckType, setDeckType] = useState<DeckType>(DeckType.TAROT);
   const { settings } = useSettings();
@@ -251,231 +276,334 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onStart }) => {
             )}
 
             <motion.div
-              initial={settings.effectsEnabled ? { opacity: 0, scale: 0.9 } : { opacity: 1, scale: 1 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.7, duration: 0.5 }}
-              className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto px-4 justify-center"
+              initial={settings.effectsEnabled ? { opacity: 0, scale: 0.9, y: 15 } : { opacity: 1, scale: 1, y: 0 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.5, type: 'spring', stiffness: 350, damping: 22 }}
+              className="flex flex-col sm:flex-row flex-wrap gap-4 w-full sm:w-auto px-4 justify-center items-center"
             >
               {(systemSettings.enabledDeckTypes?.[DeckType.TAROT] ?? true) && (
-                <motion.button
-                  whileHover={settings.effectsEnabled ? { scale: 1.03 } : {}}
-                  whileTap={settings.effectsEnabled ? { scale: 0.97 } : {}}
+                <motion.div
+                  whileHover={{ scale: 1.05, y: -3, transition: { type: 'spring', stiffness: 450, damping: 15 } }}
+                  whileTap={{ scale: 0.96 }}
                   onClick={() => handleChooseDeck(DeckType.TAROT)}
-                  className={`px-8 sm:px-12 py-4 rounded-full font-bold tracking-widest uppercase transition-all flex items-center justify-center cursor-pointer text-sm sm:text-base shadow-xl ${
-                    !settings.effectsEnabled
-                      ? (settings.theme === 'dark'
-                          ? 'bg-purple-600 hover:bg-purple-700 border border-purple-500 text-white'
-                          : 'bg-gradient-to-r from-purple-950 via-indigo-950 to-purple-900 text-white border border-purple-800 shadow-2xl shadow-purple-950/40 hover:from-purple-900 hover:to-indigo-900')
-                      : `liquid-glass-pill border border-purple-300/40 shadow-purple-500/20 ${settings.theme === 'dark' ? 'text-white' : 'text-purple-950'}`
-                  }`}
+                  className="cursor-pointer"
                 >
-                  {requiresAuth ? <Lock className="mr-2 w-4 h-4 text-amber-300" /> : null}
-                  Bói Bài Tarot <Sparkles className="ml-2 w-5 h-5 text-amber-300" />
-                </motion.button>
+                  <LiquidGlassCard
+                    borderRadius="9999px"
+                    blurIntensity="md"
+                    borderIntensity="sm"
+                    shadowIntensity="lg"
+                    glowIntensity="md"
+                    className="bg-gradient-to-r from-purple-600/70 via-indigo-600/60 to-purple-700/70 text-white ring-1 ring-white/30 cursor-pointer shadow-purple-900/30"
+                    contentClassName="px-7 sm:px-9 py-3.5 sm:py-4 font-bold tracking-wider uppercase flex items-center justify-center text-xs sm:text-sm text-white"
+                  >
+                    {requiresAuth ? <Lock className="mr-2 w-4 h-4 text-amber-300" /> : null}
+                    Bói Bài Tarot <Sparkles className="ml-2 w-4 h-4 text-amber-300 animate-pulse" />
+                  </LiquidGlassCard>
+                </motion.div>
               )}
 
               {(systemSettings.enabledDeckTypes?.[DeckType.PLAYING_CARDS] ?? true) && (
-                <motion.button
-                  whileHover={settings.effectsEnabled ? { scale: 1.03 } : {}}
-                  whileTap={settings.effectsEnabled ? { scale: 0.97 } : {}}
+                <motion.div
+                  whileHover={{ scale: 1.05, y: -3, transition: { type: 'spring', stiffness: 450, damping: 15 } }}
+                  whileTap={{ scale: 0.96 }}
                   onClick={() => handleChooseDeck(DeckType.PLAYING_CARDS)}
-                  className={`px-8 sm:px-12 py-4 rounded-full font-bold tracking-widest uppercase transition-all flex items-center justify-center cursor-pointer text-sm sm:text-base shadow-xl ${
-                    !settings.effectsEnabled
-                      ? (settings.theme === 'dark'
-                          ? 'bg-purple-600 hover:bg-purple-700 border border-purple-500 text-white'
-                          : 'bg-gradient-to-r from-purple-900 via-indigo-950 to-purple-950 text-white border border-purple-800 shadow-2xl shadow-purple-950/40 hover:from-purple-800 hover:to-indigo-800')
-                      : `liquid-glass-pill border border-white/30 shadow-indigo-500/20 ${settings.theme === 'dark' ? 'text-white' : 'text-purple-950'}`
-                  }`}
+                  className="cursor-pointer"
+                >
+                  <LiquidGlassCard
+                    borderRadius="9999px"
+                    blurIntensity="md"
+                    borderIntensity="sm"
+                    shadowIntensity="lg"
+                    glowIntensity="md"
+                    className="bg-gradient-to-r from-blue-600/70 via-indigo-600/60 to-cyan-700/70 text-white ring-1 ring-white/30 cursor-pointer shadow-blue-900/30"
+                    contentClassName="px-7 sm:px-9 py-3.5 sm:py-4 font-bold tracking-wider uppercase flex items-center justify-center text-xs sm:text-sm text-white"
+                  >
+                    {requiresAuth ? <Lock className="mr-2 w-4 h-4 text-amber-300" /> : null}
+                    Bói Bài Tây <Star className="ml-2 w-4 h-4 text-amber-300" />
+                  </LiquidGlassCard>
+                </motion.div>
+              )}
+
+              {/* Bói Tử Vi Button */}
+              <motion.div
+                whileHover={{ scale: 1.05, y: -3, transition: { type: 'spring', stiffness: 450, damping: 15 } }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => {
+                  if (requiresAuth) {
+                    openAuthModal();
+                    return;
+                  }
+                  onStartTuVi(userInfo);
+                }}
+                className="cursor-pointer"
+              >
+                <LiquidGlassCard
+                  borderRadius="9999px"
+                  blurIntensity="md"
+                  borderIntensity="sm"
+                  shadowIntensity="lg"
+                  glowIntensity="md"
+                  className="bg-gradient-to-r from-amber-600/70 via-red-600/60 to-purple-700/70 text-white ring-1 ring-amber-300/40 cursor-pointer shadow-amber-900/30"
+                  contentClassName="px-7 sm:px-9 py-3.5 sm:py-4 font-bold tracking-wider uppercase flex items-center justify-center text-xs sm:text-sm text-white"
                 >
                   {requiresAuth ? <Lock className="mr-2 w-4 h-4 text-amber-300" /> : null}
-                  Bói Bài Tây <Star className="ml-2 w-5 h-5 text-amber-300" />
-                </motion.button>
-              )}
+                  Bói Tử Vi <Compass className="ml-2 w-4 h-4 text-amber-200 animate-spin-slow" />
+                </LiquidGlassCard>
+              </motion.div>
             </motion.div>
           </motion.div>
         ) : (
           <motion.div
             key="form"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full max-w-lg"
+            initial={{ opacity: 0, scale: 0.96, y: 18 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: -18 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+            className="w-full max-w-xl"
           >
-            <LiquidGlassCapsule
-              variant="card"
-              className={`w-full transition-colors duration-300 ${
-                settings.theme === 'dark' 
-                  ? 'text-purple-100' 
-                  : 'text-purple-950 shadow-purple-900/10'
-              }`}
-              contentClassName="p-6 sm:p-10"
+            <LiquidGlassCard
+              blurIntensity="xl"
+              borderIntensity="sm"
+              shadowIntensity="xl"
+              className="w-full p-6 sm:p-9 rounded-3xl relative overflow-hidden transition-all duration-300 shadow-2xl"
             >
-            <div className="flex items-center justify-between mb-8">
-              <h2 className={`text-2xl sm:text-3xl font-serif font-bold transition-colors duration-300 ${
-                settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'
-              }`}>
-                Thông tin của bạn
-              </h2>
-              <div className={`px-3.5 py-1 rounded-full border text-[11px] uppercase tracking-widest font-bold transition-colors duration-300 ${
-                settings.theme === 'dark' 
-                  ? 'bg-purple-500/20 border-purple-500/30 text-purple-300' 
-                  : 'bg-purple-100 border-purple-200 text-purple-900'
-              }`}>
-                {deckType === DeckType.TAROT ? 'Bài Tarot' : 'Bài Tây'}
-              </div>
-            </div>
+              {/* Subtle ambient lighting inside card */}
+              <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-purple-600/20 blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full bg-indigo-600/15 blur-3xl pointer-events-none" />
 
-            <div className="space-y-5 text-left">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className={`text-xs uppercase tracking-[0.15em] ml-1 flex items-center font-bold transition-colors duration-300 ${
-                    settings.theme === 'dark' ? 'text-purple-300/70' : 'text-purple-900'
-                  }`}>
-                    <User className="w-3.5 h-3.5 mr-2 text-purple-500" /> Họ và tên
-                  </label>
-                  <input
-                    type="text"
-                    value={userInfo.fullName}
-                    onChange={(e) => setUserInfo({ ...userInfo, fullName: e.target.value })}
-                    placeholder="Nhập họ tên của bạn..."
-                    className={`w-full rounded-2xl px-4 sm:px-5 py-3.5 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500/30 font-medium liquid-glass-input ${
+              <motion.div
+                variants={formContainerVariants}
+                initial="hidden"
+                animate="visible"
+                className="relative z-10"
+              >
+                {/* Header */}
+                <motion.div variants={formItemVariants} className="flex items-center justify-between mb-7">
+                  <div className="text-left">
+                    <h2 className={`text-2xl sm:text-3xl font-serif font-bold ${
+                      settings.theme === 'dark' ? 'text-white' : 'text-slate-900'
+                    }`}>
+                      Thông tin của bạn
+                    </h2>
+                    <p className={`text-xs sm:text-sm mt-1 ${
+                      settings.theme === 'dark' ? 'text-purple-300/80' : 'text-purple-900/80'
+                    }`}>
+                      Kết nối năng lượng cá nhân với quẻ bài huyền bí
+                    </p>
+                  </div>
+                  <LiquidGlassCard
+                    borderRadius="9999px"
+                    blurIntensity="sm"
+                    borderIntensity="xs"
+                    shadowIntensity="xs"
+                    contentClassName={`px-3.5 py-1.5 text-xs uppercase tracking-wider font-bold shrink-0 flex items-center gap-1.5 ${
                       settings.theme === 'dark'
-                        ? 'text-purple-100 placeholder:text-purple-400/50 focus:border-purple-300'
-                        : 'text-slate-900 placeholder:text-slate-500 focus:border-purple-600'
+                        ? 'text-purple-200'
+                        : 'text-purple-900'
                     }`}
-                  />
-                </div>
+                  >
+                    {deckType === DeckType.TAROT ? (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                        <span>Bài Tarot</span>
+                      </>
+                    ) : (
+                      <>
+                        <Star className="w-3.5 h-3.5 text-amber-300" />
+                        <span>Bài Tây</span>
+                      </>
+                    )}
+                  </LiquidGlassCard>
+                </motion.div>
 
-                <div className="space-y-1.5">
-                  <label className={`text-xs uppercase tracking-[0.15em] ml-1 flex items-center font-bold transition-colors duration-300 ${
-                    settings.theme === 'dark' ? 'text-purple-300/70' : 'text-purple-900'
-                  }`}>
-                    Giới tính
-                  </label>
-                  <div className={`grid grid-cols-3 gap-1 p-1 rounded-2xl border ${
-                    settings.theme === 'dark'
-                      ? 'bg-black/40 border-purple-500/20'
-                      : 'bg-purple-50/40 border-purple-300 shadow-inner'
-                  }`}>
-                    {['Nam', 'Nữ', 'Khác'].map((g) => (
-                      <button
-                        key={g}
-                        type="button"
-                        onClick={() => setUserInfo({ ...userInfo, gender: g })}
-                        className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                          (userInfo.gender || 'Nam') === g
-                            ? 'bg-purple-600 text-white shadow-md'
-                            : settings.theme === 'dark'
-                            ? 'text-purple-300/70 hover:text-purple-100 hover:bg-white/5'
-                            : 'text-purple-900/70 hover:text-purple-950 hover:bg-purple-100/50'
+                {/* Form fields */}
+                <div className="space-y-4 text-left">
+                  {/* Row 1: Full name & Gender */}
+                  <motion.div variants={formItemVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className={`text-xs uppercase tracking-wider flex items-center font-bold ${
+                        settings.theme === 'dark' ? 'text-purple-200' : 'text-slate-700'
+                      }`}>
+                        <User className="w-3.5 h-3.5 mr-1.5 text-purple-400" /> Họ và tên
+                      </label>
+                      <input
+                        type="text"
+                        value={userInfo.fullName}
+                        onChange={(e) => setUserInfo({ ...userInfo, fullName: e.target.value })}
+                        placeholder="Nhập họ tên của bạn..."
+                        className={`w-full rounded-2xl px-4 py-3 text-sm font-medium transition-all outline-none border backdrop-blur-md ${
+                          settings.theme === 'dark'
+                            ? 'bg-white/[0.05] border-purple-500/30 hover:border-purple-400/50 focus:border-purple-400 focus:bg-white/[0.09] focus:ring-2 focus:ring-purple-500/30 text-white placeholder:text-purple-300/40'
+                            : 'bg-white/40 border-purple-200/90 hover:border-purple-300 focus:border-purple-600 focus:bg-white/60 focus:ring-2 focus:ring-purple-500/20 text-slate-900 placeholder:text-slate-400 shadow-sm'
+                        }`}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className={`text-xs uppercase tracking-wider flex items-center font-bold ${
+                        settings.theme === 'dark' ? 'text-purple-200' : 'text-slate-700'
+                      }`}>
+                        Giới tính
+                      </label>
+                      <div className={`grid grid-cols-3 gap-1 p-1 rounded-2xl border backdrop-blur-md ${
+                        settings.theme === 'dark'
+                          ? 'bg-white/[0.05] border-purple-500/30'
+                          : 'bg-white/40 border-purple-200'
+                      }`}>
+                        {['Nam', 'Nữ', 'Khác'].map((g) => {
+                          const isSelected = (userInfo.gender || 'Nam') === g;
+                          return (
+                            <button
+                              key={g}
+                              type="button"
+                              onClick={() => setUserInfo({ ...userInfo, gender: g })}
+                              className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30'
+                                  : settings.theme === 'dark'
+                                  ? 'text-purple-300/70 hover:text-white hover:bg-white/10'
+                                  : 'text-purple-900/70 hover:text-purple-950 hover:bg-purple-100/60'
+                              }`}
+                            >
+                              {g}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Row 2: Birth date & Birth time */}
+                  <motion.div variants={formItemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div className="space-y-1.5">
+                      <label className={`text-xs uppercase tracking-wider flex items-center justify-between font-bold ${
+                        settings.theme === 'dark' ? 'text-purple-200' : 'text-slate-700'
+                      }`}>
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-purple-400" /> Ngày tháng năm sinh
+                        </span>
+                        <span className="text-[11px] font-normal opacity-60">dd/mm/yyyy</span>
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={10}
+                        value={userInfo.birthDate || ''}
+                        onChange={(e) => handleBirthDateChange(e.target.value)}
+                        placeholder="dd/mm/yyyy (vd: 15/09/1998)"
+                        className={`w-full rounded-2xl px-4 py-3 text-sm font-medium transition-all outline-none border font-mono backdrop-blur-md ${
+                          settings.theme === 'dark'
+                            ? 'bg-white/[0.05] border-purple-500/30 hover:border-purple-400/50 focus:border-purple-400 focus:bg-white/[0.09] focus:ring-2 focus:ring-purple-500/30 text-white placeholder:text-purple-300/40'
+                            : 'bg-white/40 border-purple-200/90 hover:border-purple-300 focus:border-purple-600 focus:bg-white/60 focus:ring-2 focus:ring-purple-500/20 text-slate-900 placeholder:text-slate-400 shadow-sm'
+                        }`}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className={`text-xs uppercase tracking-wider flex items-center justify-between font-bold ${
+                        settings.theme === 'dark' ? 'text-purple-200' : 'text-slate-700'
+                      }`}>
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-purple-400" /> Giờ sinh 24h
+                        </span>
+                        <span className="text-[11px] font-normal opacity-60">Tùy chọn</span>
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={5}
+                        value={userInfo.birthTime || ''}
+                        onChange={(e) => handleBirthTimeChange(e.target.value)}
+                        placeholder="hh:mm (vd: 14:30 hoặc 08:15)"
+                        className={`w-full rounded-2xl px-4 py-3 text-sm font-medium transition-all outline-none border font-mono backdrop-blur-md ${
+                          settings.theme === 'dark'
+                            ? 'bg-white/[0.05] border-purple-500/30 hover:border-purple-400/50 focus:border-purple-400 focus:bg-white/[0.09] focus:ring-2 focus:ring-purple-500/30 text-white placeholder:text-purple-300/40'
+                            : 'bg-white/40 border-purple-200/90 hover:border-purple-300 focus:border-purple-600 focus:bg-white/60 focus:ring-2 focus:ring-purple-500/20 text-slate-900 placeholder:text-slate-400 shadow-sm'
+                        }`}
+                      />
+                    </div>
+                  </motion.div>
+
+                  {/* Row 3: Question / Need */}
+                  <motion.div variants={formItemVariants} className="space-y-1.5">
+                    <label className={`text-xs uppercase tracking-wider flex items-center justify-between font-bold ${
+                      settings.theme === 'dark' ? 'text-purple-200' : 'text-slate-700'
+                    }`}>
+                      <span className="flex items-center gap-1.5">
+                        <MessageSquare className="w-3.5 h-3.5 text-purple-400" /> Nhu cầu / Câu hỏi
+                      </span>
+                      <span className="text-[11px] font-normal opacity-60">Tùy chọn</span>
+                    </label>
+                    <textarea
+                      value={userInfo.request}
+                      onChange={(e) => setUserInfo({ ...userInfo, request: e.target.value })}
+                      placeholder="Bạn muốn vũ trụ giải đáp điều gì? (vd: Định hướng công việc sắp tới, tình cảm...)"
+                      rows={3}
+                      className={`w-full rounded-2xl px-4 py-3 text-sm font-medium transition-all outline-none border resize-none backdrop-blur-md ${
+                        settings.theme === 'dark'
+                          ? 'bg-white/[0.05] border-purple-500/30 hover:border-purple-400/50 focus:border-purple-400 focus:bg-white/[0.09] focus:ring-2 focus:ring-purple-500/30 text-white placeholder:text-purple-300/40'
+                            : 'bg-white/40 border-purple-200/90 hover:border-purple-300 focus:border-purple-600 focus:bg-white/60 focus:ring-2 focus:ring-purple-500/20 text-slate-900 placeholder:text-slate-400 shadow-sm'
+                      }`}
+                    />
+                  </motion.div>
+
+                  {/* Row 4: Action buttons */}
+                  <motion.div variants={formItemVariants} className="pt-2 flex gap-3">
+                    <motion.div
+                      whileHover={{ scale: 1.02, x: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setStep('welcome')}
+                      className="flex-1 cursor-pointer"
+                    >
+                      <LiquidGlassCard
+                        borderRadius="16px"
+                        blurIntensity="md"
+                        borderIntensity="xs"
+                        shadowIntensity="xs"
+                        className="cursor-pointer"
+                        contentClassName={`py-3.5 text-center font-semibold text-sm ${
+                          settings.theme === 'dark' ? 'text-purple-200' : 'text-purple-900'
                         }`}
                       >
-                        {g}
-                      </button>
-                    ))}
-                  </div>
+                        Quay lại
+                      </LiquidGlassCard>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ scale: 1.02, y: -1 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        if (!userInfo.fullName.trim() || !isBirthValid) return;
+                        handleStart();
+                      }}
+                      className={`flex-[2] ${(!userInfo.fullName.trim() || !isBirthValid) ? 'opacity-40 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
+                    >
+                      <LiquidGlassCard
+                        borderRadius="16px"
+                        blurIntensity="md"
+                        borderIntensity="sm"
+                        shadowIntensity="md"
+                        className="bg-gradient-to-r from-purple-600/80 to-indigo-600/80 text-white shadow-xl shadow-purple-900/20 cursor-pointer"
+                        contentClassName="py-3.5 px-6 font-bold flex items-center justify-center gap-2 text-sm sm:text-base text-white"
+                      >
+                        {requiresAuth ? (
+                          <>
+                            <Lock className="w-4 h-4 text-amber-300" />
+                            <span>Đăng nhập để xem bài</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Bắt đầu xem bài</span>
+                            <ChevronRight className="w-5 h-5" />
+                          </>
+                        )}
+                      </LiquidGlassCard>
+                    </motion.div>
+                  </motion.div>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className={`text-xs uppercase tracking-[0.15em] ml-1 flex items-center font-bold transition-colors duration-300 ${
-                    settings.theme === 'dark' ? 'text-purple-300/70' : 'text-purple-900'
-                  }`}>
-                    <Calendar className="w-3.5 h-3.5 mr-2 text-purple-500" /> Ngày tháng năm sinh
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={10}
-                    value={userInfo.birthDate || ''}
-                    onChange={(e) => handleBirthDateChange(e.target.value)}
-                    placeholder="dd/mm/yyyy (vd: 15/09/1998)"
-                    className={`w-full rounded-2xl px-4 sm:px-5 py-3.5 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500/30 font-medium liquid-glass-input ${
-                      settings.theme === 'dark'
-                        ? 'text-purple-100 placeholder:text-purple-400/50 focus:border-purple-300'
-                        : 'text-slate-900 placeholder:text-slate-500 focus:border-purple-600'
-                    }`}
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className={`text-xs uppercase tracking-[0.15em] ml-1 flex items-center font-bold transition-colors duration-300 ${
-                    settings.theme === 'dark' ? 'text-purple-300/70' : 'text-purple-900'
-                  }`}>
-                    <Clock className="w-3.5 h-3.5 mr-2 text-purple-500" /> Giờ sinh 24h (Tùy chọn)
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={5}
-                    value={userInfo.birthTime || ''}
-                    onChange={(e) => handleBirthTimeChange(e.target.value)}
-                    placeholder="hh:mm (vd: 14:30 hoặc 08:15)"
-                    className={`w-full rounded-2xl px-4 sm:px-5 py-3.5 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500/30 font-medium liquid-glass-input ${
-                      settings.theme === 'dark'
-                        ? 'text-purple-100 placeholder:text-purple-400/50 focus:border-purple-300'
-                        : 'text-slate-900 placeholder:text-slate-500 focus:border-purple-600'
-                    }`}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className={`text-xs uppercase tracking-[0.15em] ml-1 flex items-center font-bold transition-colors duration-300 ${
-                  settings.theme === 'dark' ? 'text-purple-300/70' : 'text-purple-900'
-                }`}>
-                  <MessageSquare className="w-3.5 h-3.5 mr-2 text-purple-500" /> Nhu cầu / Câu hỏi (Tùy chọn)
-                </label>
-                <textarea
-                  value={userInfo.request}
-                  onChange={(e) => setUserInfo({ ...userInfo, request: e.target.value })}
-                  placeholder="Bạn muốn vũ trụ giải đáp điều gì?..."
-                  rows={3}
-                  className={`w-full rounded-2xl px-4 sm:px-5 py-3.5 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500/30 resize-none font-medium liquid-glass-input ${
-                    settings.theme === 'dark'
-                      ? 'text-purple-100 placeholder:text-purple-400/50 focus:border-purple-300'
-                      : 'text-slate-900 placeholder:text-slate-500 focus:border-purple-600'
-                  }`}
-                />
-              </div>
-
-              <div className="pt-3 flex gap-3">
-                <button
-                  onClick={() => setStep('welcome')}
-                  className={`flex-1 py-3.5 rounded-2xl border font-medium transition-all cursor-pointer text-sm ${
-                    settings.theme === 'dark'
-                      ? 'border-purple-500/20 text-purple-300 hover:bg-white/5'
-                      : 'border-purple-200 text-purple-900 hover:bg-purple-50'
-                  }`}
-                >
-                  Quay lại
-                </button>
-                <button
-                  onClick={handleStart}
-                  disabled={!userInfo.fullName.trim() || !isBirthValid}
-                  className={`flex-[2] border font-bold py-3.5 rounded-2xl transition-all flex items-center justify-center shadow-md cursor-pointer text-sm sm:text-base ${
-                    !settings.effectsEnabled
-                      ? (settings.theme === 'dark'
-                          ? 'bg-purple-600 hover:bg-purple-700 border-purple-500 text-white'
-                          : 'bg-purple-600 hover:bg-purple-700 border-purple-500 text-white shadow-purple-500/20')
-                      : `liquid-glass-pill border-white/40 shadow-purple-500/20 ${settings.theme === 'dark' ? 'text-white' : 'text-purple-950'}`
-                  } disabled:opacity-45 disabled:cursor-not-allowed`}
-                >
-                  {requiresAuth ? (
-                    <>
-                      <Lock className="mr-2 w-4 h-4 text-amber-300" />
-                      Đăng nhập để xem bài
-                    </>
-                  ) : (
-                    <>
-                      Bắt đầu xem bài <ChevronRight className="ml-2 w-5 h-5" />
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-            </LiquidGlassCapsule>
+              </motion.div>
+            </LiquidGlassCard>
           </motion.div>
         )}
       </AnimatePresence>

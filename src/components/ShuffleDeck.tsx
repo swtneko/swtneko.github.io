@@ -83,35 +83,47 @@ const ShuffleDeck: React.FC<ShuffleDeckProps> = ({ onDraw, count, isShuffling, d
             return (
               <motion.div
                 key={id}
-                className="absolute origin-bottom cursor-pointer"
+                className="absolute origin-bottom cursor-pointer select-none"
+                whileHover={
+                  !isShuffling && !isDrawing && settings.effectsEnabled
+                    ? {
+                        y: -30,
+                        scale: 1.08,
+                        rotate: 0,
+                        zIndex: 50,
+                        transition: { type: 'spring', stiffness: 450, damping: 15 },
+                      }
+                    : {}
+                }
+                whileTap={{ scale: 0.94 }}
                 initial={{ x: 0, y: 0, rotate: 0 }}
                 animate={{
                   x: isShuffling
                     ? (Math.random() - 0.5) * 280
                     : isDrawing
-                    ? [0, (index - mid) * 40, (index - mid) * 15]
+                    ? [0, (index - mid) * 45, (index - mid) * 18]
                     : fanX,
                   y: isShuffling
                     ? (Math.random() - 0.5) * 120
                     : isDrawing
-                    ? [-20, -50, 0]
+                    ? [-35, -60, 0]
                     : fanY,
                   rotate: isShuffling
                     ? (Math.random() - 0.5) * 45
                     : isDrawing
-                    ? (index - mid) * 8
+                    ? (index - mid) * 9
                     : fanRotate,
-                  scale: isDrawing && index === Math.floor(mid) ? 1.08 : 1,
+                  scale: isDrawing && index === Math.floor(mid) ? 1.12 : 1,
                   zIndex: index,
                 }}
                 transition={
                   isDrawing
-                    ? { duration: 0.85, ease: [0.22, 1, 0.36, 1] }
+                    ? { type: 'spring', stiffness: 260, damping: 18, bounce: 0.3 }
                     : {
                         type: 'spring',
-                        stiffness: 170,
-                        damping: 18,
-                        mass: 0.9,
+                        stiffness: 220,
+                        damping: 17,
+                        mass: 0.8,
                       }
                 }
               >
@@ -125,11 +137,11 @@ const ShuffleDeck: React.FC<ShuffleDeckProps> = ({ onDraw, count, isShuffling, d
       {/* Action Button */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 w-full px-4 flex justify-center">
         <motion.button
-          whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
-          whileTap={settings.effectsEnabled ? { scale: 0.95 } : {}}
+          whileHover={settings.effectsEnabled ? { scale: 1.06, y: -2, transition: { type: 'spring', stiffness: 450, damping: 15 } } : {}}
+          whileTap={settings.effectsEnabled ? { scale: 0.94, y: 1 } : {}}
           onClick={handleDraw}
           disabled={isShuffling || isDrawing}
-          className="px-8 py-3.5 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white font-bold tracking-widest uppercase shadow-xl shadow-purple-600/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
+          className="px-8 py-3.5 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-600 text-white font-bold tracking-widest uppercase shadow-xl shadow-purple-600/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
         >
           {isShuffling ? (
             <>

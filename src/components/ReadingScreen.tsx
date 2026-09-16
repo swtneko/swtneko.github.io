@@ -280,22 +280,31 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                 { type: SpreadType.ONE_CARD, label: 'Một lá bài', desc: 'Lời khuyên nhanh & thông điệp trọng tâm', count: 1 },
                 { type: SpreadType.THREE_CARDS, label: 'Ba lá bài', desc: 'Dòng thời gian: Quá khứ, Hiện tại, Tương lai', count: 3 },
                 { type: SpreadType.CELTIC_CROSS, label: 'Celtic Cross', desc: 'Bức tranh toàn cảnh & phân tích chuyên sâu', count: 10 },
-              ].map((item) => (
-                <LiquidGlassCard
+              ].map((item, idx) => (
+                <motion.div
                   key={item.type}
-                  onClick={() => handleSpreadSelect(item.type)}
-                  className="p-6 sm:p-8 cursor-pointer hover:scale-[1.02] transition-transform duration-300 group text-left"
-                  contentClassName="flex flex-col justify-between h-full"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1, type: 'spring', stiffness: 350, damping: 20 }}
+                  whileHover={{ scale: 1.04, y: -5, transition: { type: 'spring', stiffness: 450, damping: 15 } }}
+                  whileTap={{ scale: 0.96 }}
+                  className="h-full"
                 >
-                  <div>
-                    <div className="flex justify-between items-start mb-4">
-                      <span className="text-2xl font-serif font-bold text-purple-800 dark:text-purple-300">{item.count} lá</span>
-                      <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400 opacity-70 group-hover:opacity-100 transition-opacity" />
+                  <LiquidGlassCard
+                    onClick={() => handleSpreadSelect(item.type)}
+                    className="p-6 sm:p-8 cursor-pointer h-full group text-left"
+                    contentClassName="flex flex-col justify-between h-full"
+                  >
+                    <div>
+                      <div className="flex justify-between items-start mb-4">
+                        <span className="text-2xl font-serif font-bold text-purple-800 dark:text-purple-300">{item.count} lá</span>
+                        <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400 opacity-70 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                      <h3 className="text-xl font-serif font-bold mb-2 text-slate-900 dark:text-white">{item.label}</h3>
+                      <p className="text-xs sm:text-sm text-slate-700 dark:text-purple-200 font-medium leading-relaxed">{item.desc}</p>
                     </div>
-                    <h3 className="text-xl font-serif font-bold mb-2 text-slate-900 dark:text-white">{item.label}</h3>
-                    <p className="text-xs sm:text-sm text-slate-700 dark:text-purple-200 font-medium leading-relaxed">{item.desc}</p>
-                  </div>
-                </LiquidGlassCard>
+                  </LiquidGlassCard>
+                </motion.div>
               ))}
             </div>
           </motion.div>
@@ -355,16 +364,21 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
               {drawnCards.map((drawn, i) => (
                 <motion.div 
                   key={i} 
-                  initial={{ opacity: 0, scale: 0.8, y: 30 }}
+                  initial={{ opacity: 0, scale: 0.75, y: 40 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ 
-                    delay: i * 0.2, 
-                    duration: 0.6, 
-                    type: 'spring',
-                    stiffness: 100,
-                    damping: 15
+                  whileHover={{ 
+                    y: -12, 
+                    scale: 1.05, 
+                    transition: { type: 'spring', stiffness: 450, damping: 14 } 
                   }}
-                  className="flex flex-col items-center"
+                  transition={{ 
+                    delay: i * 0.15, 
+                    type: 'spring',
+                    stiffness: 240,
+                    damping: 18,
+                    bounce: 0.35,
+                  }}
+                  className="flex flex-col items-center cursor-pointer select-none"
                 >
                   {drawn.positionName && (
                     <span className="text-xs text-purple-900 dark:text-purple-300 uppercase tracking-widest mb-3 font-bold">
@@ -377,7 +391,7 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                     isFlipped={true}
                     deckType={deckType}
                     index={i}
-                    className="scale-90 md:scale-100"
+                    className="scale-90 md:scale-100 drop-shadow-xl"
                   />
                   <div className="mt-4 text-center max-w-[220px]">
                     <h4 className="text-base font-serif font-bold text-slate-900 dark:text-purple-100 mb-1">{drawn.card.name}</h4>

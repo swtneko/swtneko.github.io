@@ -276,13 +276,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onStart, onStartTuVi }) => {
             )}
 
             <motion.div
-              initial={settings.effectsEnabled ? { opacity: 0, scale: 0.9, y: 15 } : { opacity: 1, scale: 1, y: 0 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.5, type: 'spring', stiffness: 350, damping: 22 }}
+              variants={formContainerVariants}
+              initial="hidden"
+              animate="visible"
               className="flex flex-col sm:flex-row flex-wrap gap-4 w-full sm:w-auto px-4 justify-center items-center"
             >
               {(systemSettings.enabledDeckTypes?.[DeckType.TAROT] ?? true) && (
                 <motion.div
+                  variants={formItemVariants}
                   whileHover={{ scale: 1.05, y: -3, transition: { type: 'spring', stiffness: 450, damping: 15 } }}
                   whileTap={{ scale: 0.96 }}
                   onClick={() => handleChooseDeck(DeckType.TAROT)}
@@ -305,6 +306,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onStart, onStartTuVi }) => {
 
               {(systemSettings.enabledDeckTypes?.[DeckType.PLAYING_CARDS] ?? true) && (
                 <motion.div
+                  variants={formItemVariants}
                   whileHover={{ scale: 1.05, y: -3, transition: { type: 'spring', stiffness: 450, damping: 15 } }}
                   whileTap={{ scale: 0.96 }}
                   onClick={() => handleChooseDeck(DeckType.PLAYING_CARDS)}
@@ -327,6 +329,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onStart, onStartTuVi }) => {
 
               {/* Bói Tử Vi Button */}
               <motion.div
+                variants={formItemVariants}
                 whileHover={{ scale: 1.05, y: -3, transition: { type: 'spring', stiffness: 450, damping: 15 } }}
                 whileTap={{ scale: 0.96 }}
                 onClick={() => {

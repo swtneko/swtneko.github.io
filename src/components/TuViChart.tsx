@@ -401,7 +401,7 @@ export const TuViChart: React.FC<TuViChartProps> = ({ laSo }) => {
             </div>
             <div>
               <span className="text-purple-300/60 block text-[9px]">Thân Cư / Lai Nhân:</span>
-              <span className="text-purple-200 font-semibold">Cư {laSo.chuSo.thanCu} &bull; {laSo.chuSo.cungLaiNhan}</span>
+              <span className="text-purple-200 font-semibold">Cư {laSo.chuSo.thanCu} • {laSo.chuSo.cungLaiNhan}</span>
             </div>
           </div>
 
@@ -542,9 +542,9 @@ export const TuViChart: React.FC<TuViChartProps> = ({ laSo }) => {
                     </span>
                   </div>
                   <h4 className="text-xl font-bold font-serif text-white mt-2">
-                    Đại Hạn: {selectedCung.daiHan} tuổi &bull; Cung Vị: {selectedCung.can} {selectedCung.chi}
-                    {selectedCung.tieuHan && ` &bull; Tiểu hạn: ${selectedCung.tieuHan}`}
-                    {selectedCung.nguyetHan && ` &bull; Lưu Nguyệt: Tháng ${selectedCung.nguyetHan}`}
+                    Đại Hạn: {selectedCung.daiHan} tuổi • Cung Vị: {selectedCung.can} {selectedCung.chi}
+                    {selectedCung.tieuHan && ` • Tiểu hạn: ${selectedCung.tieuHan}`}
+                    {selectedCung.nguyetHan && ` • Lưu Nguyệt: Tháng ${selectedCung.nguyetHan}`}
                   </h4>
                 </div>
                 <button

@@ -850,15 +850,14 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
         {step === 'result' && laSoData && (
           <motion.div
             key="result"
-            initial={{ opacity: 0, y: 25 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
             className="w-full space-y-8"
           >
             {/* Action Bar */}
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
+              variants={itemVariants}
               className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-3xl bg-purple-950/40 border border-purple-500/20 backdrop-blur-md"
             >
               <div className="flex items-center gap-3">
@@ -870,8 +869,8 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
                     Lá Số Tử Vi: {laSoData.chuSo.fullName}
                   </h3>
                   <div className="text-xs text-purple-200/80">
-                    {laSoData.chuSo.amDuongNamNu} &bull; Mệnh {laSoData.chuSo.banMenhNapAm} &bull; {laSoData.chuSo.cuc}
-                    {laSoData.chuSo.canLuongChi && ` &bull; ${laSoData.chuSo.canLuongChi}`}
+                    {laSoData.chuSo.amDuongNamNu} • Mệnh {laSoData.chuSo.banMenhNapAm} • {laSoData.chuSo.cuc}
+                    {laSoData.chuSo.canLuongChi && ` • ${laSoData.chuSo.canLuongChi}`}
                   </div>
                 </div>
               </div>
@@ -925,14 +924,12 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
             </motion.div>
 
             {/* Visual Interactive 12 Palaces Chart (TracuuTuVi style) */}
-            <TuViChart laSo={laSoData} />
+            <motion.div variants={itemVariants}>
+              <TuViChart laSo={laSoData} />
+            </motion.div>
 
             {/* AI Master Detailed Interpretation (5 sections) */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
+            <motion.div variants={itemVariants}>
               <LiquidGlassCard className="p-6 sm:p-10 rounded-3xl border border-purple-500/30 shadow-2xl">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-purple-500/20 pb-4 mb-6">
                   <div className="flex items-center gap-3">
@@ -944,7 +941,7 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
                         Luận Giải Chi Tiết Từ Bậc Thầy Tử Vi
                       </h3>
                       <div className="text-xs text-purple-300/80">
-                        Bản Mệnh & Cục &bull; Tam Cung Then Chốt &bull; Vận Hạn Năm {laSoData.chuSo.viewingYear} &bull; Đức Năng Thắng Số
+                        Bản Mệnh & Cục • Tam Cung Then Chốt • Vận Hạn Năm {laSoData.chuSo.viewingYear} • Đức Năng Thắng Số
                       </div>
                     </div>
                   </div>
@@ -982,11 +979,7 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
             </motion.div>
 
             {/* Follow-Up Questions Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
+            <motion.div variants={itemVariants}>
               <LiquidGlassCard className="p-6 sm:p-8 rounded-3xl border border-purple-500/30 shadow-2xl">
                 <div className="flex items-center gap-2.5 mb-4">
                   <HelpCircle className="w-5 h-5 text-amber-300" />

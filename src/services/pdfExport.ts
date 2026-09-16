@@ -15,7 +15,7 @@ export interface ExportPdfParams {
 
 // Convert markdown to clean HTML tags with luxury celestial styling for PDF
 function formatMarkdownForPdf(md: string): string {
-  if (!md) return '<p>Không có nội dung luận giải.</p>';
+  if (!md) return '<p class="pdf-block" style="color: #f5f3ff;">Không có nội dung luận giải.</p>';
 
   // Remove trailing credits if duplicated
   const clean = md.trim();
@@ -50,42 +50,42 @@ function formatMarkdownForPdf(md: string): string {
       if (inList) { htmlParts.push('</ul>'); inList = false; }
       if (inNumberedList) { htmlParts.push('</ol>'); inNumberedList = false; }
       const text = line.substring(4);
-      htmlParts.push(`<h3 style="font-size: 15px; font-weight: bold; color: #f59e0b; margin-top: 18px; margin-bottom: 8px; border-left: 3px solid #f59e0b; padding-left: 10px; font-family: 'Lora', Georgia, serif;">${text}</h3>`);
+      htmlParts.push(`<h3 class="pdf-block" style="font-size: 15px; font-weight: bold; color: #f59e0b; margin-top: 18px; margin-bottom: 8px; border-left: 3px solid #f59e0b; padding-left: 10px; font-family: 'Lora', Georgia, serif; line-height: 1.4;">${text}</h3>`);
     } else if (line.startsWith('## ')) {
       if (inList) { htmlParts.push('</ul>'); inList = false; }
       if (inNumberedList) { htmlParts.push('</ol>'); inNumberedList = false; }
       const text = line.substring(3);
-      htmlParts.push(`<h2 style="font-size: 17px; font-weight: bold; color: #fbbf24; margin-top: 22px; margin-bottom: 10px; border-bottom: 1px solid rgba(245, 158, 11, 0.4); padding-bottom: 6px; font-family: 'Lora', Georgia, serif;">${text}</h2>`);
+      htmlParts.push(`<h2 class="pdf-block" style="font-size: 17px; font-weight: bold; color: #fbbf24; margin-top: 22px; margin-bottom: 10px; border-bottom: 1px solid rgba(245, 158, 11, 0.4); padding-bottom: 6px; font-family: 'Lora', Georgia, serif; line-height: 1.4;">${text}</h2>`);
     } else if (line.startsWith('# ')) {
       if (inList) { htmlParts.push('</ul>'); inList = false; }
       if (inNumberedList) { htmlParts.push('</ol>'); inNumberedList = false; }
       const text = line.substring(2);
-      htmlParts.push(`<h1 style="font-size: 20px; font-weight: bold; color: #fef08a; margin-top: 24px; margin-bottom: 12px; font-family: 'Lora', Georgia, serif; text-align: center;">${text}</h1>`);
+      htmlParts.push(`<h1 class="pdf-block" style="font-size: 20px; font-weight: bold; color: #fef08a; margin-top: 24px; margin-bottom: 12px; font-family: 'Lora', Georgia, serif; text-align: center; line-height: 1.4;">${text}</h1>`);
     } else if (line.startsWith('- ') || line.startsWith('* ') || line.startsWith('• ')) {
       if (inNumberedList) { htmlParts.push('</ol>'); inNumberedList = false; }
       if (!inList) {
-        htmlParts.push('<ul style="margin: 8px 0; padding-left: 20px; list-style-type: disc;">');
+        htmlParts.push('<ul class="pdf-block" style="margin: 8px 0; padding-left: 20px; list-style-type: disc;">');
         inList = true;
       }
       const text = line.replace(/^[-*•]\s+/, '');
-      htmlParts.push(`<li style="margin-bottom: 6px; font-size: 13px; line-height: 1.6; color: #f3e8ff;">${text}</li>`);
+      htmlParts.push(`<li class="pdf-block" style="margin-bottom: 6px; font-size: 13px; line-height: 1.6; color: #f3e8ff;">${text}</li>`);
     } else if (/^\d+\.\s+/.test(line)) {
       if (inList) { htmlParts.push('</ul>'); inList = false; }
       if (!inNumberedList) {
-        htmlParts.push('<ol style="margin: 8px 0; padding-left: 20px; list-style-type: decimal;">');
+        htmlParts.push('<ol class="pdf-block" style="margin: 8px 0; padding-left: 20px; list-style-type: decimal;">');
         inNumberedList = true;
       }
       const text = line.replace(/^\d+\.\s+/, '');
-      htmlParts.push(`<li style="margin-bottom: 6px; font-size: 13px; line-height: 1.6; color: #f3e8ff;">${text}</li>`);
+      htmlParts.push(`<li class="pdf-block" style="margin-bottom: 6px; font-size: 13px; line-height: 1.6; color: #f3e8ff;">${text}</li>`);
     } else if (line.startsWith('> ')) {
       if (inList) { htmlParts.push('</ul>'); inList = false; }
       if (inNumberedList) { htmlParts.push('</ol>'); inNumberedList = false; }
       const text = line.substring(2);
-      htmlParts.push(`<blockquote style="margin: 12px 0; padding: 10px 14px; background: rgba(88, 28, 135, 0.4); border-left: 4px solid #f59e0b; border-radius: 6px; font-style: italic; font-size: 13px; color: #fef08a; line-height: 1.6;">${text}</blockquote>`);
+      htmlParts.push(`<blockquote class="pdf-block" style="margin: 12px 0; padding: 10px 14px; background: rgba(88, 28, 135, 0.4); border-left: 4px solid #f59e0b; border-radius: 6px; font-style: italic; font-size: 13px; color: #fef08a; line-height: 1.6;">${text}</blockquote>`);
     } else {
       if (inList) { htmlParts.push('</ul>'); inList = false; }
       if (inNumberedList) { htmlParts.push('</ol>'); inNumberedList = false; }
-      htmlParts.push(`<p style="margin-bottom: 10px; font-size: 13.5px; line-height: 1.65; color: #f5f3ff; text-align: justify;">${line}</p>`);
+      htmlParts.push(`<p class="pdf-block" style="margin-bottom: 10px; font-size: 13.5px; line-height: 1.65; color: #f5f3ff; text-align: justify;">${line}</p>`);
     }
   }
 
@@ -176,7 +176,7 @@ export async function exportReadingToPdf(params: ExportPdfParams): Promise<void>
         : 'grid-template-columns: repeat(5, 1fr);';
 
     cardsHtml = `
-      <div style="margin: 20px 0; background: #1b0c38; border: 1.5px solid #f59e0b; border-radius: 14px; padding: 18px 20px;">
+      <div class="pdf-card-block" style="margin: 20px 0; background: #1b0c38; border: 1.5px solid #f59e0b; border-radius: 14px; padding: 18px 20px;">
         <div style="text-align: center; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; color: #f59e0b; margin-bottom: 14px;">
           ✦ CÁC LÁ BÀI ĐÃ RÚT (${processedCards.length} LÁ) ✦
         </div>
@@ -208,12 +208,12 @@ export async function exportReadingToPdf(params: ExportPdfParams): Promise<void>
     ].filter(Boolean);
 
     tuViHtml = `
-      <div style="margin: 18px 0; background: rgba(35, 12, 68, 0.7); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 16px; padding: 18px 22px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(168, 85, 247, 0.3); padding-bottom: 10px; margin-bottom: 12px;">
-          <div style="font-size: 14px; font-weight: bold; color: #fef08a;">
-            👤 Đương số: <span style="color: #f59e0b; text-transform: uppercase;">${userInfo.fullName || 'Tín chủ'}</span>
+      <div class="pdf-card-block" style="margin: 18px 0; background: rgba(35, 12, 68, 0.7); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 16px; padding: 18px 22px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(168, 85, 247, 0.3); padding-bottom: 10px; margin-bottom: 12px;">
+          <div style="font-size: 14px; font-weight: bold; color: #fef08a; white-space: nowrap;">
+            👤 Đương số: <span style="color: #f59e0b; text-transform: uppercase; font-weight: 800; white-space: nowrap;">${userInfo.fullName || 'Tín chủ'}</span>
           </div>
-          <div style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fde68a; font-size: 11px; font-weight: bold; padding: 2px 10px; border-radius: 20px; font-family: sans-serif;">
+          <div style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fde68a; font-size: 11px; font-weight: bold; padding: 3px 12px; border-radius: 20px; font-family: sans-serif; white-space: nowrap;">
             ${tuViData.chuSo.amDuongNamNu} • Năm xem: ${tuViData.chuSo.viewingYear} (${tuViData.chuSo.viewingYearCanChi})
           </div>
         </div>
@@ -255,7 +255,7 @@ export async function exportReadingToPdf(params: ExportPdfParams): Promise<void>
 
   container.innerHTML = `
     <!-- Luxury Header -->
-    <div style="border-bottom: 2px solid #f59e0b; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+    <div class="pdf-card-block" style="border-bottom: 2px solid #f59e0b; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
       <div>
         <div style="font-size: 20px; font-weight: bold; color: #f59e0b; letter-spacing: 2px; text-transform: uppercase;">
           ✦ THIÊN KHÔNG ✦
@@ -264,7 +264,7 @@ export async function exportReadingToPdf(params: ExportPdfParams): Promise<void>
           ${isTuVi ? 'TỬ VI ĐẨU SỐ & MỆNH BÀN TOÀN THƯ' : 'HUYỀN HỌC & TRÍ TUỆ VŨ TRỤ'}
         </div>
       </div>
-      <div style="text-align: right; font-family: sans-serif; font-size: 11px; color: #c084fc;">
+      <div style="text-align: right; font-family: sans-serif; font-size: 11px; color: #c084fc; white-space: nowrap;">
         <div>Ngày lập: <strong style="color: #ffffff;">${dateFormatted}</strong></div>
         <div style="color: #fde68a; font-weight: 600; margin-top: 2px;">
           ${isTuVi ? `Lá số năm ${tuViData?.chuSo.viewingYear || new Date().getFullYear()}` : spreadType === SpreadType.ONE_CARD ? 'Quẻ 1 Lá' : spreadType === SpreadType.THREE_CARDS ? 'Quẻ 3 Lá' : 'Trải Bài'}
@@ -273,12 +273,12 @@ export async function exportReadingToPdf(params: ExportPdfParams): Promise<void>
     </div>
 
     <!-- Question / Header Banner -->
-    <div style="background: rgba(88, 28, 135, 0.35); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 12px; padding: 12px 18px; margin-bottom: 18px; font-size: 13px;">
-      <div style="color: #fde68a; font-weight: bold; margin-bottom: 4px;">
-        👤 Đương số / Khách hàng: <span style="color: #ffffff;">${userInfo.fullName || 'Tín chủ'}</span>
+    <div class="pdf-card-block" style="background: rgba(88, 28, 135, 0.35); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 12px; padding: 12px 18px; margin-bottom: 18px; font-size: 13px;">
+      <div style="color: #fde68a; font-weight: bold; margin-bottom: 4px; white-space: nowrap;">
+        👤 Đương số / Khách hàng: <span style="color: #ffffff; font-weight: 700; white-space: nowrap;">${userInfo.fullName || 'Tín chủ'}</span>
       </div>
       ${question ? `
-        <div style="color: #e9d5ff; font-style: italic;">
+        <div style="color: #e9d5ff; font-style: italic; line-height: 1.5;">
           ❓ Băn khoăn / Câu hỏi: "${question}"
         </div>
       ` : ''}
@@ -288,8 +288,8 @@ export async function exportReadingToPdf(params: ExportPdfParams): Promise<void>
     ${isTuVi ? tuViHtml : cardsHtml}
 
     <!-- Complete AI Interpretation Document Section -->
-    <div style="margin-top: 24px; background: rgba(20, 8, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 16px; padding: 24px 28px;">
-      <div style="font-size: 14px; font-weight: bold; color: #f59e0b; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid rgba(245, 158, 11, 0.3); padding-bottom: 10px; margin-bottom: 16px; font-family: sans-serif;">
+    <div class="pdf-card-block" style="margin-top: 24px; background: rgba(20, 8, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 16px; padding: 24px 28px;">
+      <div class="pdf-block" style="font-size: 14px; font-weight: bold; color: #f59e0b; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid rgba(245, 158, 11, 0.3); padding-bottom: 10px; margin-bottom: 16px; font-family: sans-serif;">
         ✦ TOÀN VĂN LUẬN GIẢI CHI TIẾT ✦
       </div>
       <div style="font-family: 'Lora', Georgia, serif;">
@@ -298,8 +298,8 @@ export async function exportReadingToPdf(params: ExportPdfParams): Promise<void>
     </div>
 
     <!-- Professional Footer Watermark -->
-    <div style="margin-top: 30px; border-top: 1px solid rgba(245, 158, 11, 0.4); padding-top: 14px; display: flex; justify-content: space-between; align-items: center; font-family: sans-serif; font-size: 10.5px; color: #c084fc;">
-      <div>Thiên Không Huyền Học & Tử Vi &bull; https://thienkhong.app</div>
+    <div class="pdf-card-block" style="margin-top: 30px; border-top: 1px solid rgba(245, 158, 11, 0.4); padding-top: 14px; display: flex; justify-content: space-between; align-items: center; font-family: sans-serif; font-size: 10.5px; color: #c084fc;">
+      <div>Thiên Không Huyền Học & Tử Vi • https://thienkhong.app</div>
       <div style="color: #f59e0b; font-weight: bold;">✦ TRÍ TUỆ TÂM LINH & ĐỊNH HƯỚNG VẬN MỆNH ✦</div>
     </div>
   `;
@@ -308,7 +308,27 @@ export async function exportReadingToPdf(params: ExportPdfParams): Promise<void>
 
   try {
     // Settle layout and paint
-    await new Promise((resolve) => setTimeout(resolve, 120));
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
+    // Measure safe breakpoint candidate Y coordinates from DOM elements before rendering
+    const containerRect = container.getBoundingClientRect();
+    const blockElements = container.querySelectorAll<HTMLElement>(
+      'h1, h2, h3, p, li, blockquote, .pdf-card-block, .pdf-block, ul, ol'
+    );
+    
+    // Store relative pixel positions in CSS pixels
+    const domBreakpoints: number[] = [];
+    blockElements.forEach((el) => {
+      const rect = el.getBoundingClientRect();
+      const topRel = rect.top - containerRect.top;
+      const bottomRel = rect.bottom - containerRect.top;
+      if (topRel > 10) {
+        domBreakpoints.push(topRel - 6); // slightly above the element
+      }
+      if (bottomRel > 10) {
+        domBreakpoints.push(bottomRel + 6); // slightly below the element
+      }
+    });
 
     // Render the container to high-res PNG image
     const dataUrl = await toPng(container, {
@@ -342,70 +362,85 @@ export async function exportReadingToPdf(params: ExportPdfParams): Promise<void>
 
     const pageWidth = 210;
     const pageHeight = 297;
-    const margin = 8;
-    const printWidth = pageWidth - margin * 2; // 194mm
-    const printHeight = pageHeight - margin * 2; // 281mm
+    const a4AspectRatio = pageHeight / pageWidth; // 297 / 210 ≈ 1.4142857
 
-    const pxToMm = printWidth / img.width;
-    const totalPdfHeight = img.height * pxToMm;
+    // Exact height of one A4 page in canvas image pixels
+    const fullPageHeightPx = Math.round(img.width * a4AspectRatio);
+    const scaleFactor = img.width / container.offsetWidth;
 
-    if (totalPdfHeight <= printHeight) {
-      // Fits in single page
-      pdf.addImage(dataUrl, 'PNG', margin, margin, printWidth, totalPdfHeight, undefined, 'FAST');
-    } else {
-      // Slice cleanly across multiple A4 pages without blank pages or overflow
-      const pageHeightPx = Math.floor(printHeight / pxToMm);
-      let currentY = 0;
-      let pageIndex = 0;
+    // Convert DOM breakpoint coordinates into image pixel coordinates
+    const imageBreakpoints = domBreakpoints
+      .map((bp) => bp * scaleFactor)
+      .sort((a, b) => a - b);
 
-      while (currentY < img.height) {
-        const sliceHeightPx = Math.min(pageHeightPx, img.height - currentY);
+    let currentY = 0;
+    let pageIndex = 0;
 
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = sliceHeightPx;
-        const ctx = canvas.getContext('2d');
+    while (currentY < img.height) {
+      const remainingHeight = img.height - currentY;
+      let sliceHeightPx: number;
 
-        if (ctx) {
-          // Draw dark background to prevent any white flashes
-          ctx.fillStyle = '#0f0521';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (remainingHeight <= fullPageHeightPx) {
+        // Last page: render the remaining height
+        sliceHeightPx = remainingHeight;
+      } else {
+        // Multi-page: find the optimal break point between 60% and 95% of full page height
+        const targetMaxY = currentY + fullPageHeightPx;
+        const minSafeY = currentY + fullPageHeightPx * 0.60;
 
-          // Draw the sliced section of the main image
-          ctx.drawImage(
-            img,
-            0,
-            currentY,
-            img.width,
-            sliceHeightPx,
-            0,
-            0,
-            img.width,
-            sliceHeightPx
-          );
+        // Candidate break points that do not cut across elements
+        const validBreaks = imageBreakpoints.filter(
+          (bp) => bp >= minSafeY && bp <= targetMaxY - 30 * scaleFactor
+        );
 
-          const sliceDataUrl = canvas.toDataURL('image/png', 0.95);
-          const sliceHeightMm = sliceHeightPx * pxToMm;
+        if (validBreaks.length > 0) {
+          // Take the highest safe breakpoint before page overflow
+          const chosenBreakY = validBreaks[validBreaks.length - 1];
+          sliceHeightPx = Math.round(chosenBreakY - currentY);
+        } else {
+          // Fallback if no specific element break found
+          sliceHeightPx = fullPageHeightPx;
+        }
+      }
 
-          if (pageIndex > 0) {
-            pdf.addPage();
-          }
+      // Create an exact A4-proportioned canvas (fills 100% full bleed with dark celestial theme)
+      const pageCanvas = document.createElement('canvas');
+      pageCanvas.width = img.width;
+      pageCanvas.height = fullPageHeightPx;
+      const ctx = pageCanvas.getContext('2d');
 
-          pdf.addImage(
-            sliceDataUrl,
-            'PNG',
-            margin,
-            margin,
-            printWidth,
-            sliceHeightMm,
-            undefined,
-            'FAST'
-          );
+      if (ctx) {
+        // Fill canvas with solid celestial dark background (ZERO white borders)
+        ctx.fillStyle = '#0f0521';
+        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+
+        // Draw the sliced section of the main image at the top of the A4 page
+        ctx.drawImage(
+          img,
+          0,
+          currentY,
+          img.width,
+          sliceHeightPx,
+          0,
+          0,
+          img.width,
+          sliceHeightPx
+        );
+
+        const pageDataUrl = pageCanvas.toDataURL('image/png', 0.96);
+
+        if (pageIndex > 0) {
+          pdf.addPage();
         }
 
-        currentY += sliceHeightPx;
-        pageIndex++;
+        // Fill PDF background and place full-bleed image with margin 0
+        pdf.setFillColor(15, 5, 33);
+        pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+        pdf.addImage(pageDataUrl, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
       }
+
+      currentY += sliceHeightPx;
+      pageIndex++;
     }
 
     const sanitizedName = (userInfo.fullName || 'Thien-Khong')

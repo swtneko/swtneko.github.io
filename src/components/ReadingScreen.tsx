@@ -14,6 +14,7 @@ import { FollowUpSection } from './FollowUpSection';
 import { ShareModal } from './ShareModal';
 import { LiquidGlassCard } from './LiquidGlassCard';
 import { exportReadingToPdf } from '../services/pdfExport';
+import { staggerContainer, staggerFast, cascadeItem, cascadeFade } from '../utils/motionVariants';
 
 interface ReadingScreenProps {
   userInfo: UserInfo;
@@ -248,8 +249,9 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
         {step === 'question' && (
           <motion.div
             key="question"
-            initial={settings.effectsEnabled ? { opacity: 0, x: 20 } : { opacity: 1, x: 0 }}
-            animate={{ opacity: 1, x: 0 }}
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
             exit={settings.effectsEnabled ? { opacity: 0, x: -20 } : { opacity: 1, x: 0 }}
             className="w-full max-w-lg"
           >
@@ -257,9 +259,13 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
               className="w-full p-6 sm:p-10"
               contentClassName={settings.theme === 'dark' ? 'text-purple-100' : 'text-slate-900'}
             >
-              <h2 className="text-2xl sm:text-3xl font-serif font-bold mb-3 text-slate-900 dark:text-purple-100">Bạn đang nghĩ gì?</h2>
-              <p className="text-slate-700 dark:text-purple-300 mb-6 text-sm italic font-medium">Hãy tập trung tâm trí vào điều bạn muốn hỏi vũ trụ...</p>
-              <form onSubmit={handleQuestionSubmit} className="relative">
+              <motion.h2 variants={cascadeItem} className="text-2xl sm:text-3xl font-serif font-bold mb-3 text-slate-900 dark:text-purple-100">
+                Bạn đang nghĩ gì?
+              </motion.h2>
+              <motion.p variants={cascadeItem} className="text-slate-700 dark:text-purple-300 mb-6 text-sm italic font-medium">
+                Hãy tập trung tâm trí vào điều bạn muốn hỏi vũ trụ...
+              </motion.p>
+              <motion.form variants={cascadeItem} onSubmit={handleQuestionSubmit} className="relative">
                 <textarea
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
@@ -280,7 +286,7 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                 >
                   <Send className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
-              </form>
+              </motion.form>
             </LiquidGlassCard>
           </motion.div>
         )}
@@ -288,26 +294,25 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
         {step === 'spread' && (
           <motion.div
             key="spread"
-            initial={settings.effectsEnabled ? { opacity: 0, scale: 0.95 } : { opacity: 1, scale: 1 }}
-            animate={{ opacity: 1, scale: 1 }}
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
             exit={settings.effectsEnabled ? { opacity: 0, scale: 1.05 } : { opacity: 1, scale: 1 }}
             className="w-full max-w-4xl text-center"
           >
-            <button onClick={() => setStep('question')} className="flex items-center text-xs sm:text-sm font-bold text-purple-900 dark:text-purple-300 mb-6 hover:text-purple-950 dark:hover:text-purple-100 transition-colors mx-auto cursor-pointer">
+            <motion.button variants={cascadeItem} onClick={() => setStep('question')} className="flex items-center text-xs sm:text-sm font-bold text-purple-900 dark:text-purple-300 mb-6 hover:text-purple-950 dark:hover:text-purple-100 transition-colors mx-auto cursor-pointer">
               <ArrowLeft className="w-4 h-4 mr-1.5" /> Chỉnh sửa câu hỏi
-            </button>
-            <h2 className="text-3xl sm:text-4xl font-serif font-bold mb-8 text-slate-900 dark:text-purple-100">Chọn kiểu trải bài</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            </motion.button>
+            <motion.h2 variants={cascadeItem} className="text-3xl sm:text-4xl font-serif font-bold mb-8 text-slate-900 dark:text-purple-100">Chọn kiểu trải bài</motion.h2>
+            <motion.div variants={staggerFast} className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
                 { type: SpreadType.ONE_CARD, label: 'Một lá bài', desc: 'Lời khuyên nhanh & thông điệp trọng tâm', count: 1 },
                 { type: SpreadType.THREE_CARDS, label: 'Ba lá bài', desc: 'Dòng thời gian: Quá khứ, Hiện tại, Tương lai', count: 3 },
                 { type: SpreadType.CELTIC_CROSS, label: 'Celtic Cross', desc: 'Bức tranh toàn cảnh & phân tích chuyên sâu', count: 10 },
-              ].map((item, idx) => (
+              ].map((item) => (
                 <motion.div
                   key={item.type}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1, type: 'spring', stiffness: 350, damping: 20 }}
+                  variants={cascadeItem}
                   whileHover={{ scale: 1.04, y: -5, transition: { type: 'spring', stiffness: 450, damping: 15 } }}
                   whileTap={{ scale: 0.96 }}
                   className="h-full"
@@ -328,7 +333,7 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                   </LiquidGlassCard>
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
           </motion.div>
         )}
 
@@ -354,11 +359,12 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
         {step === 'result' && (
           <motion.div
             key="result"
-            initial={settings.effectsEnabled ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
-            animate={{ opacity: 1, y: 0 }}
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
             className="w-full max-w-5xl"
           >
-            <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
+            <motion.div variants={cascadeItem} className="flex justify-between items-center mb-8 flex-wrap gap-4">
               <h2 className="text-2xl sm:text-4xl font-serif font-bold text-slate-900 dark:text-purple-100">Kết quả trải bài</h2>
               <div className="flex items-center space-x-2.5 flex-wrap gap-y-2">
                 {!isInterpreting && drawnCards.length > 0 && (
@@ -387,30 +393,20 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                   Trải bài mới
                 </button>
               </div>
-            </div>
+            </motion.div>
 
             <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
+              variants={staggerFast}
               className="flex flex-wrap justify-center gap-6 md:gap-8 mb-12"
             >
               {drawnCards.map((drawn, i) => (
                 <motion.div 
                   key={i} 
-                  initial={{ opacity: 0, scale: 0.75, y: 40 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  variants={cascadeItem}
                   whileHover={{ 
                     y: -12, 
                     scale: 1.05, 
                     transition: { type: 'spring', stiffness: 450, damping: 14 } 
-                  }}
-                  transition={{ 
-                    delay: i * 0.15, 
-                    type: 'spring',
-                    stiffness: 240,
-                    damping: 18,
-                    bounce: 0.35,
                   }}
                   className="flex flex-col items-center cursor-pointer select-none"
                 >
@@ -437,14 +433,15 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
               ))}
             </motion.div>
 
-            <LiquidGlassCard
-              borderRadius="28px"
-              blurIntensity="sm"
-              shadowIntensity="sm"
-              glowIntensity="sm"
-              className="w-full rounded-3xl p-6 sm:p-10 md:p-12"
-              contentClassName={settings.theme === 'dark' ? 'text-purple-100' : 'text-slate-900'}
-            >
+            <motion.div variants={cascadeItem}>
+              <LiquidGlassCard
+                borderRadius="28px"
+                blurIntensity="sm"
+                shadowIntensity="sm"
+                glowIntensity="sm"
+                className="w-full rounded-3xl p-6 sm:p-10 md:p-12"
+                contentClassName={settings.theme === 'dark' ? 'text-purple-100' : 'text-slate-900'}
+              >
                 <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center">
@@ -567,21 +564,24 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                   </div>
                 )}
               </div>
-            </LiquidGlassCard>
+              </LiquidGlassCard>
+            </motion.div>
 
             {/* Follow-up question & clarification card spread section */}
             {!isInterpreting && aiInterpretation && (
-              <FollowUpSection
-                originalQuestion={question}
-                theme={theme}
-                spreadType={spreadType}
-                originalCards={drawnCards}
-                originalInterpretation={aiInterpretation}
-                deckType={deckType}
-                userInfo={userInfo}
-                followUps={followUps}
-                onAddFollowUp={handleAddFollowUp}
-              />
+              <motion.div variants={cascadeItem}>
+                <FollowUpSection
+                  originalQuestion={question}
+                  theme={theme}
+                  spreadType={spreadType}
+                  originalCards={drawnCards}
+                  originalInterpretation={aiInterpretation}
+                  deckType={deckType}
+                  userInfo={userInfo}
+                  followUps={followUps}
+                  onAddFollowUp={handleAddFollowUp}
+                />
+              </motion.div>
             )}
 
             {/* Share Result Modal */}

@@ -353,7 +353,7 @@ function AppContent() {
       {/* Footer */}
       {view !== 'admin' && (
         <footer className={`relative z-10 py-10 text-center text-[10px] uppercase tracking-[0.4em] transition-colors flex flex-col items-center justify-center gap-1.5 ${settings.theme === 'dark' ? 'text-purple-400/40' : 'text-purple-900/50 font-medium'}`}>
-          <div>&copy; 2026 Celestial Tarot &bull; Dẫn lối bởi Vũ trụ</div>
+          <div>© 2026 Celestial Tarot • Dẫn lối bởi Vũ trụ</div>
         </footer>
       )}
     </div>

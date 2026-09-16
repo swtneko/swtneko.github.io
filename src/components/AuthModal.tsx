@@ -4,6 +4,7 @@ import { X, Mail, Lock, User as UserIcon, LogIn, AlertCircle, Loader2 } from 'lu
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { LiquidGlassCard } from './LiquidGlassCard';
+import { staggerContainer, cascadeItem } from '../utils/motionVariants';
 
 const AuthModal: React.FC = () => {
   const { isAuthModalOpen, closeAuthModal, signInWithGoogle, signInWithEmail, signUpWithEmail, signInGuest } = useAuth();
@@ -170,9 +171,15 @@ const AuthModal: React.FC = () => {
         </div>
 
         {/* Email Form */}
-        <form onSubmit={handleEmailSubmit} className="space-y-3">
+        <motion.form 
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          onSubmit={handleEmailSubmit} 
+          className="space-y-3"
+        >
           {mode === 'signup' && (
-            <div>
+            <motion.div variants={cascadeItem}>
               <label className="block text-xs font-medium mb-1 opacity-80 text-purple-950 dark:text-purple-300">Họ và tên hoặc Biệt danh</label>
               <div className="relative">
                 <UserIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-40 text-purple-900 dark:text-white" />
@@ -184,10 +191,10 @@ const AuthModal: React.FC = () => {
                   className="w-full text-xs pl-9 pr-3 py-2.5 rounded-xl border border-purple-200 dark:border-white/10 bg-purple-50/20 dark:bg-black/20 focus:outline-none focus:border-purple-500 text-purple-950 dark:text-white"
                 />
               </div>
-            </div>
+            </motion.div>
           )}
 
-          <div>
+          <motion.div variants={cascadeItem}>
             <label className="block text-xs font-medium mb-1 opacity-80 text-purple-950 dark:text-purple-300">Email</label>
             <div className="relative">
               <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-40 text-purple-900 dark:text-white" />
@@ -200,9 +207,9 @@ const AuthModal: React.FC = () => {
                 className="w-full text-xs pl-9 pr-3 py-2.5 rounded-xl border border-purple-200 dark:border-white/10 bg-purple-50/20 dark:bg-black/20 focus:outline-none focus:border-purple-500 text-purple-950 dark:text-white"
               />
             </div>
-          </div>
+          </motion.div>
 
-          <div>
+          <motion.div variants={cascadeItem}>
             <label className="block text-xs font-medium mb-1 opacity-80 text-purple-950 dark:text-purple-300">Mật khẩu</label>
             <div className="relative">
               <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-40 text-purple-900 dark:text-white" />
@@ -215,17 +222,18 @@ const AuthModal: React.FC = () => {
                 className="w-full text-xs pl-9 pr-3 py-2.5 rounded-xl border border-purple-200 dark:border-white/10 bg-purple-50/20 dark:bg-black/20 focus:outline-none focus:border-purple-500 text-purple-950 dark:text-white"
               />
             </div>
-          </div>
+          </motion.div>
 
-          <button
+          <motion.button
+            variants={cascadeItem}
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs transition-colors flex items-center justify-center space-x-2 shadow-md shadow-purple-600/20 mt-2"
+            className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs transition-colors flex items-center justify-center space-x-2 shadow-md shadow-purple-600/20 mt-2 cursor-pointer"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             <span>{mode === 'signin' ? 'Đăng nhập' : 'Đăng ký tài khoản'}</span>
-          </button>
-        </form>
+          </motion.button>
+        </motion.form>
 
         <div className="mt-4 text-center space-y-2">
           <p className="text-xs opacity-70">

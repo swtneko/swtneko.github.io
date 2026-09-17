@@ -8,40 +8,234 @@ export interface ModelOption {
   tag?: string;
 }
 
+export interface OpenRouterFreeModel {
+  id: string;
+  name: string;
+  desc: string;
+  context_length?: number;
+  tag?: string;
+  created?: number;
+}
+
+export const OPENROUTER_MODELS_CACHE_KEY = 'celestial-openrouter-free-models';
+
+export const DEFAULT_OPENROUTER_FREE_MODELS: OpenRouterFreeModel[] = [
+  {
+    id: 'openrouter/free',
+    name: 'OpenRouter Free Models Router (openrouter/free)',
+    desc: 'Tự động luân chuyển các mô hình miễn phí nhanh và ổn định nhất trên OpenRouter',
+    context_length: 200000,
+    tag: 'Khuyên dùng • Auto Router',
+  },
+  {
+    id: 'nvidia/nemotron-3.5-lightning:free',
+    name: 'NVIDIA: Nemotron 3.5 Lightning (free)',
+    desc: 'Mô hình siêu mạnh từ NVIDIA với 1 triệu token context, phản hồi nhanh như chớp',
+    context_length: 1000000,
+    tag: '1M Context • Mới nhất',
+  },
+  {
+    id: 'google/gemma-4-31b-it:free',
+    name: 'Google: Gemma 4 31B (free)',
+    desc: 'Mô hình nguồn mở thế hệ 4 mới nhất từ Google, năng lực lý luận và chiêm tinh vượt trội',
+    context_length: 262144,
+    tag: '262k Context • Google',
+  },
+  {
+    id: 'google/gemma-4-26b-a4b-it:free',
+    name: 'Google: Gemma 4 26B A4B (free)',
+    desc: 'Bản tinh chỉnh hiệu năng cao từ Google Gemma 4, cân bằng tốc độ và độ chính xác',
+    context_length: 262144,
+    tag: '262k Context • Google',
+  },
+  {
+    id: 'nvidia/nemotron-3-ultra-550b-a55b:free',
+    name: 'NVIDIA: Nemotron 3 Ultra 550B (free)',
+    desc: 'Siêu mô hình 550B tham số, xử lý các tầng nghĩa phức tạp của 78 lá bài Tarot và Tử Vi',
+    context_length: 1000000,
+    tag: '1M Context • Ultra',
+  },
+  {
+    id: 'thinkingmachines/inkling:free',
+    name: 'Thinking Machines: Inkling (free)',
+    desc: 'Mô hình tư duy chuyên sâu với ngữ cảnh 1 triệu token, diễn giải mạch lạc',
+    context_length: 1048576,
+    tag: '1M Context • Free',
+  },
+  {
+    id: 'dots-studio/dots-3-note-preview:free',
+    name: 'Dots Studio: Dots3-Note Preview (free)',
+    desc: 'Ngữ cảnh cực lớn 512k tokens, hỗ trợ phân tích trải bài chi tiết và đối chiếu quá khứ',
+    context_length: 512000,
+    tag: '512k Context • Free',
+  },
+  {
+    id: 'z-ai/glm-5.2:free',
+    name: 'Z.ai: GLM 5.2 (free)',
+    desc: 'Mô hình ngôn ngữ thế hệ mới, văn phong mượt mà tự nhiên bằng tiếng Việt',
+    context_length: 32768,
+    tag: 'Free • Tiếng Việt tốt',
+  },
+  {
+    id: 'meta-llama/llama-3.3-70b-instruct:free',
+    name: 'Meta: Llama 3.3 70B Instruct (free)',
+    desc: 'Mô hình 70 tỷ tham số hàng đầu từ Meta, lý luận sắc bén và cấu trúc quẻ bài mạch lạc',
+    context_length: 131072,
+    tag: '131k Context • Meta',
+  },
+  {
+    id: 'deepseek/deepseek-r1:free',
+    name: 'DeepSeek: R1 (free)',
+    desc: 'Mô hình suy luận chuyên sâu mã nguồn mở, tư duy từng bước logic',
+    context_length: 64000,
+    tag: 'Reasoning • Free',
+  },
+  {
+    id: 'liquid/lfm-2.5-2.6b:free',
+    name: 'LiquidAI: LFM2.5-2.6B (free)',
+    desc: 'Mô hình mạng nơ-ron dạng lỏng siêu nhẹ, phản hồi tức thì',
+    context_length: 65536,
+    tag: 'Siêu tốc độ',
+  },
+  {
+    id: 'openrouter/auto',
+    name: 'OpenRouter Auto Router (openrouter/auto)',
+    desc: 'Tự động chọn mô hình phù hợp nhất theo thời gian thực',
+    tag: 'Auto',
+  },
+];
+
+export const getCachedOpenRouterFreeModels = (): OpenRouterFreeModel[] => {
+  try {
+    const cached = localStorage.getItem(OPENROUTER_MODELS_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {}
+
+  return DEFAULT_OPENROUTER_FREE_MODELS;
+};
+
+// Initialize with cached models if available
+const initialOpenRouterModels = typeof window !== 'undefined'
+  ? getCachedOpenRouterFreeModels()
+  : DEFAULT_OPENROUTER_FREE_MODELS;
+
 export const PROVIDER_MODELS: Record<AIProvider, ModelOption[]> = {
   auto: [
     { id: 'auto', name: 'Tự động thông minh', desc: 'Hệ thống tự động chọn mô hình nhanh và ổn định nhất theo tình trạng mạng', tag: 'Mặc định' }
   ],
   gemini: [
-    { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash', desc: 'Mới nhất của Google - Siêu nhanh, thông minh và giàu cảm xúc', tag: 'Khuyên dùng' },
-    { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview', desc: 'Trí tuệ đỉnh cao - Phân tích Tarot, Chiêm tinh & Triết học sâu sắc nhất', tag: 'Bậc thầy tâm linh' },
-    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: 'Mô hình Pro đa tầng, giải mã quẻ bài chi tiết và chuẩn xác', tag: 'Chuyên sâu' },
-    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', desc: 'Cân bằng lý tưởng giữa tốc độ phản hồi và độ sâu biểu tượng' },
-    { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash-Lite', desc: 'Siêu nhẹ, phản hồi tức thì, tối ưu hóa quota' },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', desc: 'Mô hình thế hệ mới của Google - Siêu nhanh, thông minh và phản hồi mượt', tag: 'Khuyên dùng' },
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: 'Mô hình Pro cao cấp - Phân tích sâu sắc quẻ bài, Tử Vi & Chiêm tinh', tag: 'Chuyên sâu' },
+    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', desc: 'Tốc độ cực nhanh, phản hồi tức thì' },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', desc: 'Mô hình tiêu chuẩn ổn định, tiết kiệm quota' },
   ],
-  groq: [
-    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', desc: 'Mạnh mẽ nhất trên Groq, văn phong mượt mà và thông thái', tag: 'Khuyên dùng' },
-    { id: 'deepseek-r1-distill-llama-70b', name: 'DeepSeek R1 Distill 70B (Groq)', desc: 'Mô hình suy luận chuyên sâu kết hợp tốc độ cực hạn của Groq LPU', tag: 'Suy luận' },
-    { id: 'qwen-2.5-32b', name: 'Qwen 2.5 32B (Groq)', desc: 'Mô hình đa ngôn ngữ xuất sắc, tiếng Việt uyển chuyển và tự nhiên' },
-    { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant', desc: 'Tốc độ phản hồi tức thì (<0.5s), phản hồi siêu nhanh' },
-  ],
-  deepseek: [
-    { id: 'deepseek-chat', name: 'DeepSeek-V3 (Chat)', desc: 'Mô hình 671B MoE tiên tiến, tư duy triết học và văn phong huyền học cực hay', tag: 'Khuyên dùng' },
-    { id: 'deepseek-reasoner', name: 'DeepSeek-R1 (Reasoner)', desc: 'Mô hình suy luận từng bước (Chain-of-Thought) giải nghĩa ẩn sâu', tag: 'Suy luận chuyên sâu' },
-  ],
-  openai: [
-    { id: 'gpt-4o', name: 'GPT-4o (Flagship Omni)', desc: 'Mô hình toàn năng hàng đầu của OpenAI, văn phong trau chuốt và chuẩn xác', tag: 'Cao cấp' },
-    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', desc: 'Nhanh, thông minh, tối ưu chi phí và phản hồi mượt mà', tag: 'Khuyên dùng' },
-    { id: 'o3-mini', name: 'o3-mini (Reasoning)', desc: 'Mô hình suy luận thế hệ mới với khả năng phân tích logic quẻ bài sâu sắc', tag: 'Suy luận mới' },
-    { id: 'o1', name: 'o1 (Deep Reasoning)', desc: 'Mô hình tư duy sâu chuỗi nhân - quả cho các câu hỏi quan trọng', tag: 'Tư duy sâu' },
-  ],
-  openrouter: [
-    { id: 'openrouter/free', name: 'OpenRouter Free Router (openrouter/free)', desc: 'Tự động định tuyến các mô hình AI hoàn toàn miễn phí trên OpenRouter', tag: 'Miễn phí 100%' },
-    { id: 'openrouter/auto', name: 'OpenRouter Auto Router (openrouter/auto)', desc: 'Tự động lựa chọn mô hình tối ưu nhất trong hệ thống OpenRouter', tag: 'Tự động' },
-  ],
+  openrouter: initialOpenRouterModels.map(m => ({
+    id: m.id,
+    name: m.name,
+    desc: m.desc,
+    tag: m.tag,
+  })),
 };
 
-// Helper to retrieve all active Gemini keys (split by comma, newline, or space)
+export const fetchOpenRouterFreeModels = async (apiKey?: string): Promise<OpenRouterFreeModel[]> => {
+  const headers: Record<string, string> = {};
+  const keyToUse = apiKey || getProviderKey('openrouter');
+  if (keyToUse) {
+    headers['Authorization'] = `Bearer ${keyToUse}`;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 14000);
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/models', {
+      method: 'GET',
+      headers,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      throw new Error(`OpenRouter API trả về HTTP ${res.status}`);
+    }
+
+    const json = await res.json();
+    if (!json || !Array.isArray(json.data)) {
+      throw new Error('Dữ liệu từ OpenRouter không đúng định dạng');
+    }
+
+    const freeList: OpenRouterFreeModel[] = [];
+
+    // Always keep openrouter/free at index 0
+    freeList.push({
+      id: 'openrouter/free',
+      name: 'OpenRouter Free Models Router (openrouter/free)',
+      desc: 'Tự động luân chuyển các mô hình miễn phí nhanh và ổn định nhất trên OpenRouter',
+      context_length: 200000,
+      tag: 'Khuyên dùng • Auto Router',
+    });
+
+    for (const m of json.data) {
+      const id = String(m.id || '');
+      const lowerId = id.toLowerCase();
+      const pricing = m.pricing;
+      const isZeroCost = pricing &&
+        (parseFloat(pricing.prompt) === 0 || pricing.prompt === '0') &&
+        (parseFloat(pricing.completion) === 0 || pricing.completion === '0');
+
+      const isFree = lowerId.endsWith(':free') || lowerId.includes(':free') || isZeroCost;
+
+      if (isFree && id !== 'openrouter/free') {
+        const ctxK = m.context_length ? Math.round(m.context_length / 1000) : 0;
+        const ctxLabel = ctxK >= 1000 ? `${(ctxK / 1000).toFixed(0)}M` : `${ctxK}k`;
+        const rawDesc = m.description || `Mô hình ${m.name || id} hoàn toàn miễn phí trên OpenRouter (${ctxLabel} tokens context)`;
+        const cleanDesc = rawDesc.length > 130 ? rawDesc.slice(0, 127) + '...' : rawDesc;
+
+        freeList.push({
+          id,
+          name: m.name || id,
+          desc: cleanDesc,
+          context_length: m.context_length,
+          tag: ctxK > 0 ? `${ctxLabel} tokens • Free` : 'Free 100%',
+          created: m.created,
+        });
+      }
+    }
+
+    // Sort models: router first, then by context length descending
+    const sorted = [
+      freeList[0],
+      ...freeList.slice(1).sort((a, b) => (b.context_length || 0) - (a.context_length || 0)),
+    ];
+
+    // Cache locally
+    try {
+      localStorage.setItem(OPENROUTER_MODELS_CACHE_KEY, JSON.stringify(sorted));
+      localStorage.setItem('celestial-openrouter-free-models-updated-at', new Date().toISOString());
+    } catch (e) {}
+
+    // Update in-memory PROVIDER_MODELS
+    PROVIDER_MODELS.openrouter = sorted.map(m => ({
+      id: m.id,
+      name: m.name,
+      desc: m.desc,
+      tag: m.tag,
+    }));
+
+    return sorted;
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    console.warn('Lỗi khi fetch danh sách OpenRouter models:', err);
+    throw err;
+  }
+};
+
+// Helper to retrieve all active Gemini keys (split by comma, newline, semicolon, or space)
 export const getGeminiKeys = (): string[] => {
   const keysSet = new Set<string>();
 
@@ -52,7 +246,7 @@ export const getGeminiKeys = (): string[] => {
       const parsed: AppSettings = JSON.parse(saved);
       if (parsed.customKeys?.gemini) {
         parsed.customKeys.gemini
-          .split(/[\n,]+/)
+          .split(/[\n,;\s]+/)
           .map(k => k.trim())
           .filter(k => k.length > 5 && k !== 'MY_GEMINI_API_KEY')
           .forEach(k => keysSet.add(k));
@@ -69,7 +263,7 @@ export const getGeminiKeys = (): string[] => {
       const parsedSys = JSON.parse(sys);
       if (parsedSys.systemApiKeys?.gemini) {
         parsedSys.systemApiKeys.gemini
-          .split(/[\n,]+/)
+          .split(/[\n,;\s]+/)
           .map((k: string) => k.trim())
           .filter((k: string) => k.length > 5 && k !== 'MY_GEMINI_API_KEY')
           .forEach((k: string) => keysSet.add(k));
@@ -89,7 +283,7 @@ export const getGeminiKeys = (): string[] => {
   for (const raw of envKeys) {
     if (typeof raw === 'string' && raw) {
       raw
-        .split(/[\n,]+/)
+        .split(/[\n,;\s]+/)
         .map(k => k.trim())
         .filter(k => k.length > 5 && k !== 'undefined' && k !== 'null' && k !== 'MY_GEMINI_API_KEY')
         .forEach(k => keysSet.add(k));
@@ -100,7 +294,7 @@ export const getGeminiKeys = (): string[] => {
 };
 
 // Helper to get key for other providers
-export const getProviderKey = (provider: 'deepseek' | 'groq' | 'openai' | 'openrouter'): string => {
+export const getProviderKey = (provider: 'openrouter'): string => {
   // 1. Check custom keys from user settings
   try {
     const saved = localStorage.getItem('celestial-settings');
@@ -112,16 +306,7 @@ export const getProviderKey = (provider: 'deepseek' | 'groq' | 'openai' | 'openr
   } catch (e) {}
 
   // 2. Check environment variables
-  if (provider === 'deepseek') {
-    const k = (process.env as any).DEEPSEEK_API_KEY || (import.meta as any).env?.VITE_DEEPSEEK_API_KEY;
-    if (typeof k === 'string' && k.length > 5 && k !== 'undefined') return k.trim();
-  } else if (provider === 'groq') {
-    const k = (process.env as any).GROQ_API_KEY || (import.meta as any).env?.VITE_GROQ_API_KEY;
-    if (typeof k === 'string' && k.length > 5 && k !== 'undefined') return k.trim();
-  } else if (provider === 'openai') {
-    const k = (process.env as any).OPENAI_API_KEY || (import.meta as any).env?.VITE_OPENAI_API_KEY;
-    if (typeof k === 'string' && k.length > 5 && k !== 'undefined') return k.trim();
-  } else if (provider === 'openrouter') {
+  if (provider === 'openrouter') {
     const k = (process.env as any).OPENROUTER_API_KEY || (import.meta as any).env?.VITE_OPENROUTER_API_KEY;
     if (typeof k === 'string' && k.length > 5 && k !== 'undefined') return k.trim();
   }
@@ -143,22 +328,16 @@ export const getProviderKey = (provider: 'deepseek' | 'groq' | 'openai' | 'openr
 // Information helper for UI
 export const getProviderStatus = () => {
   const geminiKeys = getGeminiKeys();
-  const deepseek = getProviderKey('deepseek');
-  const groq = getProviderKey('groq');
-  const openai = getProviderKey('openai');
   const openrouter = getProviderKey('openrouter');
 
   return {
     gemini: { configured: geminiKeys.length > 0, count: geminiKeys.length },
-    deepseek: { configured: !!deepseek },
-    groq: { configured: !!groq },
-    openai: { configured: !!openai },
     openrouter: { configured: !!openrouter },
   };
 };
 
-// Generic OpenAI-compatible caller (DeepSeek, Groq, OpenAI, OpenRouter)
-const callOpenAICompatible = async (
+// OpenRouter API caller
+const callOpenRouterApi = async (
   endpoint: string,
   apiKey: string,
   model: string,
@@ -208,30 +387,13 @@ const callOpenAICompatible = async (
 
 // Ranked descending model hierarchies for automatic cascading fallback (Fallback base)
 const GEMINI_DEFAULT_TIERS = [
-  "gemini-3.8-flash",       // Bậc 1: Flagship mới nhất, phân tích biểu tượng sâu và nhanh
-  "gemini-3.1-pro-preview", // Bậc 2: Bậc thầy suy luận Pro đa tầng
-  "gemini-2.5-pro",         // Bậc 3: Pro ổn định cao cấp
-  "gemini-2.5-flash",       // Bậc 4: Flash tốc độ cao cân bằng
-  "gemini-3.1-flash-lite",  // Bậc 5: Flash-Lite siêu nhẹ tiết kiệm quota
-  "gemini-flash-latest",    // Bậc 6: Mặc định dự phòng chung
-];
-
-const GROQ_DEFAULT_TIERS = [
-  'llama-3.3-70b-versatile',
-  'deepseek-r1-distill-llama-70b',
-  'qwen-2.5-32b',
-  'llama-3.1-8b-instant',
-];
-
-const DEEPSEEK_DEFAULT_TIERS = [
-  'deepseek-chat',
-  'deepseek-reasoner',
-];
-
-const OPENAI_DEFAULT_TIERS = [
-  'gpt-4o',
-  'gpt-4o-mini',
-  'o3-mini',
+  "gemini-2.5-flash",       // Bậc 1: Flagship mới nhất, phân tích biểu tượng sâu và nhanh
+  "gemini-2.5-pro",         // Bậc 2: Bậc thầy suy luận Pro đa tầng
+  "gemini-2.0-flash",       // Bậc 3: Tốc độ cao
+  "gemini-2.0-flash-lite",  // Bậc 4: Tiết kiệm quota
+  "gemini-1.5-flash",       // Bậc 5: Ổn định
+  "gemini-1.5-pro",         // Bậc 6: Pro 1.5
+  "gemini-flash-latest",    // Bậc 7: Mặc định dự phòng chung
 ];
 
 // In-memory model discovery cache with 30-minute expiration
@@ -315,96 +477,6 @@ export const fetchDynamicGeminiModels = async (apiKey?: string): Promise<string[
   return GEMINI_DEFAULT_TIERS;
 };
 
-// Dynamic model fetcher from Groq API
-export const fetchDynamicGroqModels = async (apiKey?: string): Promise<string[]> => {
-  const key = apiKey || getProviderKey('groq');
-  if (!key) return GROQ_DEFAULT_TIERS;
-
-  const cacheKey = `groq_${key.slice(0, 8)}`;
-  const cached = modelCache[cacheKey];
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return cached.models;
-  }
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch('https://api.groq.com/openai/v1/models', {
-      headers: { Authorization: `Bearer ${key}` },
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data.data)) {
-        const fetched = data.data
-          .map((m: any) => m.id)
-          .filter((id: string) => {
-            const lower = id.toLowerCase();
-            return (
-              (lower.includes('llama') || lower.includes('deepseek') || lower.includes('qwen') || lower.includes('gemma') || lower.includes('mixtral')) &&
-              !lower.includes('whisper') &&
-              !lower.includes('guard') &&
-              !lower.includes('embedding')
-            );
-          });
-
-        if (fetched.length > 0) {
-          const combined = Array.from(new Set([...fetched, ...GROQ_DEFAULT_TIERS]));
-          modelCache[cacheKey] = { models: combined, timestamp: Date.now() };
-          console.info(`[Auto-Fetch] Đã tự động cập nhật ${combined.length} model mới từ Groq:`, combined);
-          return combined;
-        }
-      }
-    }
-  } catch (e) {}
-
-  return GROQ_DEFAULT_TIERS;
-};
-
-// Dynamic model fetcher from OpenAI API
-export const fetchDynamicOpenAIModels = async (apiKey?: string): Promise<string[]> => {
-  const key = apiKey || getProviderKey('openai');
-  if (!key) return OPENAI_DEFAULT_TIERS;
-
-  const cacheKey = `openai_${key.slice(0, 8)}`;
-  const cached = modelCache[cacheKey];
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return cached.models;
-  }
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch('https://api.openai.com/v1/models', {
-      headers: { Authorization: `Bearer ${key}` },
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data.data)) {
-        const fetched = data.data
-          .map((m: any) => m.id)
-          .filter((id: string) => {
-            const lower = id.toLowerCase();
-            return (lower.startsWith('gpt-4') || lower.startsWith('o1') || lower.startsWith('o3') || lower.startsWith('gpt-5') || lower.startsWith('chatgpt')) && !lower.includes('audio') && !lower.includes('realtime') && !lower.includes('embed');
-          });
-
-        if (fetched.length > 0) {
-          const combined = Array.from(new Set([...fetched, ...OPENAI_DEFAULT_TIERS]));
-          modelCache[cacheKey] = { models: combined, timestamp: Date.now() };
-          return combined;
-        }
-      }
-    }
-  } catch (e) {}
-
-  return OPENAI_DEFAULT_TIERS;
-};
-
 // Gemini generation with dynamic auto-fetched descending smart model tiers + multi-key rotation
 const callGeminiWithRotation = async (prompt: string, requestedModel?: string): Promise<string> => {
   const keys = getGeminiKeys();
@@ -412,12 +484,18 @@ const callGeminiWithRotation = async (prompt: string, requestedModel?: string): 
     throw new Error("MISSING_GEMINI_KEY");
   }
 
+  // Sanitize invalid or old model names
+  let cleanRequestedModel = requestedModel;
+  if (cleanRequestedModel && (cleanRequestedModel.includes('3.8') || cleanRequestedModel.includes('3.1') || cleanRequestedModel === 'undefined' || cleanRequestedModel === 'null')) {
+    cleanRequestedModel = 'gemini-2.5-flash';
+  }
+
   // Auto-fetch latest dynamic models from Google API (using first key) or fallback gracefully
   const dynamicModels = await fetchDynamicGeminiModels(keys[0]);
 
   // Model hierarchy: If a specific model was requested and is not 'auto', place it first, followed by descending tiers
-  const models = requestedModel && requestedModel !== 'auto'
-    ? [requestedModel, ...dynamicModels.filter(m => m !== requestedModel)]
+  const models = cleanRequestedModel && cleanRequestedModel !== 'auto'
+    ? [cleanRequestedModel, ...dynamicModels.filter(m => m !== cleanRequestedModel)]
     : dynamicModels;
 
   let lastError: any = null;
@@ -451,6 +529,11 @@ const callGeminiWithRotation = async (prompt: string, requestedModel?: string): 
         // If rate limited or quota exceeded, try next key
         if (msg.includes('429') || msg.includes('quota') || msg.includes('resource exhausted') || msg.includes('limit')) {
           quotaErrorCount++;
+        }
+
+        // If model is not found or invalid API model name, skip trying other keys for this model
+        if (msg.includes('404') || msg.includes('not found') || msg.includes('not_found') || msg.includes('is not supported')) {
+          break;
         }
       }
     }
@@ -486,7 +569,7 @@ export const dispatchAiPrompt = async (
   let globalModel: string = 'auto';
   let globalAllowFallback = true;
   let customSystemPrompt = '';
-  let aiProviderPriority: AIProvider[] = ['groq', 'gemini', 'deepseek', 'openai', 'openrouter'];
+  let aiProviderPriority: AIProvider[] = ['gemini', 'openrouter'];
   let enabledAiProviders: Partial<Record<AIProvider, boolean>> = {};
 
   try {
@@ -558,9 +641,6 @@ export const dispatchAiPrompt = async (
   const providerNames: Record<AIProvider, string> = {
     auto: 'Tự động thông minh',
     gemini: 'Google Gemini',
-    groq: 'Groq Cloud',
-    deepseek: 'DeepSeek',
-    openai: 'OpenAI GPT',
     openrouter: 'OpenRouter',
   };
 
@@ -574,85 +654,11 @@ export const dispatchAiPrompt = async (
       return await callGeminiWithRotation(finalPrompt, modelToUse);
     }
 
-    if (provider === 'groq') {
-      const key = getProviderKey('groq');
-      if (!key) throw new Error("Chưa cấu hình Groq API Key");
-      const dynamicGroq = await fetchDynamicGroqModels(key);
-      const models = (modelToUse && modelToUse !== 'auto')
-        ? [modelToUse, ...dynamicGroq.filter(m => m !== modelToUse)]
-        : dynamicGroq;
-      let lastErr: any = null;
-      for (const m of models) {
-        try {
-          const res = await callOpenAICompatible(
-            'https://api.groq.com/openai/v1/chat/completions',
-            key,
-            m,
-            finalPrompt
-          );
-          return `${res}\n\n*⚡ Diễn giải bởi Groq (${m})*`;
-        } catch (err: any) {
-          lastErr = err;
-          console.warn(`[Groq Fallback] Model ${m} gặp lỗi:`, err?.message || err);
-        }
-      }
-      throw lastErr || new Error("Tất cả mô hình Groq đều không phản hồi");
-    }
-
-    if (provider === 'deepseek') {
-      const key = getProviderKey('deepseek');
-      if (!key) throw new Error("Chưa cấu hình DeepSeek API Key");
-      const models = (modelToUse && modelToUse !== 'auto')
-        ? [modelToUse, ...DEEPSEEK_DEFAULT_TIERS.filter(m => m !== modelToUse)]
-        : DEEPSEEK_DEFAULT_TIERS;
-      let lastErr: any = null;
-      for (const m of models) {
-        try {
-          const res = await callOpenAICompatible(
-            'https://api.deepseek.com/chat/completions',
-            key,
-            m,
-            finalPrompt
-          );
-          return `${res}\n\n*✨ Diễn giải bởi DeepSeek (${m})*`;
-        } catch (err: any) {
-          lastErr = err;
-          console.warn(`[DeepSeek Fallback] Model ${m} gặp lỗi:`, err?.message || err);
-        }
-      }
-      throw lastErr || new Error("Tất cả mô hình DeepSeek đều không phản hồi");
-    }
-
-    if (provider === 'openai') {
-      const key = getProviderKey('openai');
-      if (!key) throw new Error("Chưa cấu hình OpenAI API Key");
-      const dynamicOpenAI = await fetchDynamicOpenAIModels(key);
-      const models = (modelToUse && modelToUse !== 'auto')
-        ? [modelToUse, ...dynamicOpenAI.filter(m => m !== modelToUse)]
-        : dynamicOpenAI;
-      let lastErr: any = null;
-      for (const m of models) {
-        try {
-          const res = await callOpenAICompatible(
-            'https://api.openai.com/v1/chat/completions',
-            key,
-            m,
-            finalPrompt
-          );
-          return `${res}\n\n*🌟 Diễn giải bởi OpenAI (${m})*`;
-        } catch (err: any) {
-          lastErr = err;
-          console.warn(`[OpenAI Fallback] Model ${m} gặp lỗi:`, err?.message || err);
-        }
-      }
-      throw lastErr || new Error("Tất cả mô hình OpenAI đều không phản hồi");
-    }
-
     if (provider === 'openrouter') {
       const key = getProviderKey('openrouter');
       if (!key) throw new Error("Chưa cấu hình OpenRouter API Key");
       const model = (modelToUse && modelToUse !== 'auto') ? modelToUse : 'openrouter/free';
-      const res = await callOpenAICompatible(
+      const res = await callOpenRouterApi(
         'https://openrouter.ai/api/v1/chat/completions',
         key,
         model,
@@ -714,14 +720,13 @@ Hệ thống đang cấu hình **chỉ sử dụng ${providerNames[targetProvide
   }
 
   const status = getProviderStatus();
-  const configuredAny = status.gemini.configured || status.deepseek.configured || status.groq.configured || status.openai.configured || status.openrouter.configured;
+  const configuredAny = status.gemini.configured || status.openrouter.configured;
 
   if (!configuredAny) {
     return `### ⚠️ Chưa tìm thấy khóa API
 Ứng dụng cần ít nhất một khóa API để kết nối trí tuệ nhân tạo:
 1. **Google Gemini (Miễn phí):** Lấy tại [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
-2. **Groq (Miễn phí & Cực nhanh):** Lấy tại [console.groq.com](https://console.groq.com).
-3. **DeepSeek / OpenAI / OpenRouter:** Bạn có thể nhập trực tiếp tại biểu tượng **⚙️ Cài đặt** ở góc trên màn hình.`;
+2. **OpenRouter Free:** Bạn có thể nhập tại biểu tượng **⚙️ Cài đặt** ở góc trên màn hình.`;
   }
 
   return `### ⚠️ Không thể kết nối với các dịch vụ AI
@@ -896,10 +901,22 @@ export const interpretTuViReading = async (
   customQuestion?: string
 ): Promise<string> => {
   const { chuSo, cungList } = laSoData;
-  const jsonString = JSON.stringify(laSoData, null, 2);
+
+  const cungSummaryText = (cungList || []).map(c => {
+    const chinh = (c.chinhTinh || []).map(s => `${s.name}${s.status ? ` (${s.status})` : ''}${s.tuHoa ? ` [${s.tuHoa}]` : ''}`).join(', ') || 'Vô chính diệu';
+    const cat = (c.catTinhList || []).map(s => s.name).join(', ') || 'Không';
+    const hung = (c.hungTinhList || []).map(s => s.name).join(', ') || 'Không';
+    const tuanTriet = [c.isTuan ? 'Tuần' : '', c.isTriet ? 'Triệt' : ''].filter(Boolean).join('/');
+    return `• CUNG ${c.cungChuc.toUpperCase()} (Địa Chi: ${c.chi}, Can: ${c.can}${c.isThan ? ' | CƯ THÂN' : ''}):
+  - Chính Tinh: ${chinh}
+  - Cát Tinh: ${cat}
+  - Sát Tinh / Hung Tinh: ${hung}
+  - Tràng Sinh: ${c.vongTrangSinh || 'N/A'} | Tuần/Triệt: ${tuanTriet || 'Không'}
+  - Đại Hạn: ${c.daiHan || 0}T | Tiểu Hạn: ${c.tieuHan || 'N/A'}`;
+  }).join('\n\n');
 
   const prompt = `
-Bạn là một bậc thầy chuyên gia Tử Vi Đẩu Số truyền thống kết hợp tư duy tâm lý học hiện đại. Nhiệm vụ của bạn là tiếp nhận dữ liệu JSON lá số Tử Vi (gồm 12 cung, các tinh hệ, vòng tràng sinh, tứ hóa, tuần triệt, thân cư, cân lượng) và yêu cầu của đương số để đưa ra bài luận giải sâu sắc, chính xác, mang tính định hướng xây dựng cao nhất.
+Bạn là một bậc thầy chuyên gia Tử Vi Đẩu Số truyền thống kết hợp tư duy tâm lý học hiện đại. Nhiệm vụ của bạn là tiếp nhận dữ liệu lá số Tử Vi (gồm 12 cung, các tinh hệ, vòng tràng sinh, tứ hóa, tuần triệt, thân cư, cân lượng) và yêu cầu của đương số để đưa ra bài luận giải sâu sắc, chính xác, mang tính định hướng xây dựng cao nhất.
 
 === THÔNG TIN ĐƯƠNG SỐ & LÁ SỐ TỬ VI ===
 - Đương số: ${chuSo.fullName} (${chuSo.gender}, ${chuSo.amDuongNamNu})
@@ -917,10 +934,8 @@ Bạn là một bậc thầy chuyên gia Tử Vi Đẩu Số truyền thống k�
 - Các nội dung trọng tâm muốn xem: ${chuSo.selectedTopics?.join(', ') || chuSo.selectedFocus || 'Tổng quan vận mệnh'}
 ${customQuestion ? `- Câu hỏi / Thắc mắc cụ thể của đương số: "${customQuestion}"` : '- Câu hỏi cụ thể: Không có câu hỏi riêng, yêu cầu luận giải toàn diện theo các nội dung đã chọn.'}
 
-=== DỮ LIỆU CẤU TRÚC JSON LÁ SỐ (12 CUNG & TINH HỆ) ===
-\`\`\`json
-${jsonString}
-\`\`\`
+=== CẤU TRÚC LÁ SỐ 12 CUNG & TINH HỆ ===
+${cungSummaryText}
 
 === NGUYÊN TẮC LUẬN GIẢI QUAN TRỌNG ===
 1. Tính logic và thuật toán:

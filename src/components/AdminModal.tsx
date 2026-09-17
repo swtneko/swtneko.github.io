@@ -20,7 +20,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getProviderStatus } from '../services/geminiService';
+import { getProviderStatus, fetchOpenRouterFreeModels, getCachedOpenRouterFreeModels, OpenRouterFreeModel } from '../services/geminiService';
 import firebaseConfigJson from '../../firebase-applet-config.json';
 import { AIProvider, DeckType, TarotDeckStyle } from '../types';
 import { LiquidGlassCard } from './LiquidGlassCard';
@@ -48,12 +48,31 @@ export const AdminModal: React.FC = () => {
 
   // Form states for System Settings
   const [geminiKey, setGeminiKey] = useState(systemSettings.systemApiKeys?.gemini || '');
-  const [groqKey, setGroqKey] = useState(systemSettings.systemApiKeys?.groq || '');
-  const [deepseekKey, setDeepseekKey] = useState(systemSettings.systemApiKeys?.deepseek || '');
-  const [openaiKey, setOpenaiKey] = useState(systemSettings.systemApiKeys?.openai || '');
   const [openrouterKey, setOpenrouterKey] = useState(systemSettings.systemApiKeys?.openrouter || '');
-  const [globalProvider, setGlobalProvider] = useState<AIProvider>(systemSettings.globalAiProvider || 'auto');
+  const [globalProvider, setGlobalProvider] = useState<AIProvider>(systemSettings.globalAiProvider || 'openrouter');
+  const [globalModel, setGlobalModel] = useState<string>(systemSettings.globalAiModel || 'openrouter/free');
   const [systemPrompt, setSystemPrompt] = useState(systemSettings.customSystemPrompt || '');
+
+  // OpenRouter Free Models state
+  const [openrouterFreeModels, setOpenrouterFreeModels] = useState<OpenRouterFreeModel[]>(() => getCachedOpenRouterFreeModels());
+  const [isFetchingOpenRouter, setIsFetchingOpenRouter] = useState(false);
+  const [fetchMsg, setFetchMsg] = useState<string | null>(null);
+
+  const handleFetchOpenRouter = async () => {
+    setIsFetchingOpenRouter(true);
+    setFetchMsg(null);
+    try {
+      const models = await fetchOpenRouterFreeModels(openrouterKey.trim());
+      setOpenrouterFreeModels(models);
+      setFetchMsg(`Đã cập nhật ${models.length} model Free từ OpenRouter!`);
+      setTimeout(() => setFetchMsg(null), 4000);
+    } catch (err: any) {
+      setFetchMsg('Không thể tải từ OpenRouter. Vui lòng thử lại sau.');
+      setTimeout(() => setFetchMsg(null), 4000);
+    } finally {
+      setIsFetchingOpenRouter(false);
+    }
+  };
 
   const [announcement, setAnnouncement] = useState(systemSettings.announcement || '');
   const [announcementActive, setAnnouncementActive] = useState(systemSettings.announcementActive || false);
@@ -66,9 +85,6 @@ export const AdminModal: React.FC = () => {
     systemSettings.enabledAiProviders || {
       auto: true,
       gemini: true,
-      groq: true,
-      deepseek: true,
-      openai: true,
       openrouter: true,
     }
   );
@@ -91,11 +107,9 @@ export const AdminModal: React.FC = () => {
   // Sync state when systemSettings updates from cloud
   useEffect(() => {
     setGeminiKey(systemSettings.systemApiKeys?.gemini || '');
-    setGroqKey(systemSettings.systemApiKeys?.groq || '');
-    setDeepseekKey(systemSettings.systemApiKeys?.deepseek || '');
-    setOpenaiKey(systemSettings.systemApiKeys?.openai || '');
     setOpenrouterKey(systemSettings.systemApiKeys?.openrouter || '');
-    setGlobalProvider(systemSettings.globalAiProvider || 'auto');
+    setGlobalProvider(systemSettings.globalAiProvider || 'openrouter');
+    setGlobalModel(systemSettings.globalAiModel || 'openrouter/free');
     setSystemPrompt(systemSettings.customSystemPrompt || '');
     setAnnouncement(systemSettings.announcement || '');
     setAnnouncementActive(systemSettings.announcementActive || false);
@@ -107,9 +121,6 @@ export const AdminModal: React.FC = () => {
       systemSettings.enabledAiProviders || {
         auto: true,
         gemini: true,
-        groq: true,
-        deepseek: true,
-        openai: true,
         openrouter: true,
       }
     );
@@ -136,12 +147,10 @@ export const AdminModal: React.FC = () => {
       await updateSystemSettings({
         systemApiKeys: {
           gemini: geminiKey.trim(),
-          groq: groqKey.trim(),
-          deepseek: deepseekKey.trim(),
-          openai: openaiKey.trim(),
           openrouter: openrouterKey.trim(),
         },
         globalAiProvider: globalProvider,
+        globalAiModel: globalModel,
         customSystemPrompt: systemPrompt.trim(),
         enabledAiProviders,
         enabledDeckTypes,
@@ -377,12 +386,9 @@ VITE_FIREBASE_APP_ID=`;
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {[
-                    { id: 'auto', label: 'Tự động (Khuyên dùng)', sub: 'Xoay tua key & fallback khi lỗi' },
-                    { id: 'gemini', label: 'Google Gemini', sub: 'Gemini 2.5 Flash / 3 Flash' },
-                    { id: 'groq', label: 'Groq Cloud', sub: 'Llama 3.3 70B (Siêu tốc độ)' },
-                    { id: 'deepseek', label: 'DeepSeek', sub: 'deepseek-chat (Chi phí siêu rẻ)' },
-                    { id: 'openai', label: 'OpenAI GPT', sub: 'GPT-4o mini' },
-                    { id: 'openrouter', label: 'OpenRouter Free', sub: 'openrouter/free (Router AI miễn phí 100%)' },
+                    { id: 'auto', label: 'Tự động', sub: 'Xoay tua key & fallback khi lỗi' },
+                    { id: 'gemini', label: 'Google Gemini', sub: 'Gemini 2.5 Flash / Pro' },
+                    { id: 'openrouter', label: 'OpenRouter Free (Mặc định)', sub: 'openrouter/free (Router AI miễn phí 100%)' },
                   ].map((p) => (
                     <button
                       key={p.id}
@@ -401,6 +407,49 @@ VITE_FIREBASE_APP_ID=`;
                 </div>
               </div>
 
+              {/* OpenRouter Model Selection (Dynamic Free Models) */}
+              <div className="p-4 rounded-2xl bg-purple-950/20 border border-purple-500/30 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4 text-purple-400" />
+                    <span className="font-semibold text-xs text-white">Mô hình OpenRouter Free Cho Toàn Bộ Người Dùng</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleFetchOpenRouter}
+                    disabled={isFetchingOpenRouter}
+                    className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[11px] flex items-center gap-1.5 transition-all self-start sm:self-auto cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isFetchingOpenRouter ? 'animate-spin' : ''}`} />
+                    <span>{isFetchingOpenRouter ? 'Đang fetch...' : 'Fetch Model Free Mới Nhất'}</span>
+                  </button>
+                </div>
+
+                {fetchMsg && (
+                  <div className="text-[11px] text-emerald-400 font-medium animate-pulse">
+                    {fetchMsg}
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <select
+                    value={globalModel}
+                    onChange={(e) => setGlobalModel(e.target.value)}
+                    className="w-full text-xs p-2.5 rounded-xl bg-black/60 border border-white/10 text-white focus:outline-none focus:border-purple-500"
+                  >
+                    {openrouterFreeModels.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} ({m.tag || 'Free'})
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex items-center justify-between text-[10px] text-gray-400">
+                    <span>Đang chọn: <strong className="text-purple-300 font-mono">{globalModel || 'openrouter/free'}</strong></span>
+                    <span>{openrouterFreeModels.length} mô hình free khả dụng</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Bật / Tắt Nhà Cung Cấp AI Khả Dụng */}
               <div className="p-4 rounded-2xl bg-white/5 border border-purple-500/20 space-y-3">
                 <div className="flex items-center justify-between">
@@ -413,9 +462,6 @@ VITE_FIREBASE_APP_ID=`;
                   {[
                     { id: 'auto' as AIProvider, label: 'Tự động' },
                     { id: 'gemini' as AIProvider, label: 'Gemini' },
-                    { id: 'groq' as AIProvider, label: 'Groq' },
-                    { id: 'deepseek' as AIProvider, label: 'DeepSeek' },
-                    { id: 'openai' as AIProvider, label: 'OpenAI' },
                     { id: 'openrouter' as AIProvider, label: 'OpenRouter' },
                   ].map((p) => {
                     const isEnabled = enabledAiProviders[p.id] ?? true;
@@ -475,81 +521,6 @@ VITE_FIREBASE_APP_ID=`;
                   <p className="text-[10px] text-gray-400">
                     Mẹo: Bạn có thể dán 2-3 keys cách nhau bằng dấu phẩy để phòng khi một key bị hết hạn mức (rate limit).
                   </p>
-                </div>
-
-                {/* Groq */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-white flex items-center">
-                      <Cpu className="w-3.5 h-3.5 mr-1.5 text-orange-400" />
-                      Groq API Key (Miễn phí & Cực nhanh):
-                    </span>
-                    <a
-                      href="https://console.groq.com/keys"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-orange-400 hover:underline flex items-center text-[11px]"
-                    >
-                      Lấy key miễn phí <ExternalLink className="w-2.5 h-2.5 ml-1" />
-                    </a>
-                  </div>
-                  <input
-                    type="password"
-                    value={groqKey}
-                    onChange={(e) => setGroqKey(e.target.value)}
-                    placeholder="gsk_..."
-                    className="w-full text-xs p-3 rounded-xl border border-white/10 bg-black/40 focus:outline-none focus:border-purple-500 font-mono text-white"
-                  />
-                </div>
-
-                {/* DeepSeek */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-white flex items-center">
-                      <Cpu className="w-3.5 h-3.5 mr-1.5 text-cyan-400" />
-                      DeepSeek API Key:
-                    </span>
-                    <a
-                      href="https://platform.deepseek.com/"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-cyan-400 hover:underline flex items-center text-[11px]"
-                    >
-                      Lấy key <ExternalLink className="w-2.5 h-2.5 ml-1" />
-                    </a>
-                  </div>
-                  <input
-                    type="password"
-                    value={deepseekKey}
-                    onChange={(e) => setDeepseekKey(e.target.value)}
-                    placeholder="sk-..."
-                    className="w-full text-xs p-3 rounded-xl border border-white/10 bg-black/40 focus:outline-none focus:border-purple-500 font-mono text-white"
-                  />
-                </div>
-
-                {/* OpenAI */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-white flex items-center">
-                      <Cpu className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
-                      OpenAI API Key:
-                    </span>
-                    <a
-                      href="https://platform.openai.com/api-keys"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-emerald-400 hover:underline flex items-center text-[11px]"
-                    >
-                      Lấy key <ExternalLink className="w-2.5 h-2.5 ml-1" />
-                    </a>
-                  </div>
-                  <input
-                    type="password"
-                    value={openaiKey}
-                    onChange={(e) => setOpenaiKey(e.target.value)}
-                    placeholder="sk-proj-..."
-                    className="w-full text-xs p-3 rounded-xl border border-white/10 bg-black/40 focus:outline-none focus:border-purple-500 font-mono text-white"
-                  />
                 </div>
 
                 {/* OpenRouter */}

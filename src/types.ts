@@ -69,13 +69,10 @@ export interface UserInfo {
   request?: string;
 }
 
-export type AIProvider = 'auto' | 'gemini' | 'deepseek' | 'groq' | 'openai' | 'openrouter';
+export type AIProvider = 'auto' | 'gemini' | 'openrouter';
 
 export interface CustomApiKeys {
   gemini?: string;
-  deepseek?: string;
-  groq?: string;
-  openai?: string;
   openrouter?: string;
 }
 

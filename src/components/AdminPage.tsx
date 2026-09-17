@@ -34,10 +34,11 @@ import {
   Search,
   UserCheck,
   AlertCircle,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { AIProvider, DeckType, TarotDeckStyle, AuthUser } from '../types';
-import { PROVIDER_MODELS } from '../services/geminiService';
+import { PROVIDER_MODELS, fetchOpenRouterFreeModels, getCachedOpenRouterFreeModels, OpenRouterFreeModel } from '../services/geminiService';
 import { getAllUsers, deleteUserAccount, updateUserAIModel } from '../services/firebase';
 import { AnnouncementBanner } from './AnnouncementBanner';
 import { LiquidGlassCard } from './LiquidGlassCard';
@@ -53,6 +54,7 @@ interface UserRowProps {
   isDeleting: boolean;
   onUpdateModel: (provider: string, model: string) => Promise<void>;
   updateSuccess: boolean;
+  openrouterModels: OpenRouterFreeModel[];
 }
 
 const isSuperAdminEmail = (email: string | null): boolean => {
@@ -71,6 +73,7 @@ const UserRow: React.FC<UserRowProps> = ({
   isDeleting,
   onUpdateModel,
   updateSuccess,
+  openrouterModels,
 }) => {
   const [selectedProvider, setSelectedProvider] = useState(user.assignedProvider || 'openrouter');
   const [selectedModel, setSelectedModel] = useState(user.assignedModel || 'auto');
@@ -80,35 +83,17 @@ const UserRow: React.FC<UserRowProps> = ({
     switch (provider) {
       case 'openrouter':
         return [
-          { id: 'auto', label: 'Tự động chọn model tốt nhất' },
-          { id: 'meta-llama/llama-3.3-70b-instruct', label: 'Llama 3.3 70B' },
-          { id: 'deepseek/deepseek-chat', label: 'DeepSeek V3 (Chat)' },
-          { id: 'deepseek/deepseek-r1', label: 'DeepSeek R1 (Reasoner)' },
-          { id: 'qwen/qwen-2.5-72b-instruct', label: 'Qwen 2.5 72B' },
+          { id: 'auto', label: 'Tự động (Theo Admin hoặc openrouter/free)' },
+          ...openrouterModels.map(m => ({
+            id: m.id,
+            label: `${m.name} (${m.tag || 'Free'})`,
+          })),
         ];
       case 'gemini':
         return [
           { id: 'auto', label: 'Mặc định (Gemini 2.5 Flash)' },
           { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
           { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (Tư duy)' },
-        ];
-      case 'groq':
-        return [
-          { id: 'auto', label: 'Mặc định (Llama 3.3)' },
-          { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B' },
-          { id: 'mixtral-8x7b-32768', label: 'Mixtral 8x7b' },
-        ];
-      case 'deepseek':
-        return [
-          { id: 'auto', label: 'Mặc định (DeepSeek Chat)' },
-          { id: 'deepseek-chat', label: 'DeepSeek Chat (V3)' },
-          { id: 'deepseek-reasoner', label: 'DeepSeek Reasoner (R1)' },
-        ];
-      case 'openai':
-        return [
-          { id: 'auto', label: 'Mặc định (GPT-4o Mini)' },
-          { id: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-          { id: 'gpt-4o', label: 'GPT-4o Pro' },
         ];
       default:
         return [{ id: 'auto', label: 'Tự động' }];
@@ -150,7 +135,7 @@ const UserRow: React.FC<UserRowProps> = ({
       </td>
 
       <td className="p-4">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-md">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-lg">
           <select
             value={selectedProvider}
             onChange={(e) => {
@@ -158,23 +143,35 @@ const UserRow: React.FC<UserRowProps> = ({
               setSelectedProvider(newProv);
               setSelectedModel('auto');
             }}
-            className="text-[11px] p-2 rounded-xl bg-black/60 border border-white/10 text-white focus:outline-none focus:border-purple-500"
+            className="text-[11px] p-2 rounded-xl bg-black/60 border border-white/10 text-white focus:outline-none focus:border-purple-500 shrink-0"
           >
-            <option value="auto">Tự động xoay tua & hạ cấp (Mặc định)</option>
-            <option value="gemini">Google Gemini (Tự động bậc thang)</option>
-            <option value="openrouter">OpenRouter Free</option>
-            <option value="groq">Groq Cloud</option>
-            <option value="deepseek">DeepSeek API</option>
-            <option value="openai">OpenAI GPT</option>
+            <option value="auto">Tự động (Theo Admin)</option>
+            <option value="openrouter">OpenRouter Free (Mặc định)</option>
+            <option value="gemini">Google Gemini</option>
           </select>
 
-          {selectedProvider !== user.assignedProvider && (
+          {selectedProvider !== 'auto' && (
+            <select
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              className="text-[11px] p-2 rounded-xl bg-black/60 border border-white/10 text-white focus:outline-none focus:border-purple-500 max-w-[220px] truncate"
+              title={selectedModel}
+            >
+              {getModelsForProvider(selectedProvider).map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {(selectedProvider !== (user.assignedProvider || 'auto') || selectedModel !== (user.assignedModel || 'auto')) && (
             <button
-              onClick={() => onUpdateModel(selectedProvider, 'auto')}
+              onClick={() => onUpdateModel(selectedProvider, selectedModel)}
               className="px-2.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] transition-all flex items-center gap-1 cursor-pointer shrink-0"
             >
               <Check className="w-3.5 h-3.5" />
-              <span>Cập nhật</span>
+              <span>Lưu</span>
             </button>
           )}
 
@@ -281,26 +278,65 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
 
   // Show/hide API key toggles
   const [showGemini, setShowGemini] = useState(false);
-  const [showGroq, setShowGroq] = useState(false);
-  const [showDeepseek, setShowDeepseek] = useState(false);
-  const [showOpenai, setShowOpenai] = useState(false);
   const [showOpenrouter, setShowOpenrouter] = useState(false);
 
   // Form states for System Settings
   const [geminiKey, setGeminiKey] = useState(systemSettings.systemApiKeys?.gemini || '');
-  const [groqKey, setGroqKey] = useState(systemSettings.systemApiKeys?.groq || '');
-  const [deepseekKey, setDeepseekKey] = useState(systemSettings.systemApiKeys?.deepseek || '');
-  const [openaiKey, setOpenaiKey] = useState(systemSettings.systemApiKeys?.openai || '');
   const [openrouterKey, setOpenrouterKey] = useState(systemSettings.systemApiKeys?.openrouter || '');
-  const [globalProvider, setGlobalProvider] = useState<AIProvider>(systemSettings.globalAiProvider || 'auto');
-  const [globalModel, setGlobalModel] = useState<string>(systemSettings.globalAiModel || 'auto');
+  const [globalProvider, setGlobalProvider] = useState<AIProvider>(systemSettings.globalAiProvider || 'openrouter');
+  const [globalModel, setGlobalModel] = useState<string>(systemSettings.globalAiModel || 'openrouter/free');
   const [allowFallback, setAllowFallback] = useState<boolean>(systemSettings.allowFallback ?? true);
   const [systemPrompt, setSystemPrompt] = useState(systemSettings.customSystemPrompt || '');
   const [aiProviderPriority, setAiProviderPriority] = useState<AIProvider[]>(
     systemSettings.aiProviderPriority && systemSettings.aiProviderPriority.length > 0
-      ? systemSettings.aiProviderPriority
-      : ['groq', 'gemini', 'deepseek', 'openai', 'openrouter']
+      ? systemSettings.aiProviderPriority.filter(p => p === 'gemini' || p === 'openrouter')
+      : ['openrouter', 'gemini']
   );
+
+  // OpenRouter Free Models state & fetching
+  const [openrouterFreeModels, setOpenrouterFreeModels] = useState<OpenRouterFreeModel[]>(() => {
+    return getCachedOpenRouterFreeModels();
+  });
+  const [isFetchingOpenRouter, setIsFetchingOpenRouter] = useState(false);
+  const [openrouterFetchMsg, setOpenrouterFetchMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [openrouterSearchQuery, setOpenrouterSearchQuery] = useState('');
+  const [openrouterLastUpdated, setOpenrouterLastUpdated] = useState<string | null>(() => {
+    return localStorage.getItem('celestial-openrouter-free-models-updated-at');
+  });
+
+  const handleFetchOpenRouter = async () => {
+    setIsFetchingOpenRouter(true);
+    setOpenrouterFetchMsg(null);
+    try {
+      const models = await fetchOpenRouterFreeModels(openrouterKey.trim());
+      setOpenrouterFreeModels(models);
+      const nowStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setOpenrouterLastUpdated(nowStr);
+      setOpenrouterFetchMsg({
+        type: 'success',
+        text: `Đã cập nhật thành công ${models.length} mô hình Free mới nhất từ OpenRouter API!`,
+      });
+      setTimeout(() => setOpenrouterFetchMsg(null), 6000);
+    } catch (err: any) {
+      setOpenrouterFetchMsg({
+        type: 'error',
+        text: err?.message || 'Không thể tải danh sách model từ OpenRouter. Vui lòng kiểm tra kết nối mạng hoặc thử lại.',
+      });
+    } finally {
+      setIsFetchingOpenRouter(false);
+    }
+  };
+
+  const filteredOpenrouterModels = openrouterFreeModels.filter((m) => {
+    if (!openrouterSearchQuery.trim()) return true;
+    const q = openrouterSearchQuery.toLowerCase().trim();
+    return (
+      m.name.toLowerCase().includes(q) ||
+      m.id.toLowerCase().includes(q) ||
+      (m.desc && m.desc.toLowerCase().includes(q)) ||
+      (m.tag && m.tag.toLowerCase().includes(q))
+    );
+  });
 
   const [announcement, setAnnouncement] = useState(systemSettings.announcement || '');
   const [announcementActive, setAnnouncementActive] = useState(systemSettings.announcementActive || false);
@@ -313,9 +349,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
     systemSettings.enabledAiProviders || {
       auto: true,
       gemini: true,
-      groq: true,
-      deepseek: true,
-      openai: true,
       openrouter: true,
     }
   );
@@ -338,16 +371,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
   // Sync state when systemSettings updates from cloud
   useEffect(() => {
     setGeminiKey(systemSettings.systemApiKeys?.gemini || '');
-    setGroqKey(systemSettings.systemApiKeys?.groq || '');
-    setDeepseekKey(systemSettings.systemApiKeys?.deepseek || '');
-    setOpenaiKey(systemSettings.systemApiKeys?.openai || '');
     setOpenrouterKey(systemSettings.systemApiKeys?.openrouter || '');
-    setGlobalProvider(systemSettings.globalAiProvider || 'auto');
-    setGlobalModel(systemSettings.globalAiModel || 'auto');
+    setGlobalProvider(systemSettings.globalAiProvider || 'openrouter');
+    setGlobalModel(systemSettings.globalAiModel || 'openrouter/free');
     setAiProviderPriority(
       systemSettings.aiProviderPriority && systemSettings.aiProviderPriority.length > 0
-        ? systemSettings.aiProviderPriority
-        : ['groq', 'gemini', 'deepseek', 'openai', 'openrouter']
+        ? systemSettings.aiProviderPriority.filter(p => p === 'gemini' || p === 'openrouter')
+        : ['openrouter', 'gemini']
     );
     setAllowFallback(systemSettings.allowFallback ?? true);
     setSystemPrompt(systemSettings.customSystemPrompt || '');
@@ -361,9 +391,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
       systemSettings.enabledAiProviders || {
         auto: true,
         gemini: true,
-        groq: true,
-        deepseek: true,
-        openai: true,
         openrouter: true,
       }
     );
@@ -403,9 +430,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
         customSystemPrompt: systemPrompt,
         systemApiKeys: {
           gemini: geminiKey.trim(),
-          groq: groqKey.trim(),
-          deepseek: deepseekKey.trim(),
-          openai: openaiKey.trim(),
           openrouter: openrouterKey.trim(),
         },
         enabledAiProviders,
@@ -740,38 +764,20 @@ VITE_FIREBASE_APP_ID=`;
                   {
                     id: 'auto',
                     title: 'Tự động thông minh (Khuyên dùng)',
-                    desc: 'Tự động chọn Gemini, xoay tua các key và fallback sang Groq/DeepSeek khi nghẽn mạng',
+                    desc: 'Tự động chọn Gemini, xoay tua nhiều key và fallback sang OpenRouter Free khi nghẽn mạng',
                     badge: 'Tối ưu nhất',
                   },
                   {
                     id: 'gemini',
                     title: 'Google Gemini',
-                    desc: 'Gemini 2.5 Flash / 3 Flash - Ngôn từ huyền bí sâu sắc, thấu suốt vũ trụ',
+                    desc: 'Gemini 2.5 Flash / Pro - Ngôn từ huyền bí sâu sắc, thấu suốt vũ trụ',
                     badge: 'Chất lượng cao',
                   },
                   {
-                    id: 'groq',
-                    title: 'Groq Cloud Llama 3.3',
-                    desc: 'Tốc độ phản hồi cực nhanh (dưới 1 giây), hoàn toàn miễn phí',
-                    badge: 'Siêu tốc độ',
-                  },
-                  {
-                    id: 'deepseek',
-                    title: 'DeepSeek Chat',
-                    desc: 'Mô hình deepseek-chat mạnh mẽ, tư duy triết lý sâu sắc, chi phí tối ưu',
-                    badge: 'Thông minh',
-                  },
-                  {
-                    id: 'openai',
-                    title: 'OpenAI GPT-4o mini',
-                    desc: 'Độ chuẩn xác cao, phản hồi tự nhiên và lời khuyên thực tế',
-                    badge: 'Tiêu chuẩn',
-                  },
-                  {
                     id: 'openrouter',
-                    title: 'OpenRouter Free Router',
-                    desc: 'Router AI miễn phí (openrouter/free) - Kết nối hàng loạt model miễn phí tốc độ cao',
-                    badge: 'Miễn phí 100%',
+                    title: 'OpenRouter Free (Mặc định toàn trang)',
+                    desc: 'Cổng đa mô hình AI miễn phí 100% - Tùy chọn model mới nhất từ danh sách API bên dưới',
+                    badge: 'Mặc định',
                   },
                 ].map((p) => {
                   const isSelected = globalProvider === p.id;
@@ -814,6 +820,202 @@ VITE_FIREBASE_APP_ID=`;
                     </button>
                   );
                 })}
+              </div>
+
+              {/* KHÁM PHÁ & CHỌN MÔ HÌNH OPENROUTER FREE MỚI NHẤT */}
+              <div className="p-6 rounded-3xl bg-zinc-900/70 border border-purple-500/30 space-y-5 shadow-xl relative overflow-hidden mt-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="p-2 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400">
+                        <Cpu className="w-5 h-5" />
+                      </span>
+                      <div>
+                        <h4 className="text-base font-bold text-white flex items-center gap-2">
+                          <span>Mô Hình OpenRouter Free Mặc Định Cho Tất Cả Mọi Người</span>
+                          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
+                            {openrouterFreeModels.length} Model Khả Dụng
+                          </span>
+                        </h4>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          OpenRouter cung cấp rất nhiều model miễn phí 100% (NVIDIA Nemotron 1M context, Google Gemma 4, Llama 3.3, GLM, Inkling...). Bấm nút bên phải để fetch danh sách mới nhất từ API và chọn model bạn muốn.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fetch Button */}
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleFetchOpenRouter}
+                      disabled={isFetchingOpenRouter}
+                      className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-purple-500/20 flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 active:scale-95"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isFetchingOpenRouter ? 'animate-spin' : ''}`} />
+                      <span>{isFetchingOpenRouter ? 'Đang fetch từ API...' : 'Fetch Model Free Mới Nhất'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Fetch Alert notification */}
+                {openrouterFetchMsg && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`p-3.5 rounded-2xl text-xs flex items-center gap-2 ${
+                      openrouterFetchMsg.type === 'success'
+                        ? 'bg-emerald-950/50 border border-emerald-500/40 text-emerald-300'
+                        : 'bg-red-950/50 border border-red-500/40 text-red-300'
+                    }`}
+                  >
+                    {openrouterFetchMsg.type === 'success' ? (
+                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                    )}
+                    <span className="flex-1">{openrouterFetchMsg.text}</span>
+                    <button
+                      type="button"
+                      onClick={() => setOpenrouterFetchMsg(null)}
+                      className="text-gray-400 hover:text-white p-1 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Current Selected Model Banner */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-black/50 border border-purple-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] uppercase font-bold text-purple-300 tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-3 h-3 text-amber-400" /> Model OpenRouter Đang Chọn Cho Toàn Hệ Thống:
+                    </span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-sm font-bold text-white font-mono bg-black/60 px-2.5 py-1 rounded-lg border border-white/10">
+                        {globalModel || 'openrouter/free'}
+                      </span>
+                      {globalModel === 'openrouter/free' ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-medium">
+                          Auto Router
+                        </span>
+                      ) : (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-medium">
+                          Cố định model này
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {globalModel !== 'openrouter/free' && (
+                      <button
+                        type="button"
+                        onClick={() => setGlobalModel('openrouter/free')}
+                        className="text-xs px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-purple-200 transition-all cursor-pointer font-medium"
+                      >
+                        Đặt về Auto Router (Mặc định)
+                      </button>
+                    )}
+                    {openrouterLastUpdated && (
+                      <span className="text-[10px] text-gray-400 font-mono">
+                        Cập nhật: {openrouterLastUpdated}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Search & Fast Dropdown */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      value={openrouterSearchQuery}
+                      onChange={(e) => setOpenrouterSearchQuery(e.target.value)}
+                      placeholder="Tìm kiếm model free (vd: nemotron, gemma, llama, deepseek, 1m, glm...)"
+                      className="w-full text-xs pl-10 pr-3.5 py-2.5 rounded-2xl bg-black/60 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+
+                  <div className="sm:w-72">
+                    <select
+                      value={globalModel}
+                      onChange={(e) => setGlobalModel(e.target.value)}
+                      className="w-full text-xs p-2.5 rounded-2xl bg-black/60 border border-white/10 text-white focus:outline-none focus:border-purple-500 truncate"
+                    >
+                      {openrouterFreeModels.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name} ({m.tag || 'Free'})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Visual Grid of Models */}
+                <div className="max-h-96 overflow-y-auto pr-1 space-y-2.5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    {filteredOpenrouterModels.map((m) => {
+                      const isSelected = globalModel === m.id;
+                      return (
+                        <div
+                          key={m.id}
+                          onClick={() => setGlobalModel(m.id)}
+                          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                            isSelected
+                              ? 'bg-purple-950/50 border-purple-500 text-white shadow-lg shadow-purple-500/15 ring-1 ring-purple-500/50'
+                              : 'bg-black/40 border-white/10 text-gray-300 hover:border-purple-500/40 hover:bg-black/60'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-start justify-between gap-2 mb-1.5">
+                              <span className="font-bold text-xs text-white leading-tight">
+                                {m.name}
+                              </span>
+                              <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase shrink-0 font-mono ${
+                                isSelected ? 'bg-purple-500 text-white' : 'bg-white/10 text-purple-300'
+                              }`}>
+                                {m.tag || 'Free 100%'}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-purple-400 font-mono truncate mb-1">
+                              {m.id}
+                            </div>
+                            <p className="text-[11px] text-gray-400 line-clamp-2 leading-relaxed">
+                              {m.desc}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-white/5">
+                            {m.context_length ? (
+                              <span className="text-[10px] text-gray-400 font-mono">
+                                Context: {m.context_length >= 1000000 ? `${(m.context_length / 1000000).toFixed(1)}M tokens` : `${Math.round(m.context_length / 1000)}k tokens`}
+                              </span>
+                            ) : <span />}
+                            <span className={`text-[10px] font-bold flex items-center gap-1 ${
+                              isSelected ? 'text-purple-400' : 'text-gray-500'
+                            }`}>
+                              {isSelected ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5" /> Đang chọn model này
+                                </>
+                              ) : (
+                                'Nhấn để chọn'
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {filteredOpenrouterModels.length === 0 && (
+                    <div className="p-8 text-center text-gray-400 text-xs">
+                      Không tìm thấy mô hình nào phù hợp với từ khóa "{openrouterSearchQuery}".
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Smart Auto-Descending Model Hierarchy */}
@@ -863,7 +1065,7 @@ VITE_FIREBASE_APP_ID=`;
                       Tự động chuyển sang nhà cung cấp dự phòng khi hết sạch các bậc (Auto-Fallback)
                     </div>
                     <p className="text-[11px] text-gray-400">
-                      Khi tất cả các bậc của Gemini đều cạn quota, hệ thống sẽ tự động chuyển sang Groq / DeepSeek / OpenAI / OpenRouter để không bao giờ bị gián đoạn.
+                      Khi tất cả các bậc của Gemini đều cạn quota, hệ thống sẽ tự động chuyển sang OpenRouter Free để không bao giờ bị gián đoạn.
                     </p>
                   </div>
                   <button
@@ -891,7 +1093,7 @@ VITE_FIREBASE_APP_ID=`;
                       Thứ Tự Ưu Tiên AI Mặc Định & Dự Phòng (AI Priority & Fallback Sequence)
                     </h3>
                     <p className="text-xs text-gray-400 leading-relaxed">
-                      Sắp xếp thứ tự các dịch vụ AI sẽ được gọi khi giải bài Tarot. Khi người dùng bấm trải bài, hệ thống sẽ ưu tiên dùng AI ở vị trí số 1. Nếu vị trí số 1 hết hạn mức hoặc lỗi mạng, hệ thống tự động trượt xuống vị trí 2, 3, 4, 5.
+                      Sắp xếp thứ tự các dịch vụ AI sẽ được gọi khi giải bài. Khi người dùng bấm trải bài, hệ thống sẽ ưu tiên dùng AI ở vị trí số 1. Nếu vị trí số 1 hết hạn mức hoặc lỗi mạng, hệ thống tự động trượt xuống vị trí tiếp theo.
                     </p>
                   </div>
                 </div>
@@ -904,10 +1106,7 @@ VITE_FIREBASE_APP_ID=`;
 
                     const providerInfo: Record<AIProvider, { name: string; tag: string; desc: string }> = {
                       auto: { name: 'Tự động', tag: 'Auto', desc: 'Tự động xoay tua' },
-                      gemini: { name: 'Google Gemini', tag: 'Gemini 3.8 / 3.1 Pro', desc: 'Mới nhất của Google, phân tích sâu sắc' },
-                      groq: { name: 'Groq Cloud LPU', tag: 'Llama 3.3 70B', desc: 'Tốc độ phản hồi cực hạn dưới 1 giây' },
-                      deepseek: { name: 'DeepSeek Chat', tag: 'deepseek-chat / R1', desc: 'Tư duy triết lý và huyền học đỉnh cao' },
-                      openai: { name: 'OpenAI GPT', tag: 'GPT-4o / mini', desc: 'Chuẩn mực, lời khuyên thực tế & thông thái' },
+                      gemini: { name: 'Google Gemini', tag: 'Gemini 2.5 Flash / Pro', desc: 'Siêu nhanh, thông minh, phân tích sâu sắc' },
                       openrouter: { name: 'OpenRouter Router', tag: 'openrouter/free', desc: 'Cổng đa mô hình AI miễn phí' },
                     };
 
@@ -1005,10 +1204,7 @@ VITE_FIREBASE_APP_ID=`;
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {[
                     { id: 'auto' as AIProvider, name: 'Tự động (Auto)', desc: 'Tự xoay tua nhiều key & fallback' },
-                    { id: 'gemini' as AIProvider, name: 'Google Gemini', desc: 'Gemini 2.5 Flash / 3 Flash' },
-                    { id: 'groq' as AIProvider, name: 'Groq LPU', desc: 'Llama 3.3 70B siêu tốc' },
-                    { id: 'deepseek' as AIProvider, name: 'DeepSeek', desc: 'deepseek-chat / R1' },
-                    { id: 'openai' as AIProvider, name: 'OpenAI GPT', desc: 'GPT-4o / mini' },
+                    { id: 'gemini' as AIProvider, name: 'Google Gemini', desc: 'Gemini 2.5 Flash / Pro' },
                     { id: 'openrouter' as AIProvider, name: 'OpenRouter Free', desc: 'openrouter/free & auto' },
                   ].map((p) => {
                     const isEnabled = enabledAiProviders[p.id] ?? true;
@@ -1098,114 +1294,41 @@ VITE_FIREBASE_APP_ID=`;
                 </p>
               </div>
 
-              {/* Groq */}
+              {/* OpenRouter */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold text-white flex items-center">
-                    <Cpu className="w-3.5 h-3.5 mr-1.5 text-orange-400" />
-                    Groq Cloud API Key:
+                    <Cpu className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
+                    OpenRouter API Key (Router Free):
                   </span>
-                  <a
-                    href="https://console.groq.com/keys"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-orange-400 hover:underline flex items-center text-[11px]"
-                  >
-                    Lấy key Groq miễn phí <ExternalLink className="w-2.5 h-2.5 ml-1" />
-                  </a>
-                </div>
-                <div className="relative">
-                  <input
-                    type={showGroq ? 'text' : 'password'}
-                    value={groqKey}
-                    onChange={(e) => setGroqKey(e.target.value)}
-                    placeholder="gsk_..."
-                    className="w-full text-xs p-3.5 pr-10 rounded-2xl border border-white/10 bg-black/50 focus:outline-none focus:border-purple-500 font-mono text-white"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowGroq(!showGroq)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                  >
-                    {showGroq ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* DeepSeek */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-white flex items-center">
-                    <Cpu className="w-3.5 h-3.5 mr-1.5 text-cyan-400" />
-                    DeepSeek API Key:
-                  </span>
-                  <a
-                    href="https://platform.deepseek.com/"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-cyan-400 hover:underline flex items-center text-[11px]"
-                  >
-                    Lấy key DeepSeek <ExternalLink className="w-2.5 h-2.5 ml-1" />
-                  </a>
-                </div>
-                <div className="relative">
-                  <input
-                    type={showDeepseek ? 'text' : 'password'}
-                    value={deepseekKey}
-                    onChange={(e) => setDeepseekKey(e.target.value)}
-                    placeholder="sk-..."
-                    className="w-full text-xs p-3.5 pr-10 rounded-2xl border border-white/10 bg-black/50 focus:outline-none focus:border-purple-500 font-mono text-white"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowDeepseek(!showDeepseek)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                  >
-                    {showDeepseek ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* OpenAI & OpenRouter */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-white">OpenAI API Key:</span>
-                    <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline text-[11px] flex items-center">
-                      Lấy key <ExternalLink className="w-2.5 h-2.5 ml-1" />
+                  <div className="flex items-center space-x-2">
+                    <a href="https://openrouter.ai/openrouter/free" target="_blank" rel="noreferrer" className="text-purple-300 hover:underline text-[11px] flex items-center">
+                      Router Free <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
+                    </a>
+                    <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-purple-400 hover:underline text-[11px] flex items-center">
+                      Lấy key <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
                     </a>
                   </div>
-                  <input
-                    type={showOpenai ? 'text' : 'password'}
-                    value={openaiKey}
-                    onChange={(e) => setOpenaiKey(e.target.value)}
-                    placeholder="sk-proj-..."
-                    className="w-full text-xs p-3.5 rounded-2xl border border-white/10 bg-black/50 focus:outline-none focus:border-purple-500 font-mono text-white"
-                  />
                 </div>
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-white">OpenRouter API Key (Router Free):</span>
-                    <div className="flex items-center space-x-2">
-                      <a href="https://openrouter.ai/openrouter/free" target="_blank" rel="noreferrer" className="text-purple-300 hover:underline text-[11px] flex items-center">
-                        Router Free <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
-                      </a>
-                      <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-purple-400 hover:underline text-[11px] flex items-center">
-                        Lấy key <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
-                      </a>
-                    </div>
-                  </div>
+                <div className="relative">
                   <input
                     type={showOpenrouter ? 'text' : 'password'}
                     value={openrouterKey}
                     onChange={(e) => setOpenrouterKey(e.target.value)}
                     placeholder="sk-or-..."
-                    className="w-full text-xs p-3.5 rounded-2xl border border-white/10 bg-black/50 focus:outline-none focus:border-purple-500 font-mono text-white"
+                    className="w-full text-xs p-3.5 pr-10 rounded-2xl border border-white/10 bg-black/50 focus:outline-none focus:border-purple-500 font-mono text-white"
                   />
-                  <p className="text-[10px] text-purple-300/80">
-                    ✨ Tự động kết nối qua <strong>openrouter/free</strong> miễn phí mà không cần cấu hình danh sách model phức tạp.
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowOpenrouter(!showOpenrouter)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                  >
+                    {showOpenrouter ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
+                <p className="text-[10px] text-purple-300/80">
+                  ✨ Tự động kết nối qua <strong>openrouter/free</strong> miễn phí mà không cần cấu hình danh sách model phức tạp.
+                </p>
               </div>
 
               {/* Custom System Prompt */}
@@ -1848,6 +1971,7 @@ VITE_FIREBASE_APP_ID=`;
                                 }
                               }}
                               updateSuccess={userModelUpdateSuccess === user.uid}
+                              openrouterModels={openrouterFreeModels}
                             />
                           );
                         })}

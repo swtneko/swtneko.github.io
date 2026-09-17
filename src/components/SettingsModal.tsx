@@ -24,9 +24,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
 
   // Local state for key inputs
   const [geminiInput, setGeminiInput] = useState(settings.customKeys?.gemini || '');
-  const [deepseekInput, setDeepseekInput] = useState(settings.customKeys?.deepseek || '');
-  const [groqInput, setGroqInput] = useState(settings.customKeys?.groq || '');
-  const [openaiInput, setOpenaiInput] = useState(settings.customKeys?.openai || '');
   const [openrouterInput, setOpenrouterInput] = useState(settings.customKeys?.openrouter || '');
 
   if (!isOpen) return null;
@@ -55,9 +52,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
   const handleSaveKeys = (e: React.FormEvent) => {
     e.preventDefault();
     setCustomKey('gemini', geminiInput);
-    setCustomKey('deepseek', deepseekInput);
-    setCustomKey('groq', groqInput);
-    setCustomKey('openai', openaiInput);
     setCustomKey('openrouter', openrouterInput);
 
     setSavedNotice(true);
@@ -68,32 +62,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
     {
       id: 'auto',
       label: 'Tự động (Auto Fallback)',
-      desc: 'Tự xoay vòng nhiều key Gemini, tự động chuyển sang Groq/DeepSeek/OpenAI nếu hết quota',
+      desc: 'Tự xoay vòng nhiều key Gemini, tự động chuyển sang OpenRouter nếu hết quota',
       badge: 'Khuyên dùng',
     },
     {
       id: 'gemini',
       label: 'Google Gemini',
-      desc: 'Gemini 2.5 Flash / 3 Flash (Hỗ trợ xoay tua nhiều key)',
+      desc: 'Gemini 2.5 Flash / Pro (Hỗ trợ xoay tua nhiều key)',
       badge: status.gemini.configured ? `${status.gemini.count} key khả dụng` : 'Chưa có key',
-    },
-    {
-      id: 'groq',
-      label: 'Groq',
-      desc: 'Llama 3.3 70B (Tốc độ siêu nhanh, phản hồi tức thì)',
-      badge: status.groq.configured ? 'Đã cấu hình' : undefined,
-    },
-    {
-      id: 'deepseek',
-      label: 'DeepSeek',
-      desc: 'deepseek-chat (Chi phí rẻ, suy luận sâu)',
-      badge: status.deepseek.configured ? 'Đã cấu hình' : undefined,
-    },
-    {
-      id: 'openai',
-      label: 'OpenAI GPT',
-      desc: 'GPT-4o mini (Phân tích chuẩn xác, chất lượng cao)',
-      badge: status.openai.configured ? 'Đã cấu hình' : undefined,
     },
     {
       id: 'openrouter',
@@ -306,72 +282,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
                   <span className="text-[10px] text-purple-600 dark:text-purple-300 block">
                     💡 Hỗ trợ nhiều key: nếu 1 key bị limit 429 hoặc quota, hệ thống tự chuyển sang key tiếp theo.
                   </span>
-                </div>
-
-                {/* DeepSeek Key */}
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center text-xs font-medium">
-                    <span>DeepSeek API Key:</span>
-                    <a
-                      href="https://platform.deepseek.com/"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-purple-500 hover:underline flex items-center text-[10px]"
-                    >
-                      Lấy key <ExternalLink className="w-2.5 h-2.5 ml-1" />
-                    </a>
-                  </div>
-                  <input
-                    type="password"
-                    value={deepseekInput}
-                    onChange={(e) => setDeepseekInput(e.target.value)}
-                    placeholder="sk-..."
-                    className="w-full text-xs p-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent focus:outline-none focus:border-purple-500 font-mono"
-                  />
-                </div>
-
-                {/* Groq Key */}
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center text-xs font-medium">
-                    <span>Groq API Key (Miễn phí & Cực nhanh):</span>
-                    <a
-                      href="https://console.groq.com/keys"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-purple-500 hover:underline flex items-center text-[10px]"
-                    >
-                      Lấy key <ExternalLink className="w-2.5 h-2.5 ml-1" />
-                    </a>
-                  </div>
-                  <input
-                    type="password"
-                    value={groqInput}
-                    onChange={(e) => setGroqInput(e.target.value)}
-                    placeholder="gsk_..."
-                    className="w-full text-xs p-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent focus:outline-none focus:border-purple-500 font-mono"
-                  />
-                </div>
-
-                {/* OpenAI Key */}
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center text-xs font-medium">
-                    <span>OpenAI API Key:</span>
-                    <a
-                      href="https://platform.openai.com/api-keys"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-purple-500 hover:underline flex items-center text-[10px]"
-                    >
-                      Lấy key <ExternalLink className="w-2.5 h-2.5 ml-1" />
-                    </a>
-                  </div>
-                  <input
-                    type="password"
-                    value={openaiInput}
-                    onChange={(e) => setOpenaiInput(e.target.value)}
-                    placeholder="sk-..."
-                    className="w-full text-xs p-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent focus:outline-none focus:border-purple-500 font-mono"
-                  />
                 </div>
 
                 {/* OpenRouter Key */}

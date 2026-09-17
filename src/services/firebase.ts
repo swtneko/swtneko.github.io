@@ -433,9 +433,9 @@ const SYSTEM_SETTINGS_KEY = 'celestial-system-settings';
 export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   announcement: '✨ Chúc bạn một ngày thanh thản và đón nhận những thông điệp tích cực từ các vì sao.',
   announcementActive: false,
-  globalAiProvider: 'auto',
-  globalAiModel: 'gemini-3.8-flash',
-  aiProviderPriority: ['groq', 'gemini', 'deepseek', 'openai', 'openrouter'],
+  globalAiProvider: 'openrouter',
+  globalAiModel: 'openrouter/free',
+  aiProviderPriority: ['openrouter', 'gemini'],
   allowFallback: true,
   enableGuestReadings: true,
   enableClarificationCards: true,
@@ -444,9 +444,6 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   enabledAiProviders: {
     auto: true,
     gemini: true,
-    groq: true,
-    deepseek: true,
-    openai: true,
     openrouter: true,
   },
   enabledDeckTypes: {

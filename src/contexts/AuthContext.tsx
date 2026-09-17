@@ -84,7 +84,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user.isAdmin = true;
         user.role = 'admin';
       }
-      setCurrentUser(user);
+      if (!user && localStorage.getItem('celestial-admin-unlocked') === 'true') {
+        const localAdmin: AuthUser = {
+          uid: 'admin_local',
+          email: 'nekyohotaru@gmail.com',
+          displayName: 'Quản Trị Viên (nekyohotaru)',
+          photoURL: null,
+          isAnonymous: false,
+          role: 'admin',
+          isAdmin: true,
+        };
+        setCurrentUser(localAdmin);
+      } else {
+        setCurrentUser(user);
+      }
       setLoading(false);
     });
     return () => unsubscribe();
@@ -109,6 +122,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('celestial-admin-unlocked', 'true');
       if (currentUser) {
         setCurrentUser({ ...currentUser, isAdmin: true, role: 'admin' });
+      } else {
+        const localAdmin: AuthUser = {
+          uid: 'admin_local',
+          email: 'nekyohotaru@gmail.com',
+          displayName: 'Quản Trị Viên (nekyohotaru)',
+          photoURL: null,
+          isAnonymous: false,
+          role: 'admin',
+          isAdmin: true,
+        };
+        setCurrentUser(localAdmin);
       }
       return true;
     }

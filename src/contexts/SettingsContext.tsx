@@ -15,10 +15,7 @@ interface SettingsContextType {
 
 const getDefaultModelForProvider = (provider: AIProvider): string => {
   switch (provider) {
-    case 'gemini': return 'gemini-3.8-flash';
-    case 'groq': return 'llama-3.3-70b-versatile';
-    case 'deepseek': return 'deepseek-chat';
-    case 'openai': return 'gpt-4o-mini';
+    case 'gemini': return 'gemini-2.5-flash';
     case 'openrouter': return 'openrouter/free';
     default: return 'auto';
   }
@@ -28,8 +25,8 @@ const defaultSettings: AppSettings = {
   theme: 'dark',
   effectsEnabled: true,
   soundEnabled: true,
-  aiProvider: 'auto',
-  aiModel: 'auto',
+  aiProvider: 'openrouter',
+  aiModel: 'openrouter/free',
   allowFallback: true,
   customKeys: {},
   tarotDeckStyle: 'rider-waite',

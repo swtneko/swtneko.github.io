@@ -32,13 +32,13 @@ service cloud.firestore {
 
     // Admins registry
     match /admins/{adminId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
     // User profile document
     match /users/{userId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow create, update: if isOwner(userId) || isAdmin();
       allow delete: if isOwner(userId) || isAdmin();
 

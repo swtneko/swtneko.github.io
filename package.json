@@ -1,9 +1,9 @@
 {
-  "name": "react-example",
+  "name": "neko-tarot",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://swtn3k0.github.io",
+  "homepage": "https://nekotarot.vercel.app",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "predeploy": "npm run build",

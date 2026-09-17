@@ -96,7 +96,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         },
       });
 
-      const prefix = isTuVi ? 'Tu-Vi-Thien-Khong' : 'Tarot-Thien-Khong';
+      const prefix = isTuVi ? 'Tu-Vi-Neko-Tarot' : 'Neko-Tarot';
       const link = document.createElement('a');
       link.download = `${prefix}-${Date.now()}.png`;
       link.href = dataUrl;
@@ -129,16 +129,16 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         },
       });
 
-      const prefix = isTuVi ? 'tu-vi-thien-khong' : 'tarot-thien-khong';
+      const prefix = isTuVi ? 'tu-vi-neko-tarot' : 'neko-tarot';
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], `${prefix}-${Date.now()}.png`, { type: 'image/png' });
 
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
-          title: isTuVi ? 'Lá Số Tử Vi Đẩu Số Thiên Không' : 'Kết Quả Trải Bài Tarot Thiên Không',
+          title: isTuVi ? 'Lá Số Tử Vi Đẩu Số - Neko Tarot' : 'Kết Quả Trải Bài Neko Tarot',
           text: isTuVi 
-            ? `✦ Toàn bộ luận giải Lá số Tử Vi của ${userInfo.fullName || 'Tín chủ'} tại Thiên Không!`
-            : `🌌 Toàn bộ luận giải trải bài Tarot cho câu hỏi: "${question}" tại Thiên Không!`,
+            ? `✦ Toàn bộ luận giải Lá số Tử Vi của ${userInfo.fullName || 'Tín chủ'} tại Neko Tarot!`
+            : `🌌 Toàn bộ luận giải trải bài Tarot cho câu hỏi: "${question}" tại Neko Tarot!`,
           files: [file],
         });
       } else {
@@ -152,10 +152,19 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     }
   };
 
+  const appCanonicalUrl = 'https://nekotarot.vercel.app';
+  const getShareUrl = () => {
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && !window.location.hostname.includes('run.app')) {
+      return window.location.href;
+    }
+    return appCanonicalUrl;
+  };
+
   const handleCopySummaryText = () => {
+    const shareUrl = getShareUrl();
     let text = '';
     if (isTuVi && tuViData) {
-      text = `=== LÁ SỐ TỬ VI ĐẨU SỐ THIÊN KHÔNG ===
+      text = `=== LÁ SỐ TỬ VI ĐẨU SỐ - NEKO TAROT ===
 ✦ Đương số: ${userInfo.fullName || 'Tín chủ'} (${tuViData.chuSo.amDuongNamNu})
 ✦ Sinh: ${userInfo.birthDate} lúc ${userInfo.birthTime || 'Không rõ'} (Giờ ${tuViData.chuSo.canhGio})
 ✦ Âm lịch: Ngày ${tuViData.chuSo.lunarDay}/${tuViData.chuSo.lunarMonth}/${tuViData.chuSo.lunarYear}
@@ -169,10 +178,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 --- TOÀN BỘ LUẬN GIẢI CHI TIẾT ---
 ${cleanFullInterpretation}
 
-✦ Xem chi tiết tại: ${window.location.href}`;
+✦ Xem chi tiết tại: ${shareUrl}`;
     } else {
       const cardsSummary = drawnCards.map(d => `- ${d.card.name} (${d.isReversed ? 'Ngược' : 'Xuôi'})`).join('\n');
-      text = `=== TOÀN BỘ KẾT QUẢ TRẢI BÀI THIÊN KHÔNG ===
+      text = `=== TOÀN BỘ KẾT QUẢ TRẢI BÀI NEKO TAROT ===
 ✦ Khách hàng: ${userInfo.fullName || 'Tín chủ'}
 ✦ Câu hỏi: ${question || 'Hỏi chung về vận mệnh'}
 ✦ Ngày xem: ${dateFormatted}
@@ -183,7 +192,7 @@ ${cardsSummary}
 --- TOÀN BỘ LUẬN GIẢI CHI TIẾT ---
 ${cleanFullInterpretation}
 
-✦ Xem chi tiết tại: ${window.location.href}`;
+✦ Xem chi tiết tại: ${shareUrl}`;
     }
 
     navigator.clipboard.writeText(text);
@@ -192,13 +201,13 @@ ${cleanFullInterpretation}
   };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
+    navigator.clipboard.writeText(getShareUrl());
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
 
   const shareToFacebook = () => {
-    const url = encodeURIComponent(window.location.href);
+    const url = encodeURIComponent(getShareUrl());
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=600,height=400');
   };
 
@@ -265,7 +274,7 @@ ${cleanFullInterpretation}
                   </div>
                   <div>
                     <h4 className="font-serif font-bold text-xs sm:text-sm tracking-widest uppercase text-amber-200">
-                      {isTuVi ? 'Tử Vi Đẩu Số Thiên Không' : 'Tarot Thiên Không'}
+                      {isTuVi ? 'Tử Vi Đẩu Số - Neko Tarot' : 'Neko Tarot'}
                     </h4>
                     <p className="text-[10px] text-purple-300 font-sans tracking-wide">
                       {isTuVi ? 'Mệnh Bàn & Luận Giải Toàn Thư' : 'Trí Tuệ Vũ Trụ & Huyền Học'}
@@ -459,7 +468,7 @@ ${cleanFullInterpretation}
               {/* Watermark Footer */}
               <div className="pt-3 border-t border-amber-400/30 flex items-center justify-between text-[10px] font-sans text-purple-200 relative z-10 gap-2">
                 <span className="font-medium tracking-wide truncate">
-                  {isTuVi ? 'Lập lá số Tử Vi chuẩn xác tại Thiên Không' : 'Trải bài miễn phí tại Tarot Thiên Không'}
+                  {isTuVi ? 'Lập lá số Tử Vi chuẩn xác tại Neko Tarot' : 'Trải bài miễn phí tại Neko Tarot'}
                 </span>
                 <span className="text-amber-300 font-semibold tracking-wider whitespace-nowrap flex-shrink-0">
                   {isTuVi ? '✦ Tử Vi Đẩu Số' : '✦ Thần Số & Tarot'}

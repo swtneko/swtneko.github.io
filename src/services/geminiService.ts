@@ -665,7 +665,7 @@ export const dispatchAiPrompt = async (
         finalPrompt,
         {
           'HTTP-Referer': window.location.origin,
-          'X-Title': 'Celestial Tarot',
+          'X-Title': 'Neko Tarot',
         }
       );
       return `${res}\n\n*🌌 Diễn giải bởi OpenRouter (${model})*`;

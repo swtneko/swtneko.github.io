@@ -1,6 +1,6 @@
 {
-  "name": "Remix Celestial Tarot",
-  "description": "Ứng dụng Bói Tarot, Bài Tây & Tử Vi Đẩu Số kết hợp AI luận giải chuyên sâu với giao diện Liquid Glass huyền ảo.",
+  "name": "Neko Tarot",
+  "description": "Ứng dụng Neko Tarot, Bài Tây & Tử Vi Đẩu Số kết hợp AI luận giải chuyên sâu với giao diện Liquid Glass huyền ảo.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

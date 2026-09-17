@@ -861,7 +861,7 @@ VITE_FIREBASE_APP_ID=`;
                 </div>
 
                 <div className="pt-2 text-[11px] text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
-                  <strong>⚠️ Lưu ý quan trọng về Google Login:</strong> Sau khi Vercel cấp cho bạn tên miền (ví dụ: <code>your-app.vercel.app</code>), bạn chỉ cần vào <a href="https://console.firebase.google.com" target="_blank" rel="noreferrer" className="underline font-semibold">Firebase Console</a> &gt; <strong>Authentication</strong> &gt; <strong>Settings</strong> &gt; <strong>Authorized domains</strong> và thêm tên miền Vercel của bạn vào danh sách để đăng nhập Google hoạt động chuẩn xác!
+                  <strong>⚠️ Lưu ý quan trọng về Google Login:</strong> Sau khi Vercel cấp cho bạn tên miền (ví dụ: <code>nekotarot.vercel.app</code>), bạn chỉ cần vào <a href="https://console.firebase.google.com" target="_blank" rel="noreferrer" className="underline font-semibold">Firebase Console</a> &gt; <strong>Authentication</strong> &gt; <strong>Settings</strong> &gt; <strong>Authorized domains</strong> và thêm tên miền Vercel của bạn vào danh sách để đăng nhập Google hoạt động chuẩn xác!
                 </div>
               </div>
             </div>

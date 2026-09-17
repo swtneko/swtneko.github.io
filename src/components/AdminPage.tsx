@@ -1345,7 +1345,7 @@ VITE_FIREBASE_APP_ID=`;
                   className="w-full text-xs p-3.5 rounded-2xl border border-white/10 bg-black/50 focus:outline-none focus:border-purple-500 text-white resize-none leading-relaxed"
                 />
                 <p className="text-[11px] text-gray-400">
-                  Để trống nếu bạn muốn sử dụng bộ chỉ dẫn chiêm tinh học chuẩn mực mặc định của Thiên Không.
+                  Để trống nếu bạn muốn sử dụng bộ chỉ dẫn chiêm tinh học chuẩn mực mặc định của Neko Tarot.
                 </p>
               </div>
             </div>
@@ -1820,7 +1820,7 @@ VITE_FIREBASE_APP_ID=`;
                 <p className="leading-relaxed">
                   1. Vào <a href="https://console.firebase.google.com/project/celestial-tarot-cb063/authentication/settings" target="_blank" rel="noreferrer" className="underline font-bold text-white">Firebase Console &gt; Authentication &gt; Settings</a>.<br />
                   2. Chọn mục <strong>Authorized domains</strong> &gt; Bấm <strong>Add domain</strong>.<br />
-                  3. Dán tên miền Vercel của bạn (ví dụ: <code>wtneko-tarot.vercel.app</code>) vào và bấm <strong>Add</strong> là hoàn tất!
+                  3. Dán tên miền Vercel của bạn (ví dụ: <code>nekotarot.vercel.app</code>) vào và bấm <strong>Add</strong> là hoàn tất!
                 </p>
               </div>
             </div>

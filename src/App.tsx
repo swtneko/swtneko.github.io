@@ -99,7 +99,7 @@ function AppContent() {
                   setSelectedReading(null);
                   setView('home');
                 }}
-                title="Về trang chủ Thiên Không"
+                title="Về trang chủ Neko Tarot"
               >
                 <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center transition-all duration-300 shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] ${
                   settings.theme === 'dark' 
@@ -111,7 +111,7 @@ function AppContent() {
                 <span className={`hidden min-[480px]:inline ml-2.5 text-base sm:text-lg font-serif tracking-wider uppercase whitespace-nowrap transition-colors font-extrabold ${
                   settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'
                 }`}>
-                  Thiên Không
+                  Neko Tarot
                 </span>
               </div>
               
@@ -353,7 +353,7 @@ function AppContent() {
       {/* Footer */}
       {view !== 'admin' && (
         <footer className={`relative z-10 py-10 text-center text-[10px] uppercase tracking-[0.4em] transition-colors flex flex-col items-center justify-center gap-1.5 ${settings.theme === 'dark' ? 'text-purple-400/40' : 'text-purple-900/50 font-medium'}`}>
-          <div>© 2026 Celestial Tarot • Dẫn lối bởi Vũ trụ</div>
+          <div>© 2026 Neko Tarot • Dẫn lối bởi Vũ trụ</div>
         </footer>
       )}
     </div>

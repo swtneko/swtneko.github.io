@@ -229,7 +229,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onStart, onStartTuVi }) => {
               </motion.div>
             </motion.div>
 
-            {/* Tiêu đề Tarot Thiên Không - Đảm bảo khoảng đệm để không bị cắt đuôi chữ g và hiệu ứng nảy chuẩn iOS 26 */}
+            {/* Tiêu đề Neko Tarot - Đảm bảo khoảng đệm để không bị cắt đuôi chữ g và hiệu ứng nảy chuẩn iOS 26 */}
             <motion.h1
               initial={settings.effectsEnabled ? { opacity: 0, scale: 0.95, y: 16 } : { opacity: 1, y: 0 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -240,7 +240,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onStart, onStartTuVi }) => {
                   : 'bg-gradient-to-r from-purple-950 via-indigo-950 to-purple-800 drop-shadow-sm'
               }`}
             >
-              Tarot Thiên Không
+              Neko Tarot
             </motion.h1>
 
             <motion.p

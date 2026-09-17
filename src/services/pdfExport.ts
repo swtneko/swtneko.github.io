@@ -258,7 +258,7 @@ export async function exportReadingToPdf(params: ExportPdfParams): Promise<void>
     <div class="pdf-card-block" style="border-bottom: 2px solid #f59e0b; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
       <div>
         <div style="font-size: 20px; font-weight: bold; color: #f59e0b; letter-spacing: 2px; text-transform: uppercase;">
-          ✦ THIÊN KHÔNG ✦
+          ✦ NEKO TAROT ✦
         </div>
         <div style="font-size: 12px; color: #d8b4fe; font-family: sans-serif; letter-spacing: 1px; margin-top: 2px;">
           ${isTuVi ? 'TỬ VI ĐẨU SỐ & MỆNH BÀN TOÀN THƯ' : 'HUYỀN HỌC & TRÍ TUỆ VŨ TRỤ'}
@@ -299,7 +299,7 @@ export async function exportReadingToPdf(params: ExportPdfParams): Promise<void>
 
     <!-- Professional Footer Watermark -->
     <div class="pdf-card-block" style="margin-top: 30px; border-top: 1px solid rgba(245, 158, 11, 0.4); padding-top: 14px; display: flex; justify-content: space-between; align-items: center; font-family: sans-serif; font-size: 10.5px; color: #c084fc;">
-      <div>Thiên Không Huyền Học & Tử Vi • https://swtneko-tarot.vercel.app</div>
+      <div>Neko Tarot • Huyền Học & Tử Vi • https://nekotarot.vercel.app</div>
       <div style="color: #f59e0b; font-weight: bold;">✦ TRÍ TUỆ TÂM LINH & ĐỊNH HƯỚNG VẬN MỆNH ✦</div>
     </div>
   `;

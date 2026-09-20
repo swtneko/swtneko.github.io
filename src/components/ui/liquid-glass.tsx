@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { getDisplacementMapForElement } from '../../utils/liquidGlassPhysics';
 import { cn } from '../../lib/utils';
+import { useSettings } from '../../contexts/SettingsContext';
 
 export interface LiquidGlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
   children?: React.ReactNode;
@@ -74,12 +75,29 @@ export const LiquidGlassCard = React.forwardRef<HTMLDivElement, LiquidGlassCardP
     const [displacementMapUrl, setDisplacementMapUrl] = useState<string | null>(null);
     const [filterId, setFilterId] = useState<string>('');
 
+    // Check application settings for performance mode
+    let effectsEnabled = true;
+    let currentTheme = 'dark';
+    try {
+      const settingsCtx = useSettings();
+      if (settingsCtx?.settings) {
+        effectsEnabled = settingsCtx.settings.effectsEnabled ?? true;
+        currentTheme = settingsCtx.settings.theme ?? 'dark';
+      }
+    } catch {
+      // Fallback if rendered outside context
+    }
+
     // Default border radius: if not specified via props and not in className, use 24px (rounded-3xl)
     const hasRoundedInClass = /rounded-(none|sm|md|lg|xl|2xl|3xl|full)/.test(className);
     const effectiveBorderRadius = borderRadius || (!hasRoundedInClass ? '24px' : undefined);
 
     useEffect(() => {
-      if (!refraction) return;
+      // Skip heavy SVG displacement calculation if effects/animations are turned off (low-end device mode)
+      if (!refraction || !effectsEnabled) {
+        setDisplacementMapUrl(null);
+        return;
+      }
 
       const element = containerRef.current;
       if (!element) return;
@@ -111,7 +129,7 @@ export const LiquidGlassCard = React.forwardRef<HTMLDivElement, LiquidGlassCardP
       observer.observe(element);
 
       return () => observer.disconnect();
-    }, [borderRadius, effectiveBorderRadius, refraction]);
+    }, [borderRadius, effectiveBorderRadius, refraction, effectsEnabled]);
 
     const shadowClass = shadowStyles[shadowIntensity] || shadowStyles.sm;
     const glowClass = glowStyles[glowIntensity] || '';
@@ -121,6 +139,37 @@ export const LiquidGlassCard = React.forwardRef<HTMLDivElement, LiquidGlassCardP
     // Has user supplied their own background in className?
     const hasCustomBg = /(^|\s)bg-/.test(className);
 
+    // If effects are disabled: use classic solid flat dialog background with zero blur overhead
+    if (!effectsEnabled) {
+      return (
+        <div
+          ref={containerRef}
+          onClick={onClick}
+          draggable={draggable}
+          style={{
+            borderRadius: effectiveBorderRadius,
+            ...style,
+          }}
+          className={cn(
+            'solid-flat-card relative overflow-hidden transition-colors duration-200',
+            !hasRoundedInClass && !borderRadius && 'rounded-3xl',
+            !hasCustomBg && (
+              currentTheme === 'dark' 
+                ? 'bg-[#130826] border border-purple-500/30 text-white shadow-xl' 
+                : 'bg-white border border-purple-200 text-slate-900 shadow-md'
+            ),
+            className
+          )}
+          {...rest}
+        >
+          <div className={cn('relative z-10 w-full h-full', contentClassName)}>
+            {children}
+          </div>
+        </div>
+      );
+    }
+
+    // When effects are enabled: Rich Liquid Glass with Snell's law refraction & crystal clear highlights
     return (
       <div
         ref={containerRef}
@@ -139,9 +188,6 @@ export const LiquidGlassCard = React.forwardRef<HTMLDivElement, LiquidGlassCardP
           borderClass,
           shadowClass,
           glowClass,
-          // Crystal Clear, Completely Non-Milky Glass Background:
-          // Light Mode: Subtle 25% translucent white (transparent, crisp)
-          // Dark Mode: Ultra-transparent 6% white / subtle black tint
           !hasCustomBg && 'bg-white/25 dark:bg-white/[0.06] text-slate-900 dark:text-white',
           className
         )}

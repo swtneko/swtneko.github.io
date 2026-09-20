@@ -346,6 +346,23 @@ export function cleanForFirestore<T>(data: T): T {
 }
 
 // Firestore reading persistence
+export const ensureSharedReading = async (reading: ReadingResult): Promise<boolean> => {
+  if (!reading || !reading.id) return false;
+  try {
+    const sanitized = cleanForFirestore(reading);
+    const sharedRef = doc(db, 'shared_readings', sanitized.id);
+    await setDoc(sharedRef, {
+      ...sanitized,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+    console.log(`[Firestore] Shared reading persisted: ${sanitized.id}`);
+    return true;
+  } catch (err) {
+    console.error('Failed to persist shared reading to Firestore:', err);
+    return false;
+  }
+};
+
 export const saveReading = async (userId: string | undefined, reading: ReadingResult): Promise<void> => {
   const sanitized = cleanForFirestore(reading);
   if (!userId || userId === 'guest') {
@@ -356,16 +373,8 @@ export const saveReading = async (userId: string | undefined, reading: ReadingRe
     saveUserCacheReading(userId, sanitized);
   }
 
-  // Also persist to shared_readings for instant direct-link access
-  try {
-    const sharedRef = doc(db, 'shared_readings', sanitized.id);
-    await setDoc(sharedRef, {
-      ...sanitized,
-      updatedAt: new Date().toISOString(),
-    }, { merge: true });
-  } catch (err) {
-    console.warn('Could not sync to shared_readings:', err);
-  }
+  // Always persist to shared_readings for instant direct-link access
+  await ensureSharedReading(sanitized);
 
   if (userId && userId !== 'guest') {
     try {
@@ -385,8 +394,9 @@ export const saveReading = async (userId: string | undefined, reading: ReadingRe
 /**
  * Fetch a single reading by its ID from local storage or Firestore
  */
-export const getReadingById = async (readingId: string, userId?: string): Promise<ReadingResult | null> => {
-  if (!readingId) return null;
+export const getReadingById = async (rawReadingId: string, userId?: string): Promise<ReadingResult | null> => {
+  if (!rawReadingId) return null;
+  const readingId = rawReadingId.trim();
 
   // 1. Check guest readings
   const guestList = getGuestReadings();

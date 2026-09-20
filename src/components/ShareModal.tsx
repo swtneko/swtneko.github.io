@@ -1,15 +1,17 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { toPng } from 'html-to-image';
 import ReactMarkdown from 'react-markdown';
-import { DrawnCard, UserInfo, DeckType, SpreadType, LaSoTuViData } from '../types';
+import { DrawnCard, UserInfo, DeckType, SpreadType, LaSoTuViData, ReadingResult, ReadingTheme } from '../types';
 import { Sparkles, Download, Share2, Copy, Check, X, Image as ImageIcon, MessageCircle, Compass, FileText, FileDown, Loader2 } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { exportReadingToPdf } from '../services/pdfExport';
+import { ensureSharedReading } from '../services/firebase';
 
 interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
+  readingId?: string;
   question: string;
   userInfo: UserInfo;
   drawnCards: DrawnCard[];
@@ -23,6 +25,7 @@ interface ShareModalProps {
 export const ShareModal: React.FC<ShareModalProps> = ({
   isOpen,
   onClose,
+  readingId,
   question,
   userInfo,
   drawnCards,
@@ -40,6 +43,29 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [copiedSummary, setCopiedSummary] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [pdfSuccess, setPdfSuccess] = useState(false);
+
+  // Derive stable readingId
+  const actualReadingId = readingId || (typeof window !== 'undefined' && window.location.pathname.match(/^\/(?:reading|ket-qua)\/([^/]+)/)?.[1]) || `reading-${timestamp}`;
+
+  // Automatically ensure shared reading exists in Firestore whenever ShareModal is rendered
+  useEffect(() => {
+    if (!isOpen) return;
+    const fullRecord: ReadingResult = {
+      id: actualReadingId,
+      userId: '',
+      timestamp,
+      question,
+      theme: ReadingTheme.OVERVIEW,
+      spreadType,
+      deckType,
+      userInfo,
+      drawnCards,
+      aiInterpretation: aiInterpretation || '',
+      followUps: [],
+      tuViData: tuViData || undefined,
+    };
+    ensureSharedReading(fullRecord);
+  }, [isOpen, actualReadingId, timestamp, question, spreadType, deckType, userInfo, drawnCards, aiInterpretation, tuViData]);
 
   if (!isOpen) return null;
 
@@ -154,9 +180,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   const getShareUrl = () => {
     if (typeof window !== 'undefined') {
-      return window.location.href;
+      return `${window.location.origin}/reading/${actualReadingId}`;
     }
-    return 'https://nekotarot.vercel.app';
+    return `https://nekotarot.vercel.app/reading/${actualReadingId}`;
   };
 
   const handleCopySummaryText = () => {

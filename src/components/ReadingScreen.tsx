@@ -594,6 +594,7 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
             <ShareModal
               isOpen={isShareModalOpen}
               onClose={() => setIsShareModalOpen(false)}
+              readingId={readingId}
               question={question}
               userInfo={userInfo}
               drawnCards={drawnCards}

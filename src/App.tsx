@@ -80,7 +80,17 @@ function AppContent() {
       return;
     }
 
-    // 5. Tarot route
+    // 5. Bai Tay (Playing Cards 52 cards) route
+    if (pathname === '/bai-tay' || pathname === '/baitay' || pathname === '/playing-cards') {
+      setView('reading');
+      setDeckType(DeckType.PLAYING_CARDS);
+      if (!userInfo) {
+        setUserInfo({ fullName: currentUser?.displayName || 'Tín chủ', request: '' });
+      }
+      return;
+    }
+
+    // 6. Tarot route
     if (pathname === '/tarot') {
       setView('reading');
       setDeckType(DeckType.TAROT);
@@ -156,6 +166,9 @@ function AppContent() {
     if (type === DeckType.TU_VI) {
       navigateTo('/tuvi');
       setView('tuvi');
+    } else if (type === DeckType.PLAYING_CARDS) {
+      navigateTo('/bai-tay');
+      setView('reading');
     } else {
       navigateTo('/tarot');
       setView('reading');
@@ -575,73 +588,7 @@ function AppContent() {
         )}
       </AnimatePresence>
 
-      {/* Footer with Distinct Path Links */}
-      {view !== 'admin' && (
-        <footer className={`relative z-10 py-10 text-center text-xs transition-colors flex flex-col items-center justify-center gap-3 px-4 ${settings.theme === 'dark' ? 'text-purple-300/60' : 'text-purple-900/70'}`}>
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-semibold">
-            <button 
-              onClick={handleNavigateHome} 
-              className="hover:text-purple-300 hover:underline cursor-pointer"
-            >
-              Trang chủ (/)
-            </button>
-            <span>•</span>
-            <button 
-              onClick={() => {
-                navigateTo('/tarot');
-                setView('reading');
-                setDeckType(DeckType.TAROT);
-                if (!userInfo) setUserInfo({ fullName: 'Tín chủ', request: '' });
-              }} 
-              className="hover:text-purple-300 hover:underline cursor-pointer"
-            >
-              Bói Tarot (/tarot)
-            </button>
-            <span>•</span>
-            <button 
-              onClick={() => {
-                navigateTo('/tuvi');
-                setView('tuvi');
-                setDeckType(DeckType.TU_VI);
-                if (!userInfo) setUserInfo({ fullName: 'Tín chủ', request: '' });
-              }} 
-              className="hover:text-purple-300 hover:underline cursor-pointer"
-            >
-              Tử Vi (/tuvi)
-            </button>
-            <span>•</span>
-            <button 
-              onClick={handleOpenGuide} 
-              className="hover:text-amber-400 hover:underline cursor-pointer font-bold text-amber-300/80"
-            >
-              Hướng Dẫn (/huong-dan)
-            </button>
-            <span>•</span>
-            <button 
-              onClick={handleOpenHistory} 
-              className="hover:text-purple-300 hover:underline cursor-pointer"
-            >
-              Lịch Sử (/lich-su)
-            </button>
-            {isAdmin && (
-              <>
-                <span>•</span>
-                <button 
-                  onClick={handleOpenAdmin} 
-                  className="hover:text-amber-400 hover:underline cursor-pointer text-amber-400 font-bold"
-                >
-                  Quản Trị (/admin)
-                </button>
-              </>
-            )}
-          </div>
-          <div className="text-[10px] uppercase tracking-[0.3em] opacity-60">
-            © 2026 Neko Tarot • Dẫn lối bởi Vũ trụ & Trí Tuệ Nhân Tạo
-          </div>
-        </footer>
-      )}
-
-      {/* Floating PWA Install Bubble / Popup (Only for web users, disappears once installed) */}
+      {/* Floating PWA Install Bubble / Popup */}
       <PWAFloatingBubble />
 
       {/* Connectivity status indicator */}

@@ -545,9 +545,17 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({
                 <div className="p-3 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-between">
                   <div>
                     <span className="font-mono text-amber-300 font-bold">/tarot</span>
-                    <span className="text-slate-300 ml-2">Trải bài Tarot & Bài Tây</span>
+                    <span className="text-slate-300 ml-2">Bói bài Tarot</span>
                   </div>
-                  <span className="text-[10px] text-purple-300">Bói bài</span>
+                  <span className="text-[10px] text-purple-300">Tarot Deck</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-between">
+                  <div>
+                    <span className="font-mono text-amber-300 font-bold">/bai-tay</span>
+                    <span className="text-slate-300 ml-2">Bói bài Tây 52 lá</span>
+                  </div>
+                  <span className="text-[10px] text-purple-300">52 Lá Bài</span>
                 </div>
 
                 <div className="p-3 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-between">

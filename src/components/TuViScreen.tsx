@@ -1078,6 +1078,7 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
         <ShareModal
           isOpen={isShareModalOpen}
           onClose={() => setIsShareModalOpen(false)}
+          readingId={readingId}
           question={question || `Lá số Tử Vi Đẩu Số (${laSoData.chuSo.banMenhNapAm} - Cục ${laSoData.chuSo.cuc})`}
           userInfo={{
             fullName,

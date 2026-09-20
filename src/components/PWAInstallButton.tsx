@@ -3,7 +3,11 @@ import { createPortal } from 'react-dom';
 import { Smartphone, Download, X, CheckCircle2, Sparkles, Share2, MoreVertical, ExternalLink, Copy, Check } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
-export const PWAInstallButton: React.FC = () => {
+interface PWAInstallButtonProps {
+  className?: string;
+}
+
+export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ className = '' }) => {
   const { isInstallable, isInstalled, isIOS, isAndroid, isInIframe, install } = usePWAInstall();
   const [showGuide, setShowGuide] = useState(false);
   const [activeTab, setActiveTab] = useState<'android' | 'ios'>(isIOS ? 'ios' : 'android');
@@ -49,7 +53,7 @@ export const PWAInstallButton: React.FC = () => {
       <button
         id="pwa-install-header-btn"
         onClick={handleInstallClick}
-        className="group relative inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold text-amber-200 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 hover:border-amber-400/60 shadow-[0_0_12px_rgba(251,191,36,0.2)] transition-all duration-300 shrink-0 cursor-pointer"
+        className={`group relative inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold text-amber-200 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 hover:border-amber-400/60 shadow-[0_0_12px_rgba(251,191,36,0.2)] transition-all duration-300 shrink-0 cursor-pointer ${className}`}
         title="Cài đặt Neko Tarot thành App trên điện thoại"
       >
         <span className="relative flex h-2 w-2">

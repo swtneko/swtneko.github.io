@@ -10,7 +10,7 @@ import HistoryModal from './components/HistoryModal';
 import { AdminPage } from './components/AdminPage';
 import { AnnouncementBanner } from './components/AnnouncementBanner';
 import { LiquidGlassCard } from './components/LiquidGlassCard';
-import { PWAInstallButton } from './components/PWAInstallButton';
+import { PWAFloatingBubble } from './components/PWAFloatingBubble';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { Sparkles, Settings, History, LogIn, LogOut, User as UserIcon, ShieldCheck, Bell, Lock } from 'lucide-react';
 import { DeckType, UserInfo, ReadingResult } from './types';
@@ -180,7 +180,7 @@ function AppContent() {
                       blurIntensity="md"
                       borderIntensity="xs"
                       shadowIntensity="xs"
-                      contentClassName={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold ${
+                      contentClassName={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-bold ${
                         settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'
                       }`}
                       title={currentUser.displayName || currentUser.email || 'Tài khoản'}
@@ -235,9 +235,6 @@ function AppContent() {
                     </LiquidGlassCard>
                   </motion.div>
                 )}
-
-                {/* PWA Install Button for Android & iOS */}
-                <PWAInstallButton />
 
                 {/* Settings Button */}
                 <motion.div 
@@ -298,7 +295,7 @@ function AppContent() {
             </motion.div>
           )}
 
-          {view === 'tuvi' && (
+          {view === 'tuvi' && (userInfo || selectedReading) && (
             <motion.div
               key={selectedReading ? selectedReading.id : 'tuvi'}
               initial={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
@@ -361,6 +358,9 @@ function AppContent() {
           <div>© 2026 Neko Tarot • Dẫn lối bởi Vũ trụ</div>
         </footer>
       )}
+
+      {/* Floating PWA Install Bubble / Popup (Only for web users, disappears once installed) */}
+      <PWAFloatingBubble />
 
       {/* Connectivity status indicator */}
       <OfflineIndicator />

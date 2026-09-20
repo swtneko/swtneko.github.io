@@ -41,11 +41,20 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({
   onNavigateTarot,
   onNavigateTuVi,
 }) => {
-  const { settings, deviceInfo } = useSettings();
+  const { settings, deviceInfo, isBenchmarking, rebenchmarkDevice } = useSettings();
   const [activeTab, setActiveTab] = useState<GuideTab>('overview');
   const [copiedLink, setCopiedLink] = useState(false);
+  const [guideBenchmarkMsg, setGuideBenchmarkMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const handleTestInGuide = async () => {
+    setGuideBenchmarkMsg('Đang thực hiện stress test 300 hạt & đo FPS...');
+    const res = await rebenchmarkDevice();
+    const fpsText = res.measuredFps ? ` (${res.measuredFps} FPS)` : '';
+    setGuideBenchmarkMsg(`Kết quả: ${res.tier === 'high' ? 'Máy Khỏe 60FPS' : res.tier === 'medium' ? 'Cân bằng' : 'Tiết kiệm / Yếu'}${fpsText} - Đã cập nhật cài đặt!`);
+    setTimeout(() => setGuideBenchmarkMsg(null), 4000);
+  };
 
   const handleCopyCurrentLink = () => {
     try {
@@ -504,9 +513,24 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({
                   </div>
                 </div>
 
-                <div className="text-xs text-purple-200/90 pt-1 border-t border-white/10">
-                  Trạng thái hiệu ứng: <strong>{settings.effectsEnabled ? 'Bật đầy đủ (Hiệu ứng lung linh)' : 'Chế độ nhẹ (Tối ưu pin & chống giật lag)'}</strong>
+                <div className="text-xs text-purple-200/90 pt-1 border-t border-white/10 flex items-center justify-between">
+                  <span>Trạng thái: <strong>{settings.effectsEnabled ? 'Bật đầy đủ (Mượt mà 60FPS)' : 'Chế độ nhẹ (Tối ưu tiết kiệm pin)'}</strong></span>
+                  <button
+                    type="button"
+                    disabled={isBenchmarking}
+                    onClick={handleTestInGuide}
+                    className="px-3 py-1 rounded-xl bg-amber-500 text-black text-[11px] font-bold hover:bg-amber-400 transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    <Cpu className="w-3.5 h-3.5" />
+                    <span>{isBenchmarking ? 'Đang đo FPS...' : 'Chạy Đo Cấu Hình Ngay'}</span>
+                  </button>
                 </div>
+
+                {guideBenchmarkMsg && (
+                  <div className="text-[11px] p-2 rounded-xl bg-amber-400/20 border border-amber-400/40 text-amber-200">
+                    {guideBenchmarkMsg}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2 text-xs text-slate-300">

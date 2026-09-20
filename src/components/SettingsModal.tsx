@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { X, Moon, Sun, Zap, ZapOff, Volume2, VolumeX, Cpu, Key, ChevronDown, ChevronUp, Check, ExternalLink, ShieldCheck, Lock, Layers, BookOpen, RefreshCw } from 'lucide-react';
+import { X, Moon, Sun, Zap, ZapOff, Volume2, VolumeX, Cpu, Key, ChevronDown, ChevronUp, Check, ExternalLink, ShieldCheck, Lock, Layers, BookOpen, RefreshCw, Loader2, Gauge } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { AIProvider, CustomApiKeys, TarotDeckStyle } from '../types';
@@ -18,6 +18,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
   const { 
     settings, 
     deviceInfo, 
+    isBenchmarking,
     toggleTheme, 
     toggleEffects, 
     toggleSound, 
@@ -35,12 +36,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
   const [adminPasskey, setAdminPasskey] = useState('');
   const [adminUnlockError, setAdminUnlockError] = useState('');
   const [savedNotice, setSavedNotice] = useState(false);
+  const [benchmarkFeedback, setBenchmarkFeedback] = useState<string | null>(null);
 
   // Local state for key inputs
   const [geminiInput, setGeminiInput] = useState(settings.customKeys?.gemini || '');
   const [openrouterInput, setOpenrouterInput] = useState(settings.customKeys?.openrouter || '');
 
   if (!isOpen) return null;
+
+  const handleRunBenchmark = async () => {
+    setBenchmarkFeedback('Đang kiểm tra FPS & khả năng kết xuất đồ họa...');
+    const result = await rebenchmarkDevice();
+    const fpsText = result.measuredFps ? ` (${result.measuredFps} FPS)` : '';
+    setBenchmarkFeedback(`Đo thành công: ${result.tier === 'high' ? 'Khỏe' : result.tier === 'medium' ? 'Cân bằng' : 'Cần tối ưu'}${fpsText}`);
+    setTimeout(() => {
+      setBenchmarkFeedback(null);
+    }, 4000);
+  };
 
   const handleOpenAdmin = () => {
     onClose();
@@ -157,7 +169,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
             <div className="p-3 rounded-2xl bg-purple-950/30 border border-purple-500/20 space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2.5">
-                  <Cpu className="w-4 h-4 text-amber-400" />
+                  <Cpu className="w-4 h-4 text-amber-400 shrink-0" />
                   <div className="flex flex-col">
                     <div className="flex items-center gap-1.5">
                       <span className={`text-xs font-bold ${settings.theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Tự đo cấu hình máy & tối ưu</span>
@@ -192,18 +204,35 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
 
               {/* Hardware specifications mini bar */}
               <div className="flex items-center justify-between text-[10px] pt-1.5 border-t border-white/5 px-0.5">
-                <span className="text-purple-300/70 truncate max-w-[240px]" title={deviceInfo.gpuRenderer}>
+                <span className="text-purple-300/70 truncate max-w-[200px] sm:max-w-[240px]" title={deviceInfo.gpuRenderer}>
                   GPU: {deviceInfo.gpuRenderer}
                 </span>
                 <button
                   type="button"
-                  onClick={rebenchmarkDevice}
-                  className="flex items-center gap-1 text-amber-400 hover:text-amber-300 font-semibold cursor-pointer shrink-0"
+                  disabled={isBenchmarking}
+                  onClick={handleRunBenchmark}
+                  className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-semibold cursor-pointer shrink-0 disabled:opacity-50 px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-all"
                 >
-                  <RefreshCw className="w-3 h-3" />
-                  <span>Quét lại</span>
+                  {isBenchmarking ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin text-amber-300" />
+                      <span>Đang đo FPS...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-3 h-3" />
+                      <span>Đo hiệu năng</span>
+                    </>
+                  )}
                 </button>
               </div>
+
+              {benchmarkFeedback && (
+                <div className="text-[11px] p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 flex items-center gap-1.5">
+                  <Gauge className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                  <span>{benchmarkFeedback}</span>
+                </div>
+              )}
             </div>
 
             {/* Hiệu ứng hình ảnh (Animation thủ công) */}

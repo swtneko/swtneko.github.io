@@ -1,15 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AppSettings, AIProvider, CustomApiKeys, TarotDeckStyle } from '../types';
-import { detectDeviceHardware, DeviceHardwareInfo } from '../utils/deviceBenchmark';
+import { detectDeviceHardware, runLiveBenchmark, DeviceHardwareInfo } from '../utils/deviceBenchmark';
 
 interface SettingsContextType {
   settings: AppSettings;
   deviceInfo: DeviceHardwareInfo;
+  isBenchmarking: boolean;
   toggleTheme: () => void;
   toggleEffects: () => void;
   toggleSound: () => void;
   setAutoOptimizeHardware: (enabled: boolean) => void;
-  rebenchmarkDevice: () => void;
+  rebenchmarkDevice: () => Promise<DeviceHardwareInfo>;
   setAiProvider: (provider: AIProvider) => void;
   setAiModel: (model: string) => void;
   setAllowFallback: (allow: boolean) => void;
@@ -41,6 +42,7 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [deviceInfo, setDeviceInfo] = useState<DeviceHardwareInfo>(() => detectDeviceHardware());
+  const [isBenchmarking, setIsBenchmarking] = useState(false);
 
   const [settings, setSettings] = useState<AppSettings>(() => {
     const detected = detectDeviceHardware();
@@ -76,16 +78,22 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   });
 
-  // Re-benchmark on mount in browser
+  // Re-benchmark on mount in browser using live stress test
   useEffect(() => {
-    const hw = detectDeviceHardware();
-    setDeviceInfo(hw);
-    if (settings.autoOptimizeHardware) {
-      setSettings(prev => ({
-        ...prev,
-        effectsEnabled: !hw.isLowEnd,
-      }));
-    }
+    let isMounted = true;
+    runLiveBenchmark().then((hw) => {
+      if (!isMounted) return;
+      setDeviceInfo(hw);
+      if (settings.autoOptimizeHardware) {
+        setSettings(prev => ({
+          ...prev,
+          effectsEnabled: !hw.isLowEnd,
+        }));
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -121,11 +129,17 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   };
 
-  const rebenchmarkDevice = () => {
-    const hw = detectDeviceHardware();
-    setDeviceInfo(hw);
-    if (settings.autoOptimizeHardware) {
-      setSettings(prev => ({ ...prev, effectsEnabled: !hw.isLowEnd }));
+  const rebenchmarkDevice = async (): Promise<DeviceHardwareInfo> => {
+    setIsBenchmarking(true);
+    try {
+      const hw = await runLiveBenchmark();
+      setDeviceInfo(hw);
+      if (settings.autoOptimizeHardware) {
+        setSettings(prev => ({ ...prev, effectsEnabled: !hw.isLowEnd }));
+      }
+      return hw;
+    } finally {
+      setIsBenchmarking(false);
     }
   };
 
@@ -168,6 +182,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       value={{
         settings,
         deviceInfo,
+        isBenchmarking,
         toggleTheme,
         toggleEffects,
         toggleSound,

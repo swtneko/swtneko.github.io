@@ -1,7 +1,7 @@
 /**
  * Device hardware benchmarking and capability detection utility.
  * Safely inspects available browser APIs (CPU cores, RAM, WebGL GPU renderer, motion preference)
- * to determine whether the device is lower-end (yếu/tiết kiệm pin) or high-end (khỏe).
+ * and runs real-time canvas animation stress tests to measure actual rendering FPS.
  */
 
 export interface DeviceHardwareInfo {
@@ -14,10 +14,11 @@ export interface DeviceHardwareInfo {
   prefersReducedMotion: boolean;
   saveData: boolean;
   score: number; // 0 - 100
+  measuredFps?: number;
   summary: string;
 }
 
-export function detectDeviceHardware(): DeviceHardwareInfo {
+export function detectDeviceHardware(measuredFps?: number): DeviceHardwareInfo {
   if (typeof window === 'undefined') {
     return {
       tier: 'high',
@@ -29,7 +30,8 @@ export function detectDeviceHardware(): DeviceHardwareInfo {
       prefersReducedMotion: false,
       saveData: false,
       score: 85,
-      summary: 'Thiết bị tiêu chuẩn',
+      measuredFps: 60,
+      summary: 'Thiết bị tiêu chuẩn (60 FPS)',
     };
   }
 
@@ -86,7 +88,6 @@ export function detectDeviceHardware(): DeviceHardwareInfo {
   } else {
     // If iOS (which hides deviceMemory), check screen resolution & cores
     if (/iPhone|iPad/i.test(ua)) {
-      // Modern iOS devices are typically very performant unless battery saver
       score += 15;
     }
   }
@@ -102,7 +103,7 @@ export function detectDeviceHardware(): DeviceHardwareInfo {
   ];
   const highGpuKeywords = [
     'apple', 'adreno 6', 'adreno 7', 'adreno 8', 'adreno (tm) 6', 'adreno (tm) 7',
-    'geforce', 'nvidia', 'radeon', 'rtx', 'gtx', 'immortalis', 'mali-g7'
+    'geforce', 'nvidia', 'radeon', 'rtx', 'gtx', 'immortalis', 'mali-g7', 'mali-g6'
   ];
 
   if (lowGpuKeywords.some(kw => gpuLower.includes(kw))) {
@@ -114,23 +115,35 @@ export function detectDeviceHardware(): DeviceHardwareInfo {
   if (saveData) score -= 20;
   if (prefersReducedMotion) score -= 30;
 
+  // Factor in real measured FPS if available
+  if (typeof measuredFps === 'number') {
+    if (measuredFps >= 55) {
+      score = Math.max(score, 75);
+    } else if (measuredFps >= 45) {
+      score = Math.max(score, 60);
+    } else if (measuredFps < 30) {
+      score = Math.min(score, 35);
+    }
+  }
+
   // Final tier categorization
-  const isLowEnd = score < 50 || prefersReducedMotion || saveData;
+  const isLowEnd = score < 45 || prefersReducedMotion || saveData || (typeof measuredFps === 'number' && measuredFps < 30);
   let tier: 'high' | 'medium' | 'low' = 'medium';
-  if (score >= 65 && !isLowEnd) {
+  if (score >= 60 && !isLowEnd) {
     tier = 'high';
   } else if (score < 45 || isLowEnd) {
     tier = 'low';
   }
 
   // Human-readable summary
+  const fpsText = measuredFps ? ` • ${Math.round(measuredFps)} FPS` : '';
   let summary = '';
   if (tier === 'high') {
-    summary = `Cấu hình mạnh (${cpuCores} nhân CPU${memoryGB ? `, ~${memoryGB}GB RAM` : ''}) • Mượt mà 60fps`;
+    summary = `Cấu hình mạnh (${cpuCores} nhân CPU${memoryGB ? `, ~${memoryGB}GB RAM` : ''})${fpsText} • Hiệu ứng mượt mà`;
   } else if (tier === 'medium') {
-    summary = `Cấu hình cân bằng (${cpuCores} nhân CPU${memoryGB ? `, ~${memoryGB}GB RAM` : ''}) • Hoạt động tốt`;
+    summary = `Cấu hình cân bằng (${cpuCores} nhân CPU${memoryGB ? `, ~${memoryGB}GB RAM` : ''})${fpsText} • Hoạt động tốt`;
   } else {
-    summary = `Cấu hình phổ thông / Tiết kiệm pin (${cpuCores} nhân CPU${memoryGB ? `, ~${memoryGB}GB RAM` : ''}) • Tối ưu nhẹ`;
+    summary = `Cấu hình phổ thông / Tiết kiệm pin (${cpuCores} nhân CPU${memoryGB ? `, ~${memoryGB}GB RAM` : ''})${fpsText} • Đã tối ưu nhẹ`;
   }
 
   return {
@@ -142,7 +155,105 @@ export function detectDeviceHardware(): DeviceHardwareInfo {
     isMobile,
     prefersReducedMotion,
     saveData,
+    measuredFps,
     score: Math.max(0, Math.min(100, score)),
     summary,
   };
 }
+
+/**
+ * Executes a real live canvas animation stress test for ~350ms to measure actual rendering FPS.
+ */
+export async function runLiveBenchmark(): Promise<DeviceHardwareInfo> {
+  if (typeof window === 'undefined') {
+    return detectDeviceHardware();
+  }
+
+  return new Promise<DeviceHardwareInfo>((resolve) => {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 300;
+      canvas.height = 300;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        resolve(detectDeviceHardware());
+        return;
+      }
+
+      const numParticles = 300;
+      const particles: { x: number; y: number; vx: number; vy: number; r: number; color: string }[] = [];
+      for (let i = 0; i < numParticles; i++) {
+        particles.push({
+          x: Math.random() * 300,
+          y: Math.random() * 300,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 4,
+          r: Math.random() * 3 + 1,
+          color: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 150 + 100)}, 255, 0.8)`,
+        });
+      }
+
+      let frameCount = 0;
+      const startTime = performance.now();
+      const testDurationMs = 350;
+
+      function renderFrame() {
+        const now = performance.now();
+        const elapsed = now - startTime;
+
+        if (!ctx) {
+          resolve(detectDeviceHardware());
+          return;
+        }
+
+        ctx.clearRect(0, 0, 300, 300);
+
+        // Draw and update particles
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > 300) p.vx *= -1;
+          if (p.y < 0 || p.y > 300) p.vy *= -1;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+
+          // Interconnecting particle lines
+          for (let j = i + 1; j < Math.min(i + 4, particles.length); j++) {
+            const p2 = particles[j];
+            const dx = p.x - p2.x;
+            const dy = p.y - p2.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 40) {
+              ctx.strokeStyle = `rgba(168, 85, 247, ${1 - dist / 40})`;
+              ctx.lineWidth = 0.5;
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.stroke();
+            }
+          }
+        }
+
+        frameCount++;
+
+        if (elapsed < testDurationMs) {
+          requestAnimationFrame(renderFrame);
+        } else {
+          const measuredFps = Math.min(60, Math.round((frameCount / (elapsed / 1000))));
+          const result = detectDeviceHardware(measuredFps);
+          resolve(result);
+        }
+      }
+
+      requestAnimationFrame(renderFrame);
+    } catch {
+      resolve(detectDeviceHardware());
+    }
+  });
+}
+

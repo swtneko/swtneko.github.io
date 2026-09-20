@@ -10,6 +10,8 @@ import HistoryModal from './components/HistoryModal';
 import { AdminPage } from './components/AdminPage';
 import { AnnouncementBanner } from './components/AnnouncementBanner';
 import { LiquidGlassCard } from './components/LiquidGlassCard';
+import { PWAInstallButton } from './components/PWAInstallButton';
+import { OfflineIndicator } from './components/OfflineIndicator';
 import { Sparkles, Settings, History, LogIn, LogOut, User as UserIcon, ShieldCheck, Bell, Lock } from 'lucide-react';
 import { DeckType, UserInfo, ReadingResult } from './types';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
@@ -234,6 +236,9 @@ function AppContent() {
                   </motion.div>
                 )}
 
+                {/* PWA Install Button for Android & iOS */}
+                <PWAInstallButton />
+
                 {/* Settings Button */}
                 <motion.div 
                   whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
@@ -356,6 +361,9 @@ function AppContent() {
           <div>© 2026 Neko Tarot • Dẫn lối bởi Vũ trụ</div>
         </footer>
       )}
+
+      {/* Connectivity status indicator */}
+      <OfflineIndicator />
     </div>
   );
 }

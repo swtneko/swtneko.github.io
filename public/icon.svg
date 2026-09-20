@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#241442"/>
+      <stop offset="60%" stop-color="#120a24"/>
+      <stop offset="100%" stop-color="#07040d"/>
+    </radialGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="purpleGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="108" fill="url(#bgGrad)"/>
+
+  <!-- Celestial Outer Rings -->
+  <circle cx="256" cy="256" r="218" fill="none" stroke="url(#goldGrad)" stroke-width="2.5" stroke-opacity="0.4" stroke-dasharray="6 4"/>
+  <circle cx="256" cy="256" r="202" fill="none" stroke="url(#goldGrad)" stroke-width="1.5" stroke-opacity="0.3"/>
+  <circle cx="256" cy="256" r="184" fill="none" stroke="#a855f7" stroke-width="1" stroke-opacity="0.25"/>
+
+  <!-- Four Cardinal Stars -->
+  <polygon points="256,44 260,56 272,60 260,64 256,76 252,64 240,60 252,56" fill="url(#goldGrad)"/>
+  <polygon points="256,436 260,448 272,452 260,456 256,468 252,456 240,452 252,448" fill="url(#goldGrad)"/>
+  <polygon points="44,256 56,260 60,272 64,260 76,256 64,252 60,240 56,252" fill="url(#goldGrad)"/>
+  <polygon points="436,256 448,260 452,272 456,260 468,256 456,252 452,240 448,252" fill="url(#goldGrad)"/>
+
+  <!-- Crescent Moon Background Glow -->
+  <path d="M 290 140 A 130 130 0 0 0 170 330 A 150 150 0 1 1 350 170 A 130 130 0 0 0 290 140 Z" fill="url(#purpleGlow)" opacity="0.18" filter="url(#glow)"/>
+
+  <!-- Mystical Crescent Moon behind Neko -->
+  <path d="M 280 148 A 120 120 0 0 0 180 310 A 138 138 0 1 1 336 172 A 120 120 0 0 0 280 148 Z" fill="url(#goldGrad)" opacity="0.85"/>
+
+  <!-- Mystical Neko (Cat) Silhouette & Features -->
+  <!-- Cat Ears -->
+  <polygon points="180,240 196,150 236,204" fill="#0f091f" stroke="url(#goldGrad)" stroke-width="3"/>
+  <polygon points="190,226 200,168 226,204" fill="url(#purpleGlow)" opacity="0.6"/>
+  <polygon points="332,240 316,150 276,204" fill="#0f091f" stroke="url(#goldGrad)" stroke-width="3"/>
+  <polygon points="322,226 312,168 286,204" fill="url(#purpleGlow)" opacity="0.6"/>
+
+  <!-- Cat Head & Body Silhouette -->
+  <path d="M 194 220 C 194 186, 318 186, 318 220 C 330 250, 330 286, 316 314 C 300 346, 312 400, 326 424 C 290 428, 222 428, 186 424 C 200 400, 212 346, 196 314 C 182 286, 182 250, 194 220 Z" fill="#130b26" stroke="url(#goldGrad)" stroke-width="3.5"/>
+
+  <!-- Forehead Third-Eye Celestial Diamond Star -->
+  <polygon points="256,216 264,232 280,240 264,248 256,264 248,248 232,240 248,232" fill="url(#goldGrad)" filter="url(#glow)"/>
+  <circle cx="256" cy="240" r="3.5" fill="#ffffff"/>
+
+  <!-- Glowing Cat Eyes -->
+  <ellipse cx="226" cy="276" rx="14" ry="9" transform="rotate(-10 226 276)" fill="#fef08a"/>
+  <ellipse cx="226" cy="276" rx="3.5" ry="8" fill="#1e1035"/>
+  <ellipse cx="286" cy="276" rx="14" ry="9" transform="rotate(10 286 276)" fill="#fef08a"/>
+  <ellipse cx="286" cy="276" rx="3.5" ry="8" fill="#1e1035"/>
+
+  <!-- Nose & Whiskers -->
+  <polygon points="256,296 251,291 261,291" fill="url(#goldGrad)"/>
+  <path d="M 256 296 L 252 303 M 256 296 L 260 303" stroke="url(#goldGrad)" stroke-width="2"/>
+  <line x1="210" y1="298" x2="162" y2="292" stroke="url(#goldGrad)" stroke-width="1.8" stroke-opacity="0.85"/>
+  <line x1="210" y1="304" x2="160" y2="306" stroke="url(#goldGrad)" stroke-width="1.8" stroke-opacity="0.85"/>
+  <line x1="302" y1="298" x2="350" y2="292" stroke="url(#goldGrad)" stroke-width="1.8" stroke-opacity="0.85"/>
+  <line x1="302" y1="304" x2="352" y2="306" stroke="url(#goldGrad)" stroke-width="1.8" stroke-opacity="0.85"/>
+
+  <!-- Tarot Card in Cat Paws / Chest -->
+  <rect x="235" y="342" width="42" height="66" rx="4" fill="#1f143d" stroke="url(#goldGrad)" stroke-width="2"/>
+  <circle cx="256" cy="375" r="12" fill="none" stroke="url(#goldGrad)" stroke-width="1.2" stroke-dasharray="2 2"/>
+  <polygon points="256,368 260,375 256,382 252,375" fill="url(#goldGrad)"/>
+
+  <!-- Constellation Sparkles -->
+  <circle cx="120" cy="180" r="2.5" fill="#fef08a" opacity="0.8"/>
+  <circle cx="390" cy="190" r="2.5" fill="#fef08a" opacity="0.8"/>
+  <circle cx="130" cy="360" r="2" fill="#c084fc" opacity="0.7"/>
+  <circle cx="380" cy="360" r="2" fill="#c084fc" opacity="0.7"/>
+</svg>

@@ -93,6 +93,9 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
       setFollowUps(initialReading.followUps || []);
       setStep('result');
       setIsSaved(true);
+      if (typeof window !== 'undefined' && !window.location.pathname.includes(initialReading.id)) {
+        window.history.replaceState(null, '', `/reading/${initialReading.id}`);
+      }
     }
   }, [initialReading]);
 
@@ -152,6 +155,9 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
       };
       await saveNewReading(record);
       setIsSaved(true);
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(null, '', `/reading/${newId}`);
+      }
     }).catch((err) => {
       console.error(err);
       setApiError(err.message || String(err));

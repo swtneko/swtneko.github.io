@@ -351,23 +351,97 @@ export const saveReading = async (userId: string | undefined, reading: ReadingRe
   if (!userId || userId === 'guest') {
     // Guest mode: save only to guest storage
     saveGuestReading(sanitized);
-    return;
+  } else {
+    // Account mode: save to user local cache first so it's instantly preserved
+    saveUserCacheReading(userId, sanitized);
   }
 
-  // Account mode: save to user local cache first so it's instantly preserved
-  saveUserCacheReading(userId, sanitized);
-
+  // Also persist to shared_readings for instant direct-link access
   try {
-    const readingRef = doc(db, 'users', userId, 'readings', sanitized.id);
-    await setDoc(readingRef, {
+    const sharedRef = doc(db, 'shared_readings', sanitized.id);
+    await setDoc(sharedRef, {
       ...sanitized,
-      userId,
       updatedAt: new Date().toISOString(),
     }, { merge: true });
-    console.log(`[Firestore] Successfully saved reading ${sanitized.id} for user ${userId}`);
   } catch (err) {
-    console.error('Failed to save reading to Firestore, kept in local cache:', err);
+    console.warn('Could not sync to shared_readings:', err);
   }
+
+  if (userId && userId !== 'guest') {
+    try {
+      const readingRef = doc(db, 'users', userId, 'readings', sanitized.id);
+      await setDoc(readingRef, {
+        ...sanitized,
+        userId,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+      console.log(`[Firestore] Successfully saved reading ${sanitized.id} for user ${userId}`);
+    } catch (err) {
+      console.error('Failed to save reading to Firestore, kept in local cache:', err);
+    }
+  }
+};
+
+/**
+ * Fetch a single reading by its ID from local storage or Firestore
+ */
+export const getReadingById = async (readingId: string, userId?: string): Promise<ReadingResult | null> => {
+  if (!readingId) return null;
+
+  // 1. Check guest readings
+  const guestList = getGuestReadings();
+  const fromGuest = guestList.find(r => r && r.id === readingId);
+  if (fromGuest) return fromGuest;
+
+  // 2. Check user cache if available
+  if (userId && userId !== 'guest') {
+    const userCache = getUserCacheReadings(userId);
+    const fromUserCache = userCache.find(r => r && r.id === readingId);
+    if (fromUserCache) return fromUserCache;
+  }
+
+  // 3. Fallback: check any other local storage keys
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('celestial-readings') || key.includes('reading'))) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            const found = parsed.find((r: any) => r && r.id === readingId);
+            if (found) return found;
+          }
+        }
+      }
+    }
+  } catch {}
+
+  // 4. Check Firestore shared_readings (works for any device/browser having the link)
+  try {
+    const sharedRef = doc(db, 'shared_readings', readingId);
+    const sharedSnap = await getDoc(sharedRef);
+    if (sharedSnap.exists()) {
+      return sharedSnap.data() as ReadingResult;
+    }
+  } catch (err) {
+    console.warn('Failed to fetch from shared_readings:', err);
+  }
+
+  // 5. If user is authenticated, check their private readings
+  if (userId && userId !== 'guest') {
+    try {
+      const userRef = doc(db, 'users', userId, 'readings', readingId);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        return userSnap.data() as ReadingResult;
+      }
+    } catch (err) {
+      console.warn('Failed to fetch from user readings:', err);
+    }
+  }
+
+  return null;
 };
 
 export const updateReadingFollowUps = async (

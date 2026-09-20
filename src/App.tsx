@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import CosmicBackground from './components/CosmicBackground';
 import HomeScreen from './components/HomeScreen';
@@ -7,15 +7,17 @@ import { TuViScreen } from './components/TuViScreen';
 import SettingsModal from './components/SettingsModal';
 import AuthModal from './components/AuthModal';
 import HistoryModal from './components/HistoryModal';
+import { UserGuideModal } from './components/UserGuideModal';
 import { AdminPage } from './components/AdminPage';
 import { AnnouncementBanner } from './components/AnnouncementBanner';
 import { LiquidGlassCard } from './components/LiquidGlassCard';
 import { PWAFloatingBubble } from './components/PWAFloatingBubble';
 import { OfflineIndicator } from './components/OfflineIndicator';
-import { Sparkles, Settings, History, LogIn, LogOut, User as UserIcon, ShieldCheck, Bell, Lock } from 'lucide-react';
+import { Sparkles, Settings, History, LogIn, LogOut, User as UserIcon, ShieldCheck, Bell, Lock, BookOpen, AlertCircle, Loader2 } from 'lucide-react';
 import { DeckType, UserInfo, ReadingResult } from './types';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { getReadingById } from './services/firebase';
 
 function AppContent() {
   const [view, setView] = useState<'home' | 'reading' | 'tuvi' | 'admin'>('home');
@@ -23,10 +25,125 @@ function AppContent() {
   const [deckType, setDeckType] = useState<DeckType>(DeckType.TAROT);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [selectedReading, setSelectedReading] = useState<ReadingResult | null>(null);
+  const [isLoadingDirectReading, setIsLoadingDirectReading] = useState(false);
+  const [routeError, setRouteError] = useState<string | null>(null);
 
   const { settings } = useSettings();
-  const { currentUser, openAuthModal, logout, readings, isAdmin, openAdminModal, systemSettings } = useAuth();
+  const { currentUser, openAuthModal, logout, readings, isAdmin, systemSettings } = useAuth();
+
+  // URL Navigation helper
+  const navigateTo = useCallback((path: string, replace = false) => {
+    if (typeof window === 'undefined') return;
+    if (replace) {
+      window.history.replaceState(null, '', path);
+    } else {
+      window.history.pushState(null, '', path);
+    }
+  }, []);
+
+  // Parse path and query parameters
+  const syncRouteFromLocation = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
+    const params = new URLSearchParams(window.location.search);
+    const qReadingId = params.get('id') || params.get('readingId');
+
+    // 1. Admin route
+    if (pathname === '/admin') {
+      setView('admin');
+      setIsGuideOpen(false);
+      setIsHistoryOpen(false);
+      return;
+    }
+
+    // 2. Guide route
+    if (pathname === '/huong-dan' || pathname === '/guide') {
+      setIsGuideOpen(true);
+      return;
+    }
+
+    // 3. History route
+    if (pathname === '/lich-su' || pathname === '/history') {
+      setIsHistoryOpen(true);
+      return;
+    }
+
+    // 4. Tu Vi route
+    if (pathname === '/tuvi') {
+      setView('tuvi');
+      setDeckType(DeckType.TU_VI);
+      if (!userInfo) {
+        setUserInfo({ fullName: currentUser?.displayName || 'Tín chủ', request: '' });
+      }
+      return;
+    }
+
+    // 5. Tarot route
+    if (pathname === '/tarot') {
+      setView('reading');
+      setDeckType(DeckType.TAROT);
+      if (!userInfo) {
+        setUserInfo({ fullName: currentUser?.displayName || 'Tín chủ', request: '' });
+      }
+      return;
+    }
+
+    // 6. Direct Reading link: /reading/:id or /ket-qua/:id or ?id=...
+    const readingMatch = pathname.match(/^\/(?:reading|ket-qua)\/([^/]+)/);
+    const targetReadingId = readingMatch ? decodeURIComponent(readingMatch[1]) : qReadingId;
+
+    if (targetReadingId) {
+      if (selectedReading && selectedReading.id === targetReadingId) {
+        // Already loaded
+        setView(selectedReading.deckType === DeckType.TU_VI ? 'tuvi' : 'reading');
+        return;
+      }
+
+      setIsLoadingDirectReading(true);
+      setRouteError(null);
+      try {
+        const found = await getReadingById(targetReadingId, currentUser?.uid);
+        if (found) {
+          setSelectedReading(found);
+          setUserInfo(found.userInfo);
+          setDeckType(found.deckType);
+          setView(found.deckType === DeckType.TU_VI ? 'tuvi' : 'reading');
+        } else {
+          setRouteError(`Không tìm thấy kết quả quẻ bói "${targetReadingId}". Có thể liên kết không chính xác hoặc đã hết hạn.`);
+          setTimeout(() => setRouteError(null), 5000);
+          navigateTo('/', true);
+          setView('home');
+          setSelectedReading(null);
+        }
+      } catch (err) {
+        console.error('Error fetching reading by link:', err);
+        setRouteError('Có lỗi khi tải kết quả quẻ bói từ liên kết này.');
+        navigateTo('/', true);
+        setView('home');
+      } finally {
+        setIsLoadingDirectReading(false);
+      }
+      return;
+    }
+
+    // 7. Default root
+    if (pathname === '/' || pathname === '') {
+      setView('home');
+      setSelectedReading(null);
+    }
+  }, [currentUser, navigateTo, selectedReading, userInfo]);
+
+  // Listen to browser Back/Forward (popstate)
+  useEffect(() => {
+    syncRouteFromLocation();
+    const handlePopState = () => {
+      syncRouteFromLocation();
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [syncRouteFromLocation]);
 
   const handleStart = (info: UserInfo, type: DeckType) => {
     if (!systemSettings.enableGuestReadings && !currentUser) {
@@ -37,8 +154,10 @@ function AppContent() {
     setUserInfo(info);
     setDeckType(type);
     if (type === DeckType.TU_VI) {
+      navigateTo('/tuvi');
       setView('tuvi');
     } else {
+      navigateTo('/tarot');
       setView('reading');
     }
   };
@@ -51,6 +170,7 @@ function AppContent() {
     setSelectedReading(null);
     if (info) setUserInfo(info);
     setDeckType(DeckType.TU_VI);
+    navigateTo('/tuvi');
     setView('tuvi');
   };
 
@@ -58,10 +178,61 @@ function AppContent() {
     setSelectedReading(reading);
     setUserInfo(reading.userInfo);
     setDeckType(reading.deckType);
+    navigateTo(`/reading/${reading.id}`);
     if (reading.deckType === DeckType.TU_VI) {
       setView('tuvi');
     } else {
       setView('reading');
+    }
+  };
+
+  const handleNavigateHome = () => {
+    setSelectedReading(null);
+    navigateTo('/');
+    setView('home');
+  };
+
+  const handleOpenAdmin = () => {
+    navigateTo('/admin');
+    setView('admin');
+  };
+
+  const handleOpenGuide = () => {
+    navigateTo('/huong-dan');
+    setIsGuideOpen(true);
+  };
+
+  const handleCloseGuide = () => {
+    setIsGuideOpen(false);
+    // If currently on guide URL, return to current view's URL
+    if (window.location.pathname.includes('huong-dan') || window.location.pathname.includes('guide')) {
+      if (view === 'admin') navigateTo('/admin', true);
+      else if (view === 'tuvi') navigateTo('/tuvi', true);
+      else if (view === 'reading') {
+        if (selectedReading) navigateTo(`/reading/${selectedReading.id}`, true);
+        else navigateTo('/tarot', true);
+      } else {
+        navigateTo('/', true);
+      }
+    }
+  };
+
+  const handleOpenHistory = () => {
+    navigateTo('/lich-su');
+    setIsHistoryOpen(true);
+  };
+
+  const handleCloseHistory = () => {
+    setIsHistoryOpen(false);
+    if (window.location.pathname.includes('lich-su') || window.location.pathname.includes('history')) {
+      if (view === 'admin') navigateTo('/admin', true);
+      else if (view === 'tuvi') navigateTo('/tuvi', true);
+      else if (view === 'reading') {
+        if (selectedReading) navigateTo(`/reading/${selectedReading.id}`, true);
+        else navigateTo('/tarot', true);
+      } else {
+        navigateTo('/', true);
+      }
     }
   };
 
@@ -73,6 +244,34 @@ function AppContent() {
     } ${settings.theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
       {settings.effectsEnabled && <CosmicBackground />}
       
+      {/* Route Error Notification Toast */}
+      <AnimatePresence>
+        {routeError && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl bg-rose-900/90 text-white border border-rose-500/50 shadow-xl flex items-center gap-2 text-xs backdrop-blur-md max-w-md w-11/12"
+          >
+            <AlertCircle className="w-4 h-4 text-rose-300 shrink-0" />
+            <span className="flex-1">{routeError}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Loading direct reading overlay */}
+      {isLoadingDirectReading && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/70 backdrop-blur-md">
+          <div className="p-5 rounded-3xl bg-[#120a24]/90 border border-purple-500/40 text-center space-y-3 shadow-2xl">
+            <Loader2 className="w-8 h-8 text-amber-400 animate-spin mx-auto" />
+            <div className="space-y-1">
+              <h3 className="font-bold text-white text-sm">Đang tải kết quả quẻ bói...</h3>
+              <p className="text-xs text-purple-200/70">Đang đồng bộ dữ liệu quẻ bài từ Vũ Trụ</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Fixed Top Header (Liquid Glass Floating Bar) */}
       {view !== 'admin' && (
         <header className="fixed top-2 sm:top-3 left-2 sm:left-4 right-2 sm:right-4 z-40 max-w-7xl mx-auto pointer-events-none">
@@ -97,11 +296,8 @@ function AppContent() {
               {/* Brand */}
               <div 
                 className="flex items-center cursor-pointer group shrink-0 mr-1 sm:mr-3 relative z-10"
-                onClick={() => {
-                  setSelectedReading(null);
-                  setView('home');
-                }}
-                title="Về trang chủ Neko Tarot"
+                onClick={handleNavigateHome}
+                title="Về trang chủ Neko Tarot (/)"
               >
                 <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center transition-all duration-300 shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] ${
                   settings.theme === 'dark' 
@@ -118,15 +314,38 @@ function AppContent() {
               </div>
               
               {/* Actions */}
-              <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0 relative z-10">
+              <div className="flex items-center space-x-1 sm:space-x-2 shrink-0 relative z-10">
+                {/* User Guide Button */}
+                <motion.div
+                  whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
+                  whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
+                  onClick={handleOpenGuide}
+                  className="shrink-0 cursor-pointer"
+                  title="Cẩm nang hướng dẫn sử dụng toàn tập (/huong-dan)"
+                >
+                  <LiquidGlassCard
+                    borderRadius="9999px"
+                    blurIntensity="md"
+                    borderIntensity="xs"
+                    shadowIntensity="xs"
+                    className="cursor-pointer"
+                    contentClassName={`flex items-center space-x-1 px-2.5 sm:px-3 py-1.5 text-xs font-bold ${
+                      settings.theme === 'dark' ? 'text-amber-300' : 'text-amber-800'
+                    }`}
+                  >
+                    <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
+                    <span className="hidden sm:inline">Hướng Dẫn</span>
+                  </LiquidGlassCard>
+                </motion.div>
+
                 {/* Admin Dashboard Button (Only for admin) */}
                 {isAdmin && (
                   <motion.div
                     whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
                     whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
-                    onClick={() => setView('admin')}
+                    onClick={handleOpenAdmin}
                     className="shrink-0 cursor-pointer"
-                    title="Mở Trang Quản Trị Hệ Thống"
+                    title="Mở Trang Quản Trị Hệ Thống (/admin)"
                   >
                     <LiquidGlassCard
                       borderRadius="9999px"
@@ -134,7 +353,7 @@ function AppContent() {
                       borderIntensity="xs"
                       shadowIntensity="xs"
                       className="cursor-pointer"
-                      contentClassName={`flex items-center space-x-1 px-3 py-1.5 text-xs font-bold ${
+                      contentClassName={`flex items-center space-x-1 px-2.5 sm:px-3 py-1.5 text-xs font-bold ${
                         settings.theme === 'dark' ? 'text-amber-300' : 'text-amber-800'
                       }`}
                     >
@@ -148,9 +367,9 @@ function AppContent() {
                 <motion.div
                   whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
                   whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
-                  onClick={() => setIsHistoryOpen(true)}
+                  onClick={handleOpenHistory}
                   className="shrink-0 cursor-pointer"
-                  title="Xem lịch sử các quẻ bài đã hỏi"
+                  title="Xem lịch sử các quẻ bài đã hỏi (/lich-su)"
                 >
                   <LiquidGlassCard
                     borderRadius="9999px"
@@ -158,7 +377,7 @@ function AppContent() {
                     borderIntensity="xs"
                     shadowIntensity="xs"
                     className="cursor-pointer"
-                    contentClassName={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold ${
+                    contentClassName={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-bold ${
                       settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'
                     }`}
                   >
@@ -242,7 +461,7 @@ function AppContent() {
                   whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
                   onClick={() => setIsSettingsOpen(true)}
                   className="shrink-0 cursor-pointer"
-                  title="Cài đặt hệ thống & API"
+                  title="Cài đặt hệ thống & cấu hình máy"
                 >
                   <LiquidGlassCard
                     borderRadius="9999px"
@@ -287,10 +506,7 @@ function AppContent() {
                 userInfo={userInfo || selectedReading!.userInfo} 
                 deckType={deckType}
                 initialReading={selectedReading}
-                onReset={() => {
-                  setSelectedReading(null);
-                  setView('home');
-                }}
+                onReset={handleNavigateHome}
               />
             </motion.div>
           )}
@@ -306,10 +522,7 @@ function AppContent() {
               <TuViScreen
                 initialUserInfo={userInfo}
                 initialReading={selectedReading}
-                onBack={() => {
-                  setSelectedReading(null);
-                  setView('home');
-                }}
+                onBack={handleNavigateHome}
               />
             </motion.div>
           )}
@@ -322,16 +535,28 @@ function AppContent() {
               exit={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
               className="liquid-glass-card-wrapper w-full"
             >
-              <AdminPage onBack={() => setView('home')} />
+              <AdminPage onBack={handleNavigateHome} />
             </motion.div>
           )}
         </AnimatePresence>
       </main>
 
+      {/* User Guide Modal */}
+      <UserGuideModal
+        isOpen={isGuideOpen}
+        onClose={handleCloseGuide}
+        onNavigateTarot={() => {
+          handleStart({ fullName: currentUser?.displayName || 'Tín chủ', request: '' }, DeckType.TAROT);
+        }}
+        onNavigateTuVi={() => {
+          handleStartTuVi({ fullName: currentUser?.displayName || 'Tín chủ', request: '' });
+        }}
+      />
+
       {/* History Modal */}
       <HistoryModal
         isOpen={isHistoryOpen}
-        onClose={() => setIsHistoryOpen(false)}
+        onClose={handleCloseHistory}
         onSelectReading={handleSelectHistoricalReading}
       />
 
@@ -344,18 +569,75 @@ function AppContent() {
           <SettingsModal
             isOpen={isSettingsOpen}
             onClose={() => setIsSettingsOpen(false)}
-            onOpenAdminPage={() => {
-              setIsSettingsOpen(false);
-              setView('admin');
-            }}
+            onOpenAdminPage={handleOpenAdmin}
+            onOpenGuide={handleOpenGuide}
           />
         )}
       </AnimatePresence>
 
-      {/* Footer */}
+      {/* Footer with Distinct Path Links */}
       {view !== 'admin' && (
-        <footer className={`relative z-10 py-10 text-center text-[10px] uppercase tracking-[0.4em] transition-colors flex flex-col items-center justify-center gap-1.5 ${settings.theme === 'dark' ? 'text-purple-400/40' : 'text-purple-900/50 font-medium'}`}>
-          <div>© 2026 Neko Tarot • Dẫn lối bởi Vũ trụ</div>
+        <footer className={`relative z-10 py-10 text-center text-xs transition-colors flex flex-col items-center justify-center gap-3 px-4 ${settings.theme === 'dark' ? 'text-purple-300/60' : 'text-purple-900/70'}`}>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-semibold">
+            <button 
+              onClick={handleNavigateHome} 
+              className="hover:text-purple-300 hover:underline cursor-pointer"
+            >
+              Trang chủ (/)
+            </button>
+            <span>•</span>
+            <button 
+              onClick={() => {
+                navigateTo('/tarot');
+                setView('reading');
+                setDeckType(DeckType.TAROT);
+                if (!userInfo) setUserInfo({ fullName: 'Tín chủ', request: '' });
+              }} 
+              className="hover:text-purple-300 hover:underline cursor-pointer"
+            >
+              Bói Tarot (/tarot)
+            </button>
+            <span>•</span>
+            <button 
+              onClick={() => {
+                navigateTo('/tuvi');
+                setView('tuvi');
+                setDeckType(DeckType.TU_VI);
+                if (!userInfo) setUserInfo({ fullName: 'Tín chủ', request: '' });
+              }} 
+              className="hover:text-purple-300 hover:underline cursor-pointer"
+            >
+              Tử Vi (/tuvi)
+            </button>
+            <span>•</span>
+            <button 
+              onClick={handleOpenGuide} 
+              className="hover:text-amber-400 hover:underline cursor-pointer font-bold text-amber-300/80"
+            >
+              Hướng Dẫn (/huong-dan)
+            </button>
+            <span>•</span>
+            <button 
+              onClick={handleOpenHistory} 
+              className="hover:text-purple-300 hover:underline cursor-pointer"
+            >
+              Lịch Sử (/lich-su)
+            </button>
+            {isAdmin && (
+              <>
+                <span>•</span>
+                <button 
+                  onClick={handleOpenAdmin} 
+                  className="hover:text-amber-400 hover:underline cursor-pointer text-amber-400 font-bold"
+                >
+                  Quản Trị (/admin)
+                </button>
+              </>
+            )}
+          </div>
+          <div className="text-[10px] uppercase tracking-[0.3em] opacity-60">
+            © 2026 Neko Tarot • Dẫn lối bởi Vũ trụ & Trí Tuệ Nhân Tạo
+          </div>
         </footer>
       )}
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { X, Moon, Sun, Zap, ZapOff, Volume2, VolumeX, Cpu, Key, ChevronDown, ChevronUp, Check, ExternalLink, ShieldCheck, Lock, Layers } from 'lucide-react';
+import { X, Moon, Sun, Zap, ZapOff, Volume2, VolumeX, Cpu, Key, ChevronDown, ChevronUp, Check, ExternalLink, ShieldCheck, Lock, Layers, BookOpen, RefreshCw } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { AIProvider, CustomApiKeys, TarotDeckStyle } from '../types';
@@ -11,10 +11,24 @@ interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenAdminPage?: () => void;
+  onOpenGuide?: () => void;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAdminPage }) => {
-  const { settings, toggleTheme, toggleEffects, toggleSound, setAiProvider, setAiModel, setAllowFallback, setCustomKey, setTarotDeckStyle } = useSettings();
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAdminPage, onOpenGuide }) => {
+  const { 
+    settings, 
+    deviceInfo, 
+    toggleTheme, 
+    toggleEffects, 
+    toggleSound, 
+    setAutoOptimizeHardware, 
+    rebenchmarkDevice,
+    setAiProvider, 
+    setAiModel, 
+    setAllowFallback, 
+    setCustomKey, 
+    setTarotDeckStyle 
+  } = useSettings();
   const { isAdmin, activateAdminByPasskey, currentUser, openAuthModal, systemSettings } = useAuth();
   const [showKeySettings, setShowKeySettings] = useState(false);
   const [showAdminUnlock, setShowAdminUnlock] = useState(false);
@@ -139,13 +153,68 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
               </button>
             </div>
 
-            {/* Hiệu ứng hình ảnh */}
+            {/* Tự động đo cấu hình thiết bị */}
+            <div className="p-3 rounded-2xl bg-purple-950/30 border border-purple-500/20 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2.5">
+                  <Cpu className="w-4 h-4 text-amber-400" />
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-xs font-bold ${settings.theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Tự đo cấu hình máy & tối ưu</span>
+                      <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase ${
+                        deviceInfo.tier === 'high' 
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                          : deviceInfo.tier === 'medium'
+                          ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                          : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      }`}>
+                        {deviceInfo.tier === 'high' ? 'Khỏe (60FPS)' : deviceInfo.tier === 'medium' ? 'Cân bằng' : 'Tiết kiệm / Yếu'}
+                      </span>
+                    </div>
+                    <span className={`text-[10px] ${settings.theme === 'dark' ? 'text-purple-300/80' : 'text-slate-500'}`}>
+                      {deviceInfo.summary}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAutoOptimizeHardware(!settings.autoOptimizeHardware)}
+                  className={`w-12 h-6 rounded-full relative transition-colors ${settings.autoOptimizeHardware ? 'bg-amber-500' : 'bg-gray-400'}`}
+                  title="Bật/tắt tự động tối ưu theo phần cứng"
+                >
+                  <motion.div
+                    animate={{ x: settings.autoOptimizeHardware ? 26 : 2 }}
+                    transition={settings.effectsEnabled ? undefined : { duration: 0 }}
+                    className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm"
+                  />
+                </button>
+              </div>
+
+              {/* Hardware specifications mini bar */}
+              <div className="flex items-center justify-between text-[10px] pt-1.5 border-t border-white/5 px-0.5">
+                <span className="text-purple-300/70 truncate max-w-[240px]" title={deviceInfo.gpuRenderer}>
+                  GPU: {deviceInfo.gpuRenderer}
+                </span>
+                <button
+                  type="button"
+                  onClick={rebenchmarkDevice}
+                  className="flex items-center gap-1 text-amber-400 hover:text-amber-300 font-semibold cursor-pointer shrink-0"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>Quét lại</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Hiệu ứng hình ảnh (Animation thủ công) */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 {settings.effectsEnabled ? <Zap className="w-5 h-5 text-blue-400" /> : <ZapOff className="w-5 h-5 text-gray-400" />}
                 <div className="flex flex-col">
-                  <span className={`font-semibold ${settings.theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Hiệu ứng hình ảnh</span>
-                  <span className={`text-[10px] font-medium ${settings.theme === 'dark' ? 'text-purple-300/80' : 'text-slate-500'}`}>Tắt để tăng tốc cho thiết bị yếu (vẫn giữ tráo & lật bài)</span>
+                  <span className={`font-semibold ${settings.theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Hiệu ứng hình ảnh (Animation)</span>
+                  <span className={`text-[10px] font-medium ${settings.theme === 'dark' ? 'text-purple-300/80' : 'text-slate-500'}`}>
+                    {settings.effectsEnabled ? 'Đang bật đầy đủ chuyển động 3D & bụi sao' : 'Đang ở chế độ nhẹ giúp máy mượt mà'}
+                  </span>
                 </div>
               </div>
               <button
@@ -159,6 +228,26 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
                 />
               </button>
             </div>
+
+            {/* Nút Mở Hướng Dẫn Sử Dụng Toàn Tập */}
+            {onOpenGuide && (
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenGuide();
+                  }}
+                  className="w-full py-2 px-3 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-200 hover:text-white transition flex items-center justify-between text-xs font-semibold cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-amber-400" />
+                    <span>Cẩm nang Hướng dẫn sử dụng Neko Tarot</span>
+                  </span>
+                  <span className="text-[10px] text-amber-300 font-bold uppercase">Xem ngay →</span>
+                </button>
+              </div>
+            )}
 
             {/* Âm thanh huyền bí */}
             <div className="flex items-center justify-between">

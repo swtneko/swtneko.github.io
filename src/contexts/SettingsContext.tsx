@@ -1,11 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AppSettings, AIProvider, CustomApiKeys, TarotDeckStyle } from '../types';
+import { detectDeviceHardware, DeviceHardwareInfo } from '../utils/deviceBenchmark';
 
 interface SettingsContextType {
   settings: AppSettings;
+  deviceInfo: DeviceHardwareInfo;
   toggleTheme: () => void;
   toggleEffects: () => void;
   toggleSound: () => void;
+  setAutoOptimizeHardware: (enabled: boolean) => void;
+  rebenchmarkDevice: () => void;
   setAiProvider: (provider: AIProvider) => void;
   setAiModel: (model: string) => void;
   setAllowFallback: (allow: boolean) => void;
@@ -24,6 +28,7 @@ const getDefaultModelForProvider = (provider: AIProvider): string => {
 const defaultSettings: AppSettings = {
   theme: 'dark',
   effectsEnabled: true,
+  autoOptimizeHardware: true,
   soundEnabled: true,
   aiProvider: 'openrouter',
   aiModel: 'openrouter/free',
@@ -35,14 +40,23 @@ const defaultSettings: AppSettings = {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [deviceInfo, setDeviceInfo] = useState<DeviceHardwareInfo>(() => detectDeviceHardware());
+
   const [settings, setSettings] = useState<AppSettings>(() => {
+    const detected = detectDeviceHardware();
     try {
       const saved = localStorage.getItem('celestial-settings');
       if (saved) {
         const parsed = JSON.parse(saved);
+        const autoOpt = parsed.autoOptimizeHardware ?? true;
+        // If auto-optimize is enabled and user hasn't explicitly locked effects, tune to hardware
+        const effectsVal = autoOpt ? !detected.isLowEnd : (parsed.effectsEnabled ?? !detected.isLowEnd);
+
         return {
           ...defaultSettings,
           ...parsed,
+          effectsEnabled: effectsVal,
+          autoOptimizeHardware: autoOpt,
           aiModel: parsed.aiModel || getDefaultModelForProvider(parsed.aiProvider || 'auto'),
           allowFallback: parsed.allowFallback ?? true,
           customKeys: {
@@ -54,8 +68,25 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch (e) {
       console.error("Failed to parse settings", e);
     }
-    return defaultSettings;
+    // Default initial load: adjust effects based on detected hardware
+    return {
+      ...defaultSettings,
+      effectsEnabled: !detected.isLowEnd,
+      autoOptimizeHardware: true,
+    };
   });
+
+  // Re-benchmark on mount in browser
+  useEffect(() => {
+    const hw = detectDeviceHardware();
+    setDeviceInfo(hw);
+    if (settings.autoOptimizeHardware) {
+      setSettings(prev => ({
+        ...prev,
+        effectsEnabled: !hw.isLowEnd,
+      }));
+    }
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('celestial-settings', JSON.stringify(settings));
@@ -71,7 +102,31 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const toggleEffects = () => {
-    setSettings(prev => ({ ...prev, effectsEnabled: !prev.effectsEnabled }));
+    setSettings(prev => ({ 
+      ...prev, 
+      effectsEnabled: !prev.effectsEnabled,
+      // If user manually toggles effects, remember that they took manual control
+      autoOptimizeHardware: false 
+    }));
+  };
+
+  const setAutoOptimizeHardware = (enabled: boolean) => {
+    setSettings(prev => {
+      const newEffects = enabled ? !deviceInfo.isLowEnd : prev.effectsEnabled;
+      return {
+        ...prev,
+        autoOptimizeHardware: enabled,
+        effectsEnabled: newEffects,
+      };
+    });
+  };
+
+  const rebenchmarkDevice = () => {
+    const hw = detectDeviceHardware();
+    setDeviceInfo(hw);
+    if (settings.autoOptimizeHardware) {
+      setSettings(prev => ({ ...prev, effectsEnabled: !hw.isLowEnd }));
+    }
   };
 
   const toggleSound = () => {
@@ -112,9 +167,12 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     <SettingsContext.Provider
       value={{
         settings,
+        deviceInfo,
         toggleTheme,
         toggleEffects,
         toggleSound,
+        setAutoOptimizeHardware,
+        rebenchmarkDevice,
         setAiProvider,
         setAiModel,
         setAllowFallback,

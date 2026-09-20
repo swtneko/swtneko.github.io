@@ -47,6 +47,12 @@ service cloud.firestore {
         allow read, write: if isOwner(userId) || isAdmin();
       }
     }
+
+    // Shared reading links (anyone with the direct link can read)
+    match /shared_readings/{readingId} {
+      allow read: if true;
+      allow create, update: if true;
+    }
   }
 }
 

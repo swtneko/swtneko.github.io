@@ -79,6 +79,7 @@ export interface CustomApiKeys {
 export interface AppSettings {
   theme: 'light' | 'dark';
   effectsEnabled: boolean;
+  autoOptimizeHardware?: boolean;
   soundEnabled: boolean;
   aiProvider: AIProvider;
   aiModel?: string;

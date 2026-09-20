@@ -152,12 +152,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     }
   };
 
-  const appCanonicalUrl = 'https://nekotarot.vercel.app';
   const getShareUrl = () => {
-    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && !window.location.hostname.includes('run.app')) {
+    if (typeof window !== 'undefined') {
       return window.location.href;
     }
-    return appCanonicalUrl;
+    return 'https://nekotarot.vercel.app';
   };
 
   const handleCopySummaryText = () => {

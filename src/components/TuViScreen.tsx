@@ -137,6 +137,27 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
   // Live parsed time preview
   const parsedTimePreview = parseBirthTime(birthTime);
 
+  useEffect(() => {
+    if (initialReading) {
+      setReadingId(initialReading.id);
+      setFullName(initialReading.userInfo?.fullName || '');
+      setGender(initialReading.userInfo?.gender || 'Nam');
+      setBirthDate(initialReading.userInfo?.birthDate || '');
+      setBirthTime(initialReading.userInfo?.birthTime || '14:30');
+      setQuestion(initialReading.question || '');
+      setInterpretation(initialReading.aiInterpretation || '');
+      setFollowUps(initialReading.followUps || []);
+      if (initialReading.tuViData) {
+        setLaSoData(initialReading.tuViData);
+      }
+      setStep('result');
+      setIsSaved(true);
+      if (typeof window !== 'undefined' && !window.location.pathname.includes(initialReading.id)) {
+        window.history.replaceState(null, '', `/reading/${initialReading.id}`);
+      }
+    }
+  }, [initialReading]);
+
   const handleExportPdfDirect = async () => {
     if (!laSoData) return;
     try {
@@ -304,6 +325,9 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
       try {
         await saveNewReading(resultObj);
         setIsSaved(true);
+        if (typeof window !== 'undefined') {
+          window.history.replaceState(null, '', `/reading/${newReadingId}`);
+        }
       } catch (err) {
         console.warn('Could not auto save reading:', err);
       }

@@ -11,6 +11,7 @@ import {
   saveReading,
   updateReadingFollowUps,
   deleteUserReading,
+  migrateGuestReadingsToUser,
   getSystemSettings,
   saveSystemSettings as fbSaveSystemSettings,
   subscribeToSystemSettings,
@@ -147,7 +148,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setCurrentUser(user);
     closeAuthModal();
-    refreshReadings();
+    await migrateGuestReadingsToUser(user.uid);
+    await refreshReadings();
   };
 
   const signInWithEmail = async (email: string, pass: string) => {
@@ -158,7 +160,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setCurrentUser(user);
     closeAuthModal();
-    refreshReadings();
+    await migrateGuestReadingsToUser(user.uid);
+    await refreshReadings();
   };
 
   const signUpWithEmail = async (email: string, pass: string, name: string) => {
@@ -169,7 +172,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setCurrentUser(user);
     closeAuthModal();
-    refreshReadings();
+    await migrateGuestReadingsToUser(user.uid);
+    await refreshReadings();
   };
 
   const signInGuest = async () => {

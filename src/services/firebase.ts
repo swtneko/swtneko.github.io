@@ -322,26 +322,51 @@ export const saveUserCacheReading = (userId: string, reading: ReadingResult): vo
   }
 };
 
+/**
+ * Deep sanitization for Firestore documents.
+ * Replaces any `undefined` values with `null` or strips them, ensuring setDoc never throws.
+ */
+export function cleanForFirestore<T>(data: T): T {
+  if (data === null || data === undefined) {
+    return null as unknown as T;
+  }
+  if (Array.isArray(data)) {
+    return data.map(item => cleanForFirestore(item)) as unknown as T;
+  }
+  if (typeof data === 'object') {
+    const res: any = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        res[key] = cleanForFirestore(value);
+      }
+    }
+    return res;
+  }
+  return data;
+}
+
 // Firestore reading persistence
 export const saveReading = async (userId: string | undefined, reading: ReadingResult): Promise<void> => {
+  const sanitized = cleanForFirestore(reading);
   if (!userId || userId === 'guest') {
     // Guest mode: save only to guest storage
-    saveGuestReading(reading);
+    saveGuestReading(sanitized);
     return;
   }
 
-  // Account mode: save to user local cache and Firestore
-  saveUserCacheReading(userId, reading);
+  // Account mode: save to user local cache first so it's instantly preserved
+  saveUserCacheReading(userId, sanitized);
 
   try {
-    const readingRef = doc(db, 'users', userId, 'readings', reading.id);
+    const readingRef = doc(db, 'users', userId, 'readings', sanitized.id);
     await setDoc(readingRef, {
-      ...reading,
+      ...sanitized,
       userId,
       updatedAt: new Date().toISOString(),
     }, { merge: true });
+    console.log(`[Firestore] Successfully saved reading ${sanitized.id} for user ${userId}`);
   } catch (err) {
-    console.warn('Failed to save reading to Firestore, saved to user local cache:', err);
+    console.error('Failed to save reading to Firestore, kept in local cache:', err);
   }
 };
 
@@ -350,11 +375,12 @@ export const updateReadingFollowUps = async (
   readingId: string,
   followUps: FollowUpMessage[]
 ): Promise<void> => {
+  const sanitizedFollowUps = cleanForFirestore(followUps);
   if (!userId || userId === 'guest') {
     const local = getGuestReadings();
     const found = local.find(r => r.id === readingId);
     if (found) {
-      found.followUps = followUps;
+      found.followUps = sanitizedFollowUps;
       localStorage.setItem(GUEST_READINGS_KEY, JSON.stringify(local));
     }
     return;
@@ -364,14 +390,14 @@ export const updateReadingFollowUps = async (
   const userCache = getUserCacheReadings(userId);
   const foundInCache = userCache.find(r => r.id === readingId);
   if (foundInCache) {
-    foundInCache.followUps = followUps;
+    foundInCache.followUps = sanitizedFollowUps;
     localStorage.setItem(getUserCacheKey(userId), JSON.stringify(userCache));
   }
 
   try {
     const readingRef = doc(db, 'users', userId, 'readings', readingId);
     await setDoc(readingRef, {
-      followUps,
+      followUps: sanitizedFollowUps,
       updatedAt: new Date().toISOString(),
     }, { merge: true });
   } catch (err) {
@@ -385,6 +411,8 @@ export const getUserReadings = async (userId?: string): Promise<ReadingResult[]>
     return getGuestReadings();
   }
 
+  const localCache = getUserCacheReadings(userId);
+
   try {
     const readingsColl = collection(db, 'users', userId, 'readings');
     const q = query(readingsColl, orderBy('timestamp', 'desc'));
@@ -395,14 +423,60 @@ export const getUserReadings = async (userId?: string): Promise<ReadingResult[]>
       cloudReadings.push(d.data() as ReadingResult);
     });
 
-    if (cloudReadings.length > 0) {
-      localStorage.setItem(getUserCacheKey(userId), JSON.stringify(cloudReadings));
-      return cloudReadings;
+    // Merge cloud and local cache so no readings are ever lost across reloads
+    const map = new Map<string, ReadingResult>();
+    localCache.forEach((r) => {
+      if (r && r.id) map.set(r.id, r);
+    });
+    cloudReadings.forEach((r) => {
+      if (r && r.id) map.set(r.id, r);
+    });
+
+    const merged = Array.from(map.values()).sort(
+      (a, b) => (b.timestamp || 0) - (a.timestamp || 0)
+    );
+
+    // Save merged list to local cache
+    localStorage.setItem(getUserCacheKey(userId), JSON.stringify(merged));
+
+    // If any local reading was missing from cloud, re-sync it to Firestore in the background
+    const cloudIds = new Set(cloudReadings.map((c) => c.id));
+    const missingInCloud = localCache.filter((l) => l && l.id && !cloudIds.has(l.id));
+    if (missingInCloud.length > 0) {
+      Promise.all(
+        missingInCloud.map((r) => {
+          const readingRef = doc(db, 'users', userId, 'readings', r.id);
+          return setDoc(
+            readingRef,
+            { ...cleanForFirestore(r), userId, updatedAt: new Date().toISOString() },
+            { merge: true }
+          );
+        })
+      ).catch((e) => console.warn('Background sync of missing readings failed:', e));
     }
-    return getUserCacheReadings(userId);
+
+    return merged;
   } catch (err) {
     console.warn('Failed to fetch readings from Firestore, returning user cache:', err);
-    return getUserCacheReadings(userId);
+    return localCache;
+  }
+};
+
+export const migrateGuestReadingsToUser = async (userId: string): Promise<void> => {
+  if (!userId || userId === 'guest') return;
+  const guestReadings = getGuestReadings();
+  if (guestReadings.length === 0) return;
+
+  try {
+    for (const r of guestReadings) {
+      const userReading: ReadingResult = { ...r, userId };
+      await saveReading(userId, userReading);
+    }
+    // Clear guest readings once successfully migrated
+    localStorage.removeItem(GUEST_READINGS_KEY);
+    console.log(`[Firestore] Migrated ${guestReadings.length} guest readings to user ${userId}`);
+  } catch (e) {
+    console.warn('Failed to migrate guest readings:', e);
   }
 };
 

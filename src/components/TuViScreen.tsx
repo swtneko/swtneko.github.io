@@ -275,9 +275,12 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
       const aiResponse = await interpretTuViReading(chart, question.trim());
       setInterpretation(aiResponse);
 
-      // 3. Prepare ReadingResult
+      // 3. Prepare ReadingResult with fresh unique ID
+      const newReadingId = `tuvi-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      setReadingId(newReadingId);
+
       const resultObj: ReadingResult = {
-        id: readingId,
+        id: newReadingId,
         userId: currentUser?.uid || 'guest',
         timestamp: Date.now(),
         question: question.trim() || `Lá số Tử Vi: ${fullName.trim()} (${chart.chuSo.banMenhNapAm} - Cục ${chart.chuSo.cuc})`,

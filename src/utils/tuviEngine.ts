@@ -291,7 +291,7 @@ const CAN_LUONG_YEAR: Record<string, number> = {
   'Canh Ngọ': 0.9, 'Tân Mùi': 0.8, 'Nhâm Thân': 0.7, 'Quý Dậu': 0.8, 'Giáp Tuất': 1.5, 'Ất Hợi': 0.9,
   'Bính Tý': 1.6, 'Đinh Sửu': 0.8, 'Mậu Dần': 0.8, 'Kỷ Mão': 1.9, 'Canh Thìn': 1.2, 'Tân Tỵ': 0.6,
   'Nhâm Ngọ': 0.8, 'Quý Mùi': 0.7, 'Giáp Thân': 0.5, 'Ất Dậu': 1.5, 'Bính Tuất': 0.6, 'Đinh Hợi': 1.6,
-  'Mậu Tý': 1.5, 'Kỷ Sửu': 0.7, 'Canh Dần': 0.9, 'Tân Mão': 1.2, 'Nhâm Thìn': 1.0, 'Quý Tỵ': 0.7,
+  'Mậu Tý': 1.5, 'Kỷ Sửu': 0.8, 'Canh Dần': 0.9, 'Tân Mão': 1.2, 'Nhâm Thìn': 1.0, 'Quý Tỵ': 0.7,
   'Giáp Ngọ': 1.5, 'Ất Mùi': 0.6, 'Bính Thân': 0.5, 'Đinh Dậu': 1.4, 'Mậu Tuất': 1.9, 'Kỷ Hợi': 0.9,
   'Canh Tý': 0.7, 'Tân Sửu': 0.7, 'Nhâm Dần': 1.2, 'Quý Mão': 1.2, 'Giáp Thìn': 0.8, 'Ất Tỵ': 0.7,
   'Bính Ngọ': 1.3, 'Đinh Mùi': 0.5, 'Mậu Thân': 1.4, 'Kỷ Dậu': 0.5, 'Canh Tuất': 0.9, 'Tân Hợi': 1.7,
@@ -429,11 +429,11 @@ export function getCuc(yearCan: Can, menhChi: Chi): { cuc: string; cucNumber: nu
 // Bảng miếu hãm chuẩn xác cho 14 chính tinh trên 12 địa chi
 export const STAR_STATUS: Record<string, Record<Chi, 'Miếu' | 'Vượng' | 'Đắc' | 'Bình' | 'Hãm'>> = {
   'Tử Vi': {
-    'Tý': 'Bình', 'Sửu': 'Đắc', 'Dần': 'Miếu', 'Mão': 'Vượng', 'Thìn': 'Đắc', 'Tỵ': 'Vượng',
+    'Tý': 'Bình', 'Sửu': 'Đắc', 'Dần': 'Miếu', 'Mão': 'Vượng', 'Thìn': 'Đắc', 'Tỵ': 'Miếu',
     'Ngọ': 'Miếu', 'Mùi': 'Đắc', 'Thân': 'Miếu', 'Dậu': 'Vượng', 'Tuất': 'Đắc', 'Hợi': 'Bình',
   },
   'Thiên Cơ': {
-    'Tý': 'Đắc', 'Sửu': 'Hãm', 'Dần': 'Vượng', 'Mão': 'Miếu', 'Thìn': 'Đắc', 'Tỵ': 'Bình',
+    'Tý': 'Đắc', 'Sửu': 'Hãm', 'Dần': 'Vượng', 'Mão': 'Miếu', 'Thìn': 'Miếu', 'Tỵ': 'Bình',
     'Ngọ': 'Miếu', 'Mùi': 'Hãm', 'Thân': 'Vượng', 'Dậu': 'Miếu', 'Tuất': 'Đắc', 'Hợi': 'Bình',
   },
   'Thái Dương': {
@@ -457,7 +457,7 @@ export const STAR_STATUS: Record<string, Record<Chi, 'Miếu' | 'Vượng' | 'Đ
     'Ngọ': 'Vượng', 'Mùi': 'Miếu', 'Thân': 'Miếu', 'Dậu': 'Đắc', 'Tuất': 'Miếu', 'Hợi': 'Đắc',
   },
   'Thái Âm': {
-    'Tý': 'Miếu', 'Sửu': 'Đắc', 'Dần': 'Hãm', 'Mão': 'Hãm', 'Thìn': 'Hãm', 'Tỵ': 'Hãm',
+    'Tý': 'Vượng', 'Sửu': 'Đắc', 'Dần': 'Hãm', 'Mão': 'Hãm', 'Thìn': 'Hãm', 'Tỵ': 'Hãm',
     'Ngọ': 'Hãm', 'Mùi': 'Đắc', 'Thân': 'Đắc', 'Dậu': 'Vượng', 'Tuất': 'Vượng', 'Hợi': 'Miếu',
   },
   'Tham Lang': {
@@ -473,11 +473,11 @@ export const STAR_STATUS: Record<string, Record<Chi, 'Miếu' | 'Vượng' | 'Đ
     'Ngọ': 'Vượng', 'Mùi': 'Đắc', 'Thân': 'Miếu', 'Dậu': 'Hãm', 'Tuất': 'Vượng', 'Hợi': 'Đắc',
   },
   'Thiên Lương': {
-    'Tý': 'Miếu', 'Sửu': 'Vượng', 'Dần': 'Miếu', 'Mão': 'Miếu', 'Thìn': 'Vượng', 'Tỵ': 'Hãm',
+    'Tý': 'Miếu', 'Sửu': 'Vượng', 'Dần': 'Miếu', 'Mão': 'Miếu', 'Thìn': 'Miếu', 'Tỵ': 'Hãm',
     'Ngọ': 'Miếu', 'Mùi': 'Vượng', 'Thân': 'Hãm', 'Dậu': 'Đắc', 'Tuất': 'Miếu', 'Hợi': 'Hãm',
   },
   'Thất Sát': {
-    'Tý': 'Miếu', 'Sửu': 'Đắc', 'Dần': 'Miếu', 'Mão': 'Hãm', 'Thìn': 'Đắc', 'Tỵ': 'Bình',
+    'Tý': 'Miếu', 'Sửu': 'Đắc', 'Dần': 'Miếu', 'Mão': 'Hãm', 'Thìn': 'Đắc', 'Tỵ': 'Vượng',
     'Ngọ': 'Miếu', 'Mùi': 'Đắc', 'Thân': 'Miếu', 'Dậu': 'Hãm', 'Tuất': 'Đắc', 'Hợi': 'Bình',
   },
   'Phá Quân': {
@@ -802,15 +802,21 @@ export function buildLaSoTuVi(params: BuildLaSoParams): LaSoTuViData {
   const locTonIndex = CHI_LIST.indexOf(locTonChi);
   starsByChi[locTonChi].push({ name: 'Lộc Tồn', type: 'cat-tinh', element: 'Thổ', status: 'Miếu', meaning: 'Phú quý, tài lộc dồi dào, giải trừ hung họa' });
   const kinhDuongChi = CHI_LIST[(locTonIndex + 1) % 12];
-  starsByChi[kinhDuongChi].push({ name: 'Kình Dương', type: 'hung-tinh', element: 'Kim', status: 'Hãm', meaning: 'Cương nghị, uy quyền nhưng dễ va chạm thương tật' });
+  const isKinhDuongDac = ['Thìn', 'Tuất', 'Sửu', 'Mùi'].includes(kinhDuongChi);
+  starsByChi[kinhDuongChi].push({ name: 'Kình Dương', type: 'hung-tinh', element: 'Kim', status: isKinhDuongDac ? 'Đắc' : 'Hãm', meaning: 'Cương nghị, uy quyền nhưng dễ va chạm thương tật' });
   const daLaChi = CHI_LIST[(locTonIndex - 1 + 12) % 12];
-  starsByChi[daLaChi].push({ name: 'Đà La', type: 'hung-tinh', element: 'Kim', status: 'Hãm', meaning: 'Trầm ngâm, kiên nhẫn, đề phòng tiểu nhân ám hại' });
+  const isDaLaDac = ['Thìn', 'Tuất', 'Sửu', 'Mùi'].includes(daLaChi);
+  starsByChi[daLaChi].push({ name: 'Đà La', type: 'hung-tinh', element: 'Kim', status: isDaLaDac ? 'Đắc' : 'Hãm', meaning: 'Trầm ngâm, kiên nhẫn, đề phòng tiểu nhân ám hại' });
 
   // Địa Không, Địa Kiếp (theo Giờ sinh)
   const diaKiepIndex = (11 + canhGio.hourIndex) % 12; // Khởi Hợi đi thuận
-  starsByChi[CHI_LIST[diaKiepIndex]].push({ name: 'Địa Kiếp', type: 'hung-tinh', element: 'Hỏa', status: 'Hãm', meaning: 'Sát tinh bùng nổ, táo bạo, thăng trầm bất ngờ' });
+  const diaKiepChi = CHI_LIST[diaKiepIndex];
+  const isDiaKiepDac = ['Dần', 'Thân', 'Tỵ', 'Hợi'].includes(diaKiepChi);
+  starsByChi[diaKiepChi].push({ name: 'Địa Kiếp', type: 'hung-tinh', element: 'Hỏa', status: isDiaKiepDac ? 'Đắc' : 'Hãm', meaning: 'Sát tinh bùng nổ, táo bạo, thăng trầm bất ngờ' });
   const diaKhongIndex = (11 - canhGio.hourIndex + 120) % 12; // Khởi Hợi đi nghịch
-  starsByChi[CHI_LIST[diaKhongIndex]].push({ name: 'Địa Không', type: 'hung-tinh', element: 'Hỏa', status: 'Hãm', meaning: 'Tư duy phá cách, trực giác nhạy bén, hư hao tiền bạc' });
+  const diaKhongChi = CHI_LIST[diaKhongIndex];
+  const isDiaKhongDac = ['Dần', 'Thân', 'Tỵ', 'Hợi'].includes(diaKhongChi);
+  starsByChi[diaKhongChi].push({ name: 'Địa Không', type: 'hung-tinh', element: 'Hỏa', status: isDiaKhongDac ? 'Đắc' : 'Hãm', meaning: 'Tư duy phá cách, trực giác nhạy bén, hư hao tiền bạc' });
 
   // Hỏa Tinh & Linh Tinh (theo Chi Năm, Giờ Sinh và Âm Dương Nam Nữ)
   const yearChiIndex = CHI_LIST.indexOf(yearChi);
@@ -841,8 +847,10 @@ export function buildLaSoTuVi(params: BuildLaSoParams): LaSoTuViData {
     ? (linhTinhStart - canhGio.hourIndex + 120) % 12
     : (linhTinhStart + canhGio.hourIndex) % 12;
 
-  starsByChi[CHI_LIST[hoaTinhIndex]].push({ name: 'Hỏa Tinh', type: 'hung-tinh', element: 'Hỏa', status: 'Hãm', meaning: 'Tính tình nóng nảy, đột phát, sức chiến đấu cao' });
-  starsByChi[CHI_LIST[linhTinhIndex]].push({ name: 'Linh Tinh', type: 'hung-tinh', element: 'Hỏa', status: 'Hãm', meaning: 'Âm hỏa, nhạy cảm, sâu sắc, mưu lược' });
+  const isHoaTinhDac = ['Dần', 'Ngọ', 'Tuất'].includes(CHI_LIST[hoaTinhIndex]);
+  const isLinhTinhDac = ['Dần', 'Ngọ', 'Tuất'].includes(CHI_LIST[linhTinhIndex]);
+  starsByChi[CHI_LIST[hoaTinhIndex]].push({ name: 'Hỏa Tinh', type: 'hung-tinh', element: 'Hỏa', status: isHoaTinhDac ? 'Đắc' : 'Hãm', meaning: 'Tính tình nóng nảy, đột phát, sức chiến đấu cao' });
+  starsByChi[CHI_LIST[linhTinhIndex]].push({ name: 'Linh Tinh', type: 'hung-tinh', element: 'Hỏa', status: isLinhTinhDac ? 'Đắc' : 'Hãm', meaning: 'Âm hỏa, nhạy cảm, sâu sắc, mưu lược' });
 
   // 14. An Cát Tinh
   // Tả Phù, Hữu Bật (theo Tháng sinh)
@@ -853,9 +861,11 @@ export function buildLaSoTuVi(params: BuildLaSoParams): LaSoTuViData {
 
   // Văn Xương, Văn Khúc (theo Giờ sinh)
   const vanXuongIndex = (10 - canhGio.hourIndex + 120) % 12;
-  starsByChi[CHI_LIST[vanXuongIndex]].push({ name: 'Văn Xương', type: 'cat-tinh', element: 'Kim', status: 'Miếu', meaning: 'Học vấn uyên bác, thi cử đỗ đạt, tài hoa xuất chúng' });
+  const isVanXuongDac = ['Tỵ', 'Hợi', 'Thìn', 'Tuất', 'Sửu', 'Mùi'].includes(CHI_LIST[vanXuongIndex]);
+  starsByChi[CHI_LIST[vanXuongIndex]].push({ name: 'Văn Xương', type: 'cat-tinh', element: 'Kim', status: isVanXuongDac ? 'Đắc' : 'Hãm', meaning: 'Học vấn uyên bác, thi cử đỗ đạt, tài hoa xuất chúng' });
   const vanKhucIndex = (4 + canhGio.hourIndex) % 12;
-  starsByChi[CHI_LIST[vanKhucIndex]].push({ name: 'Văn Khúc', type: 'cat-tinh', element: 'Thủy', status: 'Miếu', meaning: 'Khéo léo nghệ thuật, ăn nói lưu loát, năng khiếu thi ca' });
+  const isVanKhucDac = ['Tỵ', 'Hợi', 'Thìn', 'Tuất', 'Sửu', 'Mùi'].includes(CHI_LIST[vanKhucIndex]);
+  starsByChi[CHI_LIST[vanKhucIndex]].push({ name: 'Văn Khúc', type: 'cat-tinh', element: 'Thủy', status: isVanKhucDac ? 'Đắc' : 'Hãm', meaning: 'Khéo léo nghệ thuật, ăn nói lưu loát, năng khiếu thi ca' });
 
   // Ân Quang, Thiên Quý (theo Xương Khúc và ngày sinh)
   const anQuangIndex = (vanXuongIndex + lDay - 2 + 120) % 12;
@@ -874,7 +884,8 @@ export function buildLaSoTuVi(params: BuildLaSoParams): LaSoTuViData {
   else if ([8, 0, 4].includes(yearChiIndex)) thienMaChi = 'Dần';
   else if ([5, 9, 1].includes(yearChiIndex)) thienMaChi = 'Hợi';
   else thienMaChi = 'Tỵ';
-  starsByChi[thienMaChi].push({ name: 'Thiên Mã', type: 'cat-tinh', element: 'Hỏa', status: 'Vượng', meaning: 'Năng động, dịch chuyển, phát triển phương xa, xe cộ' });
+  const isThienMaDac = ['Tỵ', 'Hợi'].includes(thienMaChi) && thienMaChi === 'Tỵ';
+  starsByChi[thienMaChi].push({ name: 'Thiên Mã', type: 'cat-tinh', element: 'Hỏa', status: isThienMaDac ? 'Đắc' : (thienMaChi === 'Dần' ? 'Vượng' : 'Hãm'), meaning: 'Năng động, dịch chuyển, phát triển phương xa, xe cộ' });
 
   // Đào Hoa (theo Chi Năm)
   let daoHoaChi: Chi = 'Mão';
@@ -920,10 +931,14 @@ export function buildLaSoTuVi(params: BuildLaSoParams): LaSoTuViData {
   ];
   THAI_TUE_STARS.forEach((s, idx) => {
     const c = CHI_LIST[(yearChiIndex + idx) % 12];
-    starsByChi[c].push({ name: s.name, type: s.type, element: s.element });
+    let status: 'Miếu' | 'Vượng' | 'Đắc' | 'Bình' | 'Hãm' | undefined = undefined;
+    if (s.name === 'Tang Môn' || s.name === 'Bạch Hổ') {
+      status = ['Dần', 'Thân', 'Mão', 'Dậu'].includes(c) ? 'Đắc' : 'Hãm';
+    }
+    starsByChi[c].push({ name: s.name, type: s.type, element: s.element, status });
   });
 
-  // Vòng Bác Sĩ (theo Lộc Tồn)
+  // Vòng Bác Sĩ (khởi từ Lộc Tồn theo chiều thuận chuẩn truyền thống)
   const BAC_SI_STARS = [
     { name: 'Bác Sĩ', type: 'cat-tinh' as const, element: 'Thủy' as NguHanh },
     { name: 'Lực Sĩ', type: 'cat-tinh' as const, element: 'Hỏa' as NguHanh },
@@ -939,9 +954,7 @@ export function buildLaSoTuVi(params: BuildLaSoParams): LaSoTuViData {
     { name: 'Quan Phủ', type: 'hung-tinh' as const, element: 'Hỏa' as NguHanh },
   ];
   BAC_SI_STARS.forEach((s, idx) => {
-    const chiIdx = isDaiHanThuan
-      ? (locTonIndex + idx) % 12
-      : (locTonIndex - idx + 120) % 12;
+    const chiIdx = (locTonIndex + idx) % 12;
     starsByChi[CHI_LIST[chiIdx]].push({ name: s.name, type: s.type, element: s.element });
   });
 
@@ -950,6 +963,106 @@ export function buildLaSoTuVi(params: BuildLaSoParams): LaSoTuViData {
   const duongPhuIndex = (locTonIndex + 5) % 12;
   starsByChi[CHI_LIST[quocAnIndex]].push({ name: 'Quốc Ấn', type: 'cat-tinh', element: 'Thổ' });
   starsByChi[CHI_LIST[duongPhuIndex]].push({ name: 'Đường Phù', type: 'cat-tinh', element: 'Mộc' });
+
+  // Thai Phụ & Phong Cáo (theo Giờ sinh)
+  const thaiPhuIndex = (6 + canhGio.hourIndex) % 12;
+  const phongCaoIndex = (2 + canhGio.hourIndex) % 12;
+  starsByChi[CHI_LIST[thaiPhuIndex]].push({ name: 'Thai Phụ', type: 'cat-tinh', element: 'Kim' });
+  starsByChi[CHI_LIST[phongCaoIndex]].push({ name: 'Phong Cáo', type: 'cat-tinh', element: 'Thổ' });
+
+  // Tam Thai & Bát Tọa (theo Tả Phù, Hữu Bật và Ngày sinh)
+  const tamThaiIndex = (taPhuIndex + (lDay - 1)) % 12;
+  const batToaIndex = (huuBatIndex - (lDay - 1) + 120) % 12;
+  starsByChi[CHI_LIST[tamThaiIndex]].push({ name: 'Tam Thai', type: 'cat-tinh', element: 'Thủy' });
+  starsByChi[CHI_LIST[batToaIndex]].push({ name: 'Bát Tọa', type: 'cat-tinh', element: 'Mộc' });
+
+  // Đẩu Quân (theo Chi Năm, Tháng sinh và Giờ sinh)
+  const dauQuanIndex = (yearChiIndex - (lMonth - 1) + canhGio.hourIndex + 120) % 12;
+  starsByChi[CHI_LIST[dauQuanIndex]].push({ name: 'Đẩu Quân', type: 'cat-tinh', element: 'Hỏa' });
+
+  // Thiên Hình & Thiên Diêu, Thiên Y (theo Tháng sinh)
+  const thienHinhIndex = (9 + (lMonth - 1)) % 12; // Dậu khởi tháng 1 đi thuận
+  const isThienHinhDac = ['Dần', 'Mão', 'Dậu', 'Tuất'].includes(CHI_LIST[thienHinhIndex]);
+  starsByChi[CHI_LIST[thienHinhIndex]].push({
+    name: 'Thiên Hình',
+    type: 'hung-tinh',
+    element: 'Hỏa',
+    status: isThienHinhDac ? 'Đắc' : 'Hãm',
+    meaning: 'Tính kỷ luật, pháp luật, hình thương'
+  });
+
+  const thienDieuIndex = (1 + (lMonth - 1)) % 12; // Sửu khởi tháng 1 đi thuận
+  const isThienDieuDac = ['Mão', 'Dậu'].includes(CHI_LIST[thienDieuIndex]);
+  starsByChi[CHI_LIST[thienDieuIndex]].push({
+    name: 'Thiên Diêu',
+    type: 'hung-tinh',
+    element: 'Thủy',
+    status: isThienDieuDac ? 'Đắc' : 'Hãm',
+    meaning: 'Đào hoa phong lưu, mê hoặc'
+  });
+
+  const thienYIndex = (1 + (lMonth - 1)) % 12; // Sửu khởi tháng 1 đi thuận
+  starsByChi[CHI_LIST[thienYIndex]].push({ name: 'Thiên Y', type: 'cat-tinh', element: 'Thủy' });
+
+  // Thiên Giải & Địa Giải (theo Tháng sinh)
+  const thienGiaiIndex = (8 + Math.floor((lMonth - 1) / 2)) % 12;
+  const diaGiaiIndex = (7 + Math.floor((lMonth - 1) / 2)) % 12;
+  starsByChi[CHI_LIST[thienGiaiIndex]].push({ name: 'Thiên Giải', type: 'cat-tinh', element: 'Thổ' });
+  starsByChi[CHI_LIST[diaGiaiIndex]].push({ name: 'Địa Giải', type: 'cat-tinh', element: 'Thổ' });
+
+  // Thiên Tài & Thiên Thọ
+  const thienTaiIndex = (menhIndex + yearChiIndex) % 12;
+  const thanCungIndex = thanChi ? CHI_LIST.indexOf(thanChi) : menhIndex;
+  const thienThoIndex = (thanCungIndex + yearChiIndex - 1 + 12) % 12;
+  starsByChi[CHI_LIST[thienTaiIndex]].push({ name: 'Thiên Tài', type: 'cat-tinh', element: 'Thổ' });
+  starsByChi[CHI_LIST[thienThoIndex]].push({ name: 'Thiên Thọ', type: 'cat-tinh', element: 'Thổ' });
+
+  // Lưu Hà & Thiên Trù (theo Can năm)
+  const LUU_HA_MAP: Record<Can, Chi> = {
+    'Giáp': 'Dậu', 'Ất': 'Tuất', 'Bính': 'Mùi', 'Đinh': 'Thân', 'Mậu': 'Tỵ',
+    'Kỷ': 'Ngọ', 'Canh': 'Thân', 'Tân': 'Thìn', 'Nhâm': 'Hợi', 'Quý': 'Dần'
+  };
+  const THIEN_TRU_MAP: Record<Can, Chi> = {
+    'Giáp': 'Tỵ', 'Ất': 'Ngọ', 'Bính': 'Tý', 'Đinh': 'Tỵ', 'Mậu': 'Ngọ',
+    'Kỷ': 'Thân', 'Canh': 'Dần', 'Tân': 'Ngọ', 'Nhâm': 'Dậu', 'Quý': 'Tuất'
+  };
+  starsByChi[LUU_HA_MAP[yearCan] || 'Ngọ'].push({ name: 'Lưu Hà', type: 'cat-tinh', element: 'Thủy' });
+  starsByChi[THIEN_TRU_MAP[yearCan] || 'Thân'].push({ name: 'Thiên Trù', type: 'cat-tinh', element: 'Thổ' });
+
+  // Phá Toái & Hoa Cái (theo Chi năm)
+  let phaToaiChi: Chi = 'Sửu';
+  if ([0, 6, 3, 9].includes(yearChiIndex)) phaToaiChi = 'Tỵ';
+  else if ([2, 8, 5, 11].includes(yearChiIndex)) phaToaiChi = 'Dậu';
+  else phaToaiChi = 'Sửu';
+  starsByChi[phaToaiChi].push({ name: 'Phá Toái', type: 'hung-tinh', element: 'Hỏa' });
+
+  let hoaCaiChi: Chi = 'Sửu';
+  if ([2, 6, 10].includes(yearChiIndex)) hoaCaiChi = 'Tuất';
+  else if ([8, 0, 4].includes(yearChiIndex)) hoaCaiChi = 'Thìn';
+  else if ([5, 9, 1].includes(yearChiIndex)) hoaCaiChi = 'Sửu';
+  else hoaCaiChi = 'Mùi';
+  starsByChi[hoaCaiChi].push({ name: 'Hoa Cái', type: 'cat-tinh', element: 'Kim' });
+
+  // Lưu Niên Văn Tinh (LN Văn Tinh theo Can năm)
+  const LN_VAN_TINH_MAP: Record<Can, Chi> = {
+    'Giáp': 'Tỵ', 'Ất': 'Ngọ', 'Bính': 'Thân', 'Đinh': 'Dậu', 'Mậu': 'Thân',
+    'Kỷ': 'Dậu', 'Canh': 'Hợi', 'Tân': 'Tý', 'Nhâm': 'Dần', 'Quý': 'Mão'
+  };
+  starsByChi[LN_VAN_TINH_MAP[yearCan] || 'Dậu'].push({ name: 'LN Văn Tinh', type: 'cat-tinh', element: 'Hỏa' });
+
+  // Thiên La (cố định Thìn) & Địa Võng (cố định Tuất)
+  starsByChi['Thìn'].push({ name: 'Thiên La', type: 'hung-tinh', element: 'Kim' });
+  starsByChi['Tuất'].push({ name: 'Địa Võng', type: 'hung-tinh', element: 'Kim' });
+
+  // Thiên Không (đồng cung Thiếu Dương = Chi năm + 1)
+  const thienKhongIndex = (yearChiIndex + 1) % 12;
+  starsByChi[CHI_LIST[thienKhongIndex]].push({ name: 'Thiên Không', type: 'hung-tinh', element: 'Hỏa' });
+
+  // Thiên Thương (tại Cung Nô Bộc = menhIndex + 5) & Thiên Sứ (tại Cung Tật Ách = menhIndex + 7)
+  const noBocChiIndex = (menhIndex + 5) % 12;
+  const tatAchChiIndex = (menhIndex + 7) % 12;
+  starsByChi[CHI_LIST[noBocChiIndex]].push({ name: 'Thiên Thương', type: 'hung-tinh', element: 'Thổ' });
+  starsByChi[CHI_LIST[tatAchChiIndex]].push({ name: 'Thiên Sứ', type: 'hung-tinh', element: 'Thủy' });
 
   // Cô Thần, Quả Tú, Kiếp Sát (theo Chi Năm)
   let coThanChi: Chi = 'Dần';
@@ -1004,15 +1117,60 @@ export function buildLaSoTuVi(params: BuildLaSoParams): LaSoTuViData {
   const viewLocTonChi = LOC_TON_MAP[viewCan] || 'Tỵ';
   const viewLocTonIndex = CHI_LIST.indexOf(viewLocTonChi);
 
-  // Lưu Thái Tuế
+  // Lưu Thái Tuế, L.Tang Môn, L.Bạch Hổ
   starsByChi[viewChi].push({ name: 'L.Thái tuế', type: 'luu-tinh', isLuu: true, element: 'Hỏa' });
-  // Lưu Lộc Tồn, Kình Dương, Đà La
+  starsByChi[CHI_LIST[(viewChiIndex + 2) % 12]].push({ name: 'L.Tang môn', type: 'luu-tinh', isLuu: true, element: 'Mộc' });
+  starsByChi[CHI_LIST[(viewChiIndex + 8) % 12]].push({ name: 'L.Bạch hổ', type: 'luu-tinh', isLuu: true, element: 'Kim' });
+
+  // Lưu Lộc Tồn, Lưu Kình Dương, Lưu Đà La
   starsByChi[viewLocTonChi].push({ name: 'L.Lộc tồn', type: 'luu-tinh', isLuu: true, element: 'Thổ' });
   starsByChi[CHI_LIST[(viewLocTonIndex + 1) % 12]].push({ name: 'L.Kình dương', type: 'luu-tinh', isLuu: true, element: 'Kim' });
   starsByChi[CHI_LIST[(viewLocTonIndex - 1 + 12) % 12]].push({ name: 'L.Đà la', type: 'luu-tinh', isLuu: true, element: 'Kim' });
-  // Lưu Tang Môn, Bạch Hổ
-  starsByChi[CHI_LIST[(viewChiIndex + 2) % 12]].push({ name: 'L.Tang môn', type: 'luu-tinh', isLuu: true, element: 'Mộc' });
-  starsByChi[CHI_LIST[(viewChiIndex + 8) % 12]].push({ name: 'L.Bạch hổ', type: 'luu-tinh', isLuu: true, element: 'Kim' });
+
+  // Lưu Thiên Mã theo Chi năm xem hạn
+  let viewThienMaChi: Chi = 'Thân';
+  if ([2, 6, 10].includes(viewChiIndex)) viewThienMaChi = 'Thân';
+  else if ([8, 0, 4].includes(viewChiIndex)) viewThienMaChi = 'Dần';
+  else if ([5, 9, 1].includes(viewChiIndex)) viewThienMaChi = 'Hợi';
+  else viewThienMaChi = 'Tỵ';
+  starsByChi[viewThienMaChi].push({ name: 'L.Thiên mã', type: 'luu-tinh', isLuu: true, element: 'Hỏa' });
+
+  // Lưu Đào Hoa & Lưu Hồng Loan
+  let viewDaoHoaChi: Chi = 'Mão';
+  if ([2, 6, 10].includes(viewChiIndex)) viewDaoHoaChi = 'Mão';
+  else if ([8, 0, 4].includes(viewChiIndex)) viewDaoHoaChi = 'Dậu';
+  else if ([5, 9, 1].includes(viewChiIndex)) viewDaoHoaChi = 'Ngọ';
+  else viewDaoHoaChi = 'Tý';
+  starsByChi[viewDaoHoaChi].push({ name: 'L.Đào hoa', type: 'luu-tinh', isLuu: true, element: 'Mộc' });
+
+  const viewHongLoanIndex = (3 - viewChiIndex + 120) % 12;
+  starsByChi[CHI_LIST[viewHongLoanIndex]].push({ name: 'L.Hồng loan', type: 'luu-tinh', isLuu: true, element: 'Thủy' });
+
+  // Lưu Thiên Khốc, Thiên Hư
+  const viewThienKhocIndex = (6 - viewChiIndex + 120) % 12;
+  const viewThienHuIndex = (6 + viewChiIndex) % 12;
+  starsByChi[CHI_LIST[viewThienKhocIndex]].push({ name: 'L.Thiên khốc', type: 'luu-tinh', isLuu: true, element: 'Thủy' });
+  starsByChi[CHI_LIST[viewThienHuIndex]].push({ name: 'L.Thiên hư', type: 'luu-tinh', isLuu: true, element: 'Thủy' });
+
+  // Lưu Tứ Hóa theo Can năm xem hạn
+  const viewTuHoa = TU_HOA_MAP[viewCan];
+  if (viewTuHoa) {
+    // Tìm vị trí của chính tinh tương ứng
+    Object.entries(starsByChi).forEach(([cChi, stars]) => {
+      if (stars.some(s => s.name === viewTuHoa.loc)) {
+        starsByChi[cChi as Chi].push({ name: 'L.Hóa lộc', type: 'luu-tinh', isLuu: true, element: 'Mộc' });
+      }
+      if (stars.some(s => s.name === viewTuHoa.quyen)) {
+        starsByChi[cChi as Chi].push({ name: 'L.Hóa quyền', type: 'luu-tinh', isLuu: true, element: 'Hỏa' });
+      }
+      if (stars.some(s => s.name === viewTuHoa.khoa)) {
+        starsByChi[cChi as Chi].push({ name: 'L.Hóa khoa', type: 'luu-tinh', isLuu: true, element: 'Thủy' });
+      }
+      if (stars.some(s => s.name === viewTuHoa.ky)) {
+        starsByChi[cChi as Chi].push({ name: 'L.Hóa kỵ', type: 'luu-tinh', isLuu: true, element: 'Thủy' });
+      }
+    });
+  }
 
   // 15. An Vòng Tràng Sinh
   const trangSinhStartChi = TRANG_SINH_START_MAP[cucInfo.cuc] || 'Thân';

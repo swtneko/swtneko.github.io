@@ -21,10 +21,14 @@ import {
   Clock,
   MapPin,
   Scale,
+  FileDown,
+  Loader2,
 } from 'lucide-react';
 
 interface TuViChartProps {
   laSo: LaSoTuViData;
+  onExportPdf?: () => void;
+  isExportingPdf?: boolean;
 }
 
 // Traditional 4x4 Grid layout coordinates:
@@ -48,7 +52,7 @@ const GRID_COORDINATES: Record<Chi, { row: number; col: number }> = {
   'Thìn': { row: 1, col: 0 },
 };
 
-export const TuViChart: React.FC<TuViChartProps> = ({ laSo }) => {
+export const TuViChart: React.FC<TuViChartProps> = ({ laSo, onExportPdf, isExportingPdf = false }) => {
   const { settings } = useSettings();
   const [selectedCung, setSelectedCung] = useState<CungLaSo | null>(
     laSo.cungList.find(c => c.cungChuc === 'Mệnh') || null
@@ -157,6 +161,24 @@ export const TuViChart: React.FC<TuViChartProps> = ({ laSo }) => {
         </div>
 
         <div className="flex items-center gap-2">
+          {onExportPdf && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onExportPdf}
+              disabled={isExportingPdf}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-amber-400/50 bg-gradient-to-r from-red-600/30 via-amber-500/30 to-purple-600/30 hover:from-red-600/50 hover:via-amber-500/50 hover:to-purple-600/50 text-amber-300 hover:text-white text-xs font-bold cursor-pointer shadow-sm transition-all disabled:opacity-50"
+              title="Xuất lá số thành file PDF chuyên nghiệp để lưu trữ hoặc in ấn"
+            >
+              {isExportingPdf ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-300" />
+              ) : (
+                <FileDown className="w-3.5 h-3.5 text-amber-300" />
+              )}
+              <span>{isExportingPdf ? 'Đang tạo PDF...' : 'Xuất PDF Lá Số'}</span>
+            </motion.button>
+          )}
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -285,28 +307,28 @@ export const TuViChart: React.FC<TuViChartProps> = ({ laSo }) => {
               </div>
 
               {/* 2-Column Auxiliary Stars: Left = Cát tinh, Right = Hung tinh (Like tracuutuvi.com) */}
-              <div className="grid grid-cols-2 gap-1 text-[9px] leading-tight overflow-hidden flex-1 py-1">
+              <div className="grid grid-cols-2 gap-1 text-[8.5px] leading-tight overflow-hidden flex-1 py-1">
                 {/* Left: Cát tinh */}
                 <div className="space-y-0.5 text-left border-r border-white/5 pr-0.5">
-                  {(cung.catTinhList || cung.phuTinh.filter(p => p.type === 'cat-tinh')).slice(0, 5).map((p, idx) => (
+                  {(cung.catTinhList || cung.phuTinh.filter(p => p.type === 'cat-tinh')).slice(0, 7).map((p, idx) => (
                     <div key={idx} className="truncate text-emerald-300/90 font-medium">
                       {p.name} {p.status ? getStatusAbbr(p.status) : ''}
                     </div>
                   ))}
-                  {((cung.catTinhList || []).length > 5) && (
-                    <div className="text-[8px] text-emerald-400/50">...</div>
+                  {((cung.catTinhList || []).length > 7) && (
+                    <div className="text-[7.5px] text-emerald-400/50">+{((cung.catTinhList || []).length - 7)} sao</div>
                   )}
                 </div>
 
                 {/* Right: Hung tinh & Lưu tinh */}
                 <div className="space-y-0.5 text-right pl-0.5">
-                  {(cung.hungTinhList || cung.phuTinh.filter(p => p.type !== 'cat-tinh')).slice(0, 5).map((p, idx) => (
+                  {(cung.hungTinhList || cung.phuTinh.filter(p => p.type !== 'cat-tinh')).slice(0, 7).map((p, idx) => (
                     <div key={idx} className={`truncate font-medium ${p.isLuu ? 'text-pink-300' : 'text-rose-300/90'}`}>
                       {p.name} {p.status ? getStatusAbbr(p.status) : ''}
                     </div>
                   ))}
-                  {((cung.hungTinhList || []).length > 5) && (
-                    <div className="text-[8px] text-rose-400/50">...</div>
+                  {((cung.hungTinhList || []).length > 7) && (
+                    <div className="text-[7.5px] text-rose-400/50">+{((cung.hungTinhList || []).length - 7)} sao</div>
                   )}
                 </div>
               </div>

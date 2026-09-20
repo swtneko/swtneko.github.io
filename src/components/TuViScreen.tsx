@@ -405,9 +405,9 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
         <div className="flex items-center gap-2">
           <motion.span
             whileHover={{ scale: 1.03 }}
-            className="px-3.5 py-1 rounded-full border border-amber-400/40 bg-amber-400/10 text-amber-300 font-bold text-xs uppercase tracking-widest flex items-center gap-1.5 shadow-sm"
+            className="px-3.5 py-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 font-bold text-xs uppercase tracking-widest hidden sm:flex items-center gap-1.5 shadow-sm"
           >
-            <Compass className="w-3.5 h-3.5 animate-spin-slow" /> Bói Tử Vi Đẩu Số & Luận Giải AI
+            <Compass className="w-3.5 h-3.5 animate-spin-slow" /> Bói Tử Vi Đẩu Số
           </motion.span>
         </div>
       </motion.div>
@@ -885,10 +885,10 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
                   onClick={handleExportPdfDirect}
                   disabled={isExportingPdf}
                   className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white shadow-md flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
-                  title="Xuất trọn bộ Lá số & Luận giải chi tiết ra file PDF A4 chuẩn đẹp"
+                  title="Xuất lá số thành file PDF chuyên nghiệp để lưu trữ hoặc in ấn"
                 >
                   {isExportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-                  <span>{isExportingPdf ? 'Đang tạo PDF...' : 'Xuất PDF'}</span>
+                  <span>{isExportingPdf ? 'Đang tạo PDF...' : 'Xuất PDF Lá Số'}</span>
                 </motion.button>
 
                 <motion.button
@@ -928,7 +928,11 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
 
             {/* Visual Interactive 12 Palaces Chart (TracuuTuVi style) */}
             <motion.div variants={itemVariants}>
-              <TuViChart laSo={laSoData} />
+              <TuViChart
+                laSo={laSoData}
+                onExportPdf={handleExportPdfDirect}
+                isExportingPdf={isExportingPdf}
+              />
             </motion.div>
 
             {/* AI Master Detailed Interpretation (5 sections) */}

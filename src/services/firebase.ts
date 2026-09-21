@@ -345,9 +345,13 @@ export function cleanForFirestore<T>(data: T): T {
   return data;
 }
 
-// Firestore reading persistence
+// Firestore reading persistence (Logged-in accounts only)
 export const ensureSharedReading = async (reading: ReadingResult): Promise<boolean> => {
   if (!reading || !reading.id) return false;
+  // Strictly prevent unauthenticated/guest readings from uploading to Firebase
+  if (!reading.userId || reading.userId === 'guest') {
+    return false;
+  }
   try {
     const sanitized = cleanForFirestore(reading);
     const sharedRef = doc(db, 'shared_readings', sanitized.id);
@@ -366,28 +370,30 @@ export const ensureSharedReading = async (reading: ReadingResult): Promise<boole
 export const saveReading = async (userId: string | undefined, reading: ReadingResult): Promise<void> => {
   const sanitized = cleanForFirestore(reading);
   if (!userId || userId === 'guest') {
-    // Guest mode: save only to guest storage
+    // Guest mode: save ONLY to guest local storage (LocalStorage). Strictly DO NOT upload to Firebase!
     saveGuestReading(sanitized);
-  } else {
-    // Account mode: save to user local cache first so it's instantly preserved
-    saveUserCacheReading(userId, sanitized);
+    return;
   }
 
-  // Always persist to shared_readings for instant direct-link access
-  await ensureSharedReading(sanitized);
+  // Account mode: save to user local cache first so it's instantly preserved
+  saveUserCacheReading(userId, sanitized);
 
-  if (userId && userId !== 'guest') {
-    try {
-      const readingRef = doc(db, 'users', userId, 'readings', sanitized.id);
-      await setDoc(readingRef, {
-        ...sanitized,
-        userId,
-        updatedAt: new Date().toISOString(),
-      }, { merge: true });
-      console.log(`[Firestore] Successfully saved reading ${sanitized.id} for user ${userId}`);
-    } catch (err) {
-      console.error('Failed to save reading to Firestore, kept in local cache:', err);
-    }
+  // Authenticated user: persist to shared_readings and users/{userId}/readings in Firestore
+  await ensureSharedReading({
+    ...sanitized,
+    userId,
+  });
+
+  try {
+    const readingRef = doc(db, 'users', userId, 'readings', sanitized.id);
+    await setDoc(readingRef, {
+      ...sanitized,
+      userId,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+    console.log(`[Firestore] Successfully saved reading ${sanitized.id} for user ${userId}`);
+  } catch (err) {
+    console.error('Failed to save reading to Firestore, kept in local cache:', err);
   }
 };
 
@@ -481,6 +487,13 @@ export const updateReadingFollowUps = async (
   try {
     const readingRef = doc(db, 'users', userId, 'readings', readingId);
     await setDoc(readingRef, {
+      followUps: sanitizedFollowUps,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+
+    // Also update shared_readings so viewers see the owner's latest follow-ups
+    const sharedRef = doc(db, 'shared_readings', readingId);
+    await setDoc(sharedRef, {
       followUps: sanitizedFollowUps,
       updatedAt: new Date().toISOString(),
     }, { merge: true });

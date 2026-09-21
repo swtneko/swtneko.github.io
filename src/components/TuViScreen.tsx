@@ -9,6 +9,7 @@ import { TuViChart } from './TuViChart';
 import { ShareModal } from './ShareModal';
 import { LiquidGlassCard } from './LiquidGlassCard';
 import { exportReadingToPdf } from '../services/pdfExport';
+import { getGuestReadings } from '../services/firebase';
 import ReactMarkdown from 'react-markdown';
 import {
   Sparkles,
@@ -99,6 +100,15 @@ const itemVariants: Variants = {
 export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initialReading, onBack }) => {
   const { settings } = useSettings();
   const { saveNewReading, updateFollowUps, currentUser, systemSettings, openAuthModal } = useAuth();
+
+  const isOwner = React.useMemo(() => {
+    if (!initialReading) return true;
+    if (initialReading.userId && initialReading.userId !== 'guest') {
+      return Boolean(currentUser && !currentUser.isAnonymous && currentUser.uid === initialReading.userId);
+    }
+    const guestList = getGuestReadings();
+    return guestList.some((r) => r && r.id === initialReading.id);
+  }, [initialReading, currentUser]);
 
   const [step, setStep] = useState<'form' | 'loading' | 'result'>(initialReading ? 'result' : 'form');
   const [readingId, setReadingId] = useState<string>(initialReading ? initialReading.id : `tuvi-${Date.now()}`);
@@ -1043,30 +1053,46 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
                   </div>
                 )}
 
-                <form onSubmit={handleSendFollowUp} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={followUpQuestion}
-                    onChange={(e) => setFollowUpQuestion(e.target.value)}
-                    placeholder="Hỏi thêm về lá số của bạn (vd: Cung Quan Lộc của tôi năm nay có gì đột phá?)..."
-                    disabled={isAnsweringFollowUp}
-                    className="flex-1 rounded-2xl px-4 py-3 bg-black/40 border border-purple-500/30 text-white placeholder:text-purple-400/40 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50"
-                  />
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    type="submit"
-                    disabled={!followUpQuestion.trim() || isAnsweringFollowUp}
-                    className="px-5 py-3 rounded-2xl font-bold bg-amber-500 hover:bg-amber-400 text-black flex items-center gap-2 text-xs sm:text-sm shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    {isAnsweringFollowUp ? (
-                      <Compass className="w-4 h-4 animate-spin-slow" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                    Gửi hỏi
-                  </motion.button>
-                </form>
+                {!isOwner ? (
+                  <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 text-left">
+                      <Lock className="w-5 h-5 text-amber-400 shrink-0" />
+                      <span>Chế độ chỉ đọc: Chỉ chính chủ tạo lá số mới có quyền thỉnh giáo tiếp nối với Bậc Thầy Tử Vi AI. Bạn có thể đọc toàn văn luận giải hoặc lập lá số riêng cho mình.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setStep('form')}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-xs shrink-0 cursor-pointer shadow-md transition-all whitespace-nowrap"
+                    >
+                      Lập lá số của riêng bạn
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSendFollowUp} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={followUpQuestion}
+                      onChange={(e) => setFollowUpQuestion(e.target.value)}
+                      placeholder="Hỏi thêm về lá số của bạn (vd: Cung Quan Lộc của tôi năm nay có gì đột phá?)..."
+                      disabled={isAnsweringFollowUp}
+                      className="flex-1 rounded-2xl px-4 py-3 bg-black/40 border border-purple-500/30 text-white placeholder:text-purple-400/40 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/50"
+                    />
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      type="submit"
+                      disabled={!followUpQuestion.trim() || isAnsweringFollowUp}
+                      className="px-5 py-3 rounded-2xl font-bold bg-amber-500 hover:bg-amber-400 text-black flex items-center gap-2 text-xs sm:text-sm shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {isAnsweringFollowUp ? (
+                        <Compass className="w-4 h-4 animate-spin-slow" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )}
+                      Gửi hỏi
+                    </motion.button>
+                  </form>
+                )}
               </LiquidGlassCard>
             </motion.div>
           </motion.div>
@@ -1079,6 +1105,7 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
           isOpen={isShareModalOpen}
           onClose={() => setIsShareModalOpen(false)}
           readingId={readingId}
+          readingUserId={initialReading?.userId || (currentUser && !currentUser.isAnonymous ? currentUser.uid : 'guest')}
           question={question || `Lá số Tử Vi Đẩu Số (${laSoData.chuSo.banMenhNapAm} - Cục ${laSoData.chuSo.cuc})`}
           userInfo={{
             fullName,

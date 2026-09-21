@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageSquarePlus, Sparkles, Send, Loader2, PlusCircle, HelpCircle, Layers, CheckCircle2, RefreshCw, X, RotateCcw } from 'lucide-react';
+import { MessageSquarePlus, Sparkles, Send, Loader2, PlusCircle, HelpCircle, Layers, CheckCircle2, RefreshCw, X, RotateCcw, Lock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { DrawnCard, FollowUpMessage, ReadingTheme, SpreadType, UserInfo, DeckType, TarotCard as TarotCardType } from '../types';
 import TarotCard from './TarotCard';
@@ -22,6 +22,8 @@ interface FollowUpSectionProps {
   userInfo: UserInfo;
   followUps: FollowUpMessage[];
   onAddFollowUp: (followUp: FollowUpMessage) => void;
+  isOwner?: boolean;
+  onStartNewReading?: () => void;
 }
 
 export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
@@ -34,6 +36,8 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
   userInfo,
   followUps,
   onAddFollowUp,
+  isOwner = true,
+  onStartNewReading,
 }) => {
   const { settings } = useSettings();
   const [questionInput, setQuestionInput] = useState('');
@@ -251,88 +255,125 @@ export const FollowUpSection: React.FC<FollowUpSectionProps> = ({
         </div>
       )}
 
-      {/* Follow-up Question Composer Box */}
+      {/* Follow-up Question Composer Box or Read-Only Viewer Notice */}
       <motion.div variants={cascadeItem}>
-        <LiquidGlassCard
-          className="w-full p-6 md:p-8"
-          contentClassName={isDark ? 'text-white' : 'text-slate-900'}
-        >
-          <div className="flex items-center space-x-2.5 mb-2 text-slate-900 dark:text-purple-300">
-            <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            <h3 className="text-xl sm:text-2xl font-serif font-bold">Đặt câu hỏi tiếp nối</h3>
-          </div>
-          <p className="text-xs sm:text-sm text-slate-700 dark:text-purple-200 mb-4 font-medium">
-            Bạn có thể hỏi sâu thêm về các lá bài đã xuất hiện, hoặc rút thêm lá bài mới để vũ trụ làm rõ hơn câu trả lời!
-          </p>
-
-          <form onSubmit={handleDirectFollowUp} className="space-y-4">
-            <div className="relative">
-              <textarea
-                value={questionInput}
-                onChange={(e) => setQuestionInput(e.target.value)}
-                disabled={loading}
-                placeholder="Nhập điều bạn muốn hỏi thêm (ví dụ: 'Lời khuyên cụ thể cho tuần tới là gì?', 'Có tín hiệu nào cần đặc biệt lưu tâm?')..."
-                className={`w-full h-24 p-4 text-sm rounded-2xl transition-all resize-none disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-500/30 font-medium liquid-glass-input ${
-                  isDark
-                    ? 'text-purple-100 placeholder:text-purple-400/50 focus:border-purple-300'
-                    : 'text-slate-900 placeholder:text-slate-500 focus:border-purple-600'
-                }`}
-              />
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-slate-800 dark:text-purple-300 font-bold">Rút bài mới:</span>
-                <button
-                  type="button"
-                  disabled={loading || !questionInput.trim()}
-                  onClick={() => handleOpenClarificationDraw(1)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
-                    isDark
-                      ? 'liquid-glass-btn-subtle text-purple-200'
-                      : 'border-purple-300 hover:border-purple-600 bg-purple-50 hover:bg-purple-100 text-purple-950'
-                  }`}
-                  title="Rút 1 lá bài lời khuyên làm rõ cho câu hỏi này"
-                >
-                  <PlusCircle className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
-                  Rút 1 lá làm rõ
-                </button>
-                <button
-                  type="button"
-                  disabled={loading || !questionInput.trim()}
-                  onClick={() => handleOpenClarificationDraw(3)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
-                    isDark
-                      ? 'liquid-glass-btn-subtle text-purple-200'
-                      : 'border-purple-300 hover:border-purple-600 bg-purple-50 hover:bg-purple-100 text-purple-950'
-                  }`}
-                  title="Rút 3 lá bài chi tiết cho câu hỏi này"
-                >
-                  <Layers className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
-                  Trải 3 lá chi tiết
-                </button>
+        {!isOwner ? (
+          <LiquidGlassCard
+            className="w-full p-6 md:p-8"
+            contentClassName={isDark ? 'text-white' : 'text-slate-900'}
+          >
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-5 text-center sm:text-left">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-500 dark:text-amber-400 shrink-0">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="text-base sm:text-lg font-serif font-bold text-slate-900 dark:text-purple-100">
+                    Chế độ người xem (Chỉ đọc)
+                  </h4>
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-purple-200/85 mt-1 max-w-lg leading-relaxed">
+                    Chỉ người tạo quẻ bói mới có quyền đặt câu hỏi tiếp nối với AI. Bạn có thể đọc toàn bộ kết quả, các câu hỏi làm rõ hiện có, hoặc tự trải quẻ bài riêng cho bản thân!
+                  </p>
+                </div>
               </div>
-
               <button
-                type="submit"
-                disabled={loading || !questionInput.trim()}
-                className="px-5 py-2.5 rounded-xl liquid-glass-btn-action text-white font-bold text-xs flex items-center justify-center space-x-2 transition-all shadow-md shadow-purple-600/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                type="button"
+                onClick={() => {
+                  if (onStartNewReading) {
+                    onStartNewReading();
+                  } else {
+                    window.location.href = '/';
+                  }
+                }}
+                className="px-5 py-2.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-purple-600/30 shrink-0 cursor-pointer transition-all flex items-center gap-2"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Vũ trụ đang kết nối...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>Hỏi sâu AI (Giải trực tiếp)</span>
-                  </>
-                )}
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span>Trải quẻ của riêng bạn</span>
               </button>
             </div>
-          </form>
-        </LiquidGlassCard>
+          </LiquidGlassCard>
+        ) : (
+          <LiquidGlassCard
+            className="w-full p-6 md:p-8"
+            contentClassName={isDark ? 'text-white' : 'text-slate-900'}
+          >
+            <div className="flex items-center space-x-2.5 mb-2 text-slate-900 dark:text-purple-300">
+              <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              <h3 className="text-xl sm:text-2xl font-serif font-bold">Đặt câu hỏi tiếp nối</h3>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-700 dark:text-purple-200 mb-4 font-medium">
+              Bạn có thể hỏi sâu thêm về các lá bài đã xuất hiện, hoặc rút thêm lá bài mới để vũ trụ làm rõ hơn câu trả lời!
+            </p>
+
+            <form onSubmit={handleDirectFollowUp} className="space-y-4">
+              <div className="relative">
+                <textarea
+                  value={questionInput}
+                  onChange={(e) => setQuestionInput(e.target.value)}
+                  disabled={loading}
+                  placeholder="Nhập điều bạn muốn hỏi thêm (ví dụ: 'Lời khuyên cụ thể cho tuần tới là gì?', 'Có tín hiệu nào cần đặc biệt lưu tâm?')..."
+                  className={`w-full h-24 p-4 text-sm rounded-2xl transition-all resize-none disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-500/30 font-medium liquid-glass-input ${
+                    isDark
+                      ? 'text-purple-100 placeholder:text-purple-400/50 focus:border-purple-300'
+                      : 'text-slate-900 placeholder:text-slate-500 focus:border-purple-600'
+                  }`}
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-slate-800 dark:text-purple-300 font-bold">Rút bài mới:</span>
+                  <button
+                    type="button"
+                    disabled={loading || !questionInput.trim()}
+                    onClick={() => handleOpenClarificationDraw(1)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
+                      isDark
+                        ? 'liquid-glass-btn-subtle text-purple-200'
+                        : 'border-purple-300 hover:border-purple-600 bg-purple-50 hover:bg-purple-100 text-purple-950'
+                    }`}
+                    title="Rút 1 lá bài lời khuyên làm rõ cho câu hỏi này"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
+                    Rút 1 lá làm rõ
+                  </button>
+                  <button
+                    type="button"
+                    disabled={loading || !questionInput.trim()}
+                    onClick={() => handleOpenClarificationDraw(3)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
+                      isDark
+                        ? 'liquid-glass-btn-subtle text-purple-200'
+                        : 'border-purple-300 hover:border-purple-600 bg-purple-50 hover:bg-purple-100 text-purple-950'
+                    }`}
+                    title="Rút 3 lá bài chi tiết cho câu hỏi này"
+                  >
+                    <Layers className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
+                    Trải 3 lá chi tiết
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || !questionInput.trim()}
+                  className="px-5 py-2.5 rounded-xl liquid-glass-btn-action text-white font-bold text-xs flex items-center justify-center space-x-2 transition-all shadow-md shadow-purple-600/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Vũ trụ đang kết nối...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Hỏi sâu AI (Giải trực tiếp)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </LiquidGlassCard>
+        )}
       </motion.div>
 
       {/* Interactive Clarification Card Drawer Modal - Powered by LiquidGlassCard & ShuffleDeck */}

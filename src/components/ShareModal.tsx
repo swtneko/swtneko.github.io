@@ -3,8 +3,9 @@ import { motion } from 'motion/react';
 import { toPng } from 'html-to-image';
 import ReactMarkdown from 'react-markdown';
 import { DrawnCard, UserInfo, DeckType, SpreadType, LaSoTuViData, ReadingResult, ReadingTheme } from '../types';
-import { Sparkles, Download, Share2, Copy, Check, X, Image as ImageIcon, MessageCircle, Compass, FileText, FileDown, Loader2 } from 'lucide-react';
+import { Sparkles, Download, Share2, Copy, Check, X, Image as ImageIcon, MessageCircle, Compass, FileText, FileDown, Loader2, Lock, LogIn } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
+import { useAuth } from '../contexts/AuthContext';
 import { exportReadingToPdf } from '../services/pdfExport';
 import { ensureSharedReading } from '../services/firebase';
 
@@ -12,6 +13,7 @@ interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
   readingId?: string;
+  readingUserId?: string;
   question: string;
   userInfo: UserInfo;
   drawnCards: DrawnCard[];
@@ -26,6 +28,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   isOpen,
   onClose,
   readingId,
+  readingUserId,
   question,
   userInfo,
   drawnCards,
@@ -36,6 +39,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   tuViData,
 }) => {
   const { settings } = useSettings();
+  const { currentUser, openAuthModal } = useAuth();
   const cardRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
@@ -44,15 +48,22 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [pdfSuccess, setPdfSuccess] = useState(false);
 
+  const isUserLoggedIn = Boolean(currentUser && !currentUser.isAnonymous);
+  const isOwnerAuthed = Boolean(readingUserId && readingUserId !== 'guest');
+  const canShareOnlineLink = isUserLoggedIn || isOwnerAuthed;
+
   // Derive stable readingId
   const actualReadingId = readingId || (typeof window !== 'undefined' && window.location.pathname.match(/^\/(?:reading|ket-qua)\/([^/]+)/)?.[1]) || `reading-${timestamp}`;
 
-  // Automatically ensure shared reading exists in Firestore whenever ShareModal is rendered
+  // Persist to shared_readings in Firestore ONLY IF authenticated
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !canShareOnlineLink) return;
+    const effectiveUserId = currentUser?.uid || (readingUserId && readingUserId !== 'guest' ? readingUserId : '');
+    if (!effectiveUserId) return;
+
     const fullRecord: ReadingResult = {
       id: actualReadingId,
-      userId: '',
+      userId: effectiveUserId,
       timestamp,
       question,
       theme: ReadingTheme.OVERVIEW,
@@ -65,7 +76,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       tuViData: tuViData || undefined,
     };
     ensureSharedReading(fullRecord);
-  }, [isOpen, actualReadingId, timestamp, question, spreadType, deckType, userInfo, drawnCards, aiInterpretation, tuViData]);
+  }, [isOpen, canShareOnlineLink, actualReadingId, currentUser, readingUserId, timestamp, question, spreadType, deckType, userInfo, drawnCards, aiInterpretation, tuViData]);
 
   if (!isOpen) return null;
 
@@ -226,12 +237,20 @@ ${cleanFullInterpretation}
   };
 
   const handleCopyLink = () => {
+    if (!canShareOnlineLink) {
+      openAuthModal();
+      return;
+    }
     navigator.clipboard.writeText(getShareUrl());
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
 
   const shareToFacebook = () => {
+    if (!canShareOnlineLink) {
+      openAuthModal();
+      return;
+    }
     const url = encodeURIComponent(getShareUrl());
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=600,height=400');
   };
@@ -273,6 +292,28 @@ ${cleanFullInterpretation}
 
         {/* Scrollable Container containing Card Preview */}
         <div className="flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto flex flex-col items-center">
+          {!canShareOnlineLink && (
+            <div className="w-full max-w-[480px] mb-3 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex flex-col sm:flex-row items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2 text-left">
+                <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="leading-snug">
+                  Quẻ bói không đăng nhập được lưu cục bộ trên máy. Đăng nhập để tạo link chia sẻ trực tuyến!
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  openAuthModal();
+                }}
+                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shrink-0 cursor-pointer shadow-sm transition-all flex items-center gap-1.5"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Đăng nhập</span>
+              </button>
+            </div>
+          )}
+
           <p className="text-[11px] text-purple-300 mb-2.5 text-center">
             {isTuVi 
               ? '✨ Ảnh lá số HD hiển thị đầy đủ 100% Bát Tự, Mệnh Cục, Tứ Chính và toàn văn Lời giải đoán!' 
@@ -554,10 +595,29 @@ ${cleanFullInterpretation}
 
             <button
               onClick={handleCopyLink}
-              className="flex-1 flex items-center justify-center space-x-1 px-2.5 py-2 rounded-lg border border-purple-400/30 bg-white/10 hover:bg-white/15 text-purple-200 text-xs font-semibold transition-all cursor-pointer truncate"
+              className={`flex-1 flex items-center justify-center space-x-1 px-2.5 py-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer truncate ${
+                canShareOnlineLink
+                  ? 'border-purple-400/30 bg-white/10 hover:bg-white/15 text-purple-200'
+                  : 'border-amber-400/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300'
+              }`}
+              title={canShareOnlineLink ? 'Sao chép đường link trực tuyến' : 'Đăng nhập để tạo link chia sẻ trực tuyến'}
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
-              <span className="truncate">{copied ? 'Đã chép link' : 'Sao chép link'}</span>
+              {!canShareOnlineLink ? (
+                <>
+                  <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span className="truncate">Đăng nhập để lấy link</span>
+                </>
+              ) : copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span className="truncate">Đã chép link</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Sao chép link</span>
+                </>
+              )}
             </button>
 
             <button

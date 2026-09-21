@@ -36,6 +36,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
   const [adminPasskey, setAdminPasskey] = useState('');
   const [adminUnlockError, setAdminUnlockError] = useState('');
   const [savedNotice, setSavedNotice] = useState(false);
+  const [showHardwareDetails, setShowHardwareDetails] = useState(false);
   const [benchmarkFeedback, setBenchmarkFeedback] = useState<string | null>(null);
 
   // Local state for key inputs
@@ -45,13 +46,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
   if (!isOpen) return null;
 
   const handleRunBenchmark = async () => {
-    setBenchmarkFeedback('Đang kiểm tra FPS & khả năng kết xuất đồ họa...');
+    setBenchmarkFeedback('Đang quét thông số phần cứng (CPU, RAM, GPU, Tần số quét màn hình)...');
     const result = await rebenchmarkDevice();
-    const fpsText = result.measuredFps ? ` (${result.measuredFps} FPS)` : '';
-    setBenchmarkFeedback(`Đo thành công: ${result.tier === 'high' ? 'Khỏe' : result.tier === 'medium' ? 'Cân bằng' : 'Cần tối ưu'}${fpsText}`);
+    const hzText = result.refreshRateHz ? ` • ${result.refreshRateHz}Hz` : '';
+    setBenchmarkFeedback(`Đã kiểm tra: ${result.summary} (Điểm phần cứng: ${result.score}/100)${hzText}`);
     setTimeout(() => {
       setBenchmarkFeedback(null);
-    }, 4000);
+    }, 4500);
   };
 
   const handleOpenAdmin = () => {
@@ -165,25 +166,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
               </button>
             </div>
 
-            {/* Tự động đo cấu hình thiết bị */}
-            <div className="p-3 rounded-2xl bg-purple-950/30 border border-purple-500/20 space-y-2.5">
+            {/* Tự động kiểm tra cấu hình thiết bị thực tế */}
+            <div className="p-3.5 rounded-2xl bg-purple-950/30 border border-purple-500/20 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2.5">
-                  <Cpu className="w-4 h-4 text-amber-400 shrink-0" />
+                  <Cpu className="w-5 h-5 text-amber-400 shrink-0" />
                   <div className="flex flex-col">
                     <div className="flex items-center gap-1.5">
-                      <span className={`text-xs font-bold ${settings.theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Tự đo cấu hình máy & tối ưu</span>
-                      <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase ${
+                      <span className={`text-xs font-bold ${settings.theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Cấu hình phần cứng thiết bị</span>
+                      <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${
                         deviceInfo.tier === 'high' 
                           ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
                           : deviceInfo.tier === 'medium'
                           ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
                           : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                       }`}>
-                        {deviceInfo.tier === 'high' ? 'Khỏe (60FPS)' : deviceInfo.tier === 'medium' ? 'Cân bằng' : 'Tiết kiệm / Yếu'}
+                        {deviceInfo.tier === 'high' ? 'Khỏe (Cao cấp)' : deviceInfo.tier === 'medium' ? 'Cân bằng' : 'Tiết kiệm / Nhẹ'}
                       </span>
                     </div>
-                    <span className={`text-[10px] ${settings.theme === 'dark' ? 'text-purple-300/80' : 'text-slate-500'}`}>
+                    <span className={`text-[11px] font-medium ${settings.theme === 'dark' ? 'text-purple-300/90' : 'text-slate-600'}`}>
                       {deviceInfo.summary}
                     </span>
                   </div>
@@ -192,7 +193,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
                   type="button"
                   onClick={() => setAutoOptimizeHardware(!settings.autoOptimizeHardware)}
                   className={`w-12 h-6 rounded-full relative transition-colors ${settings.autoOptimizeHardware ? 'bg-amber-500' : 'bg-gray-400'}`}
-                  title="Bật/tắt tự động tối ưu theo phần cứng"
+                  title="Bật/tắt tự động tối ưu theo phần cứng máy"
                 >
                   <motion.div
                     animate={{ x: settings.autoOptimizeHardware ? 26 : 2 }}
@@ -202,34 +203,89 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
                 </button>
               </div>
 
-              {/* Hardware specifications mini bar */}
-              <div className="flex items-center justify-between text-[10px] pt-1.5 border-t border-white/5 px-0.5">
-                <span className="text-purple-300/70 truncate max-w-[200px] sm:max-w-[240px]" title={deviceInfo.gpuRenderer}>
-                  GPU: {deviceInfo.gpuRenderer}
-                </span>
+              {/* Hardware specifications mini summary & action bar */}
+              <div className="flex items-center justify-between text-[11px] pt-2 border-t border-white/10 px-0.5 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowHardwareDetails(!showHardwareDetails)}
+                  className="flex items-center gap-1 text-purple-300 hover:text-purple-100 font-semibold cursor-pointer truncate text-left"
+                >
+                  <span>{showHardwareDetails ? 'Ẩn thông số chi tiết' : 'Chi tiết CPU, RAM, GPU, Màn hình'}</span>
+                  {showHardwareDetails ? <ChevronUp className="w-3.5 h-3.5 shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 shrink-0" />}
+                </button>
                 <button
                   type="button"
                   disabled={isBenchmarking}
                   onClick={handleRunBenchmark}
-                  className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-semibold cursor-pointer shrink-0 disabled:opacity-50 px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-all"
+                  className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-bold cursor-pointer shrink-0 disabled:opacity-50 px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 transition-all text-[11px]"
                 >
                   {isBenchmarking ? (
                     <>
-                      <Loader2 className="w-3 h-3 animate-spin text-amber-300" />
-                      <span>Đang đo FPS...</span>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-300" />
+                      <span>Đang quét...</span>
                     </>
                   ) : (
                     <>
-                      <RefreshCw className="w-3 h-3" />
-                      <span>Đo hiệu năng</span>
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Quét lại phần cứng</span>
                     </>
                   )}
                 </button>
               </div>
 
+              {/* Expanded Real Hardware Specs Panel */}
+              {showHardwareDetails && (
+                <div className="mt-2 p-3 rounded-xl bg-black/40 border border-purple-500/30 space-y-2 text-xs">
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                      <span className="text-purple-300/70 block text-[10px]">Bộ xử lý (CPU)</span>
+                      <span className="font-bold text-white">{deviceInfo.cpuCores} Luồng / Cores</span>
+                      <span className="text-[9.5px] text-slate-400 block">{deviceInfo.cpuArchitecture}</span>
+                    </div>
+
+                    <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                      <span className="text-purple-300/70 block text-[10px]">Bộ nhớ RAM (Dung lượng)</span>
+                      <span className="font-bold text-white block">
+                        {deviceInfo.memoryLabel || `${deviceInfo.memoryGB} GB RAM`}
+                      </span>
+                      <span className="text-[9.5px] text-slate-400 block">
+                        {deviceInfo.memoryGB && deviceInfo.memoryGB >= 8 ? 'Cấu hình cao (Web API chuẩn hóa tối đa 8GB)' : deviceInfo.jsHeapLimitMB ? `Heap: ${deviceInfo.jsHeapLimitMB}MB` : 'Khả dụng chuẩn hệ thống'}
+                      </span>
+                    </div>
+
+                    <div className="p-2 rounded-lg bg-white/5 border border-white/5 col-span-2">
+                      <span className="text-purple-300/70 block text-[10px]">Card đồ họa (GPU Model)</span>
+                      <span className="font-bold text-amber-200 block break-words" title={deviceInfo.gpuRenderer}>
+                        {deviceInfo.gpuRenderer}
+                      </span>
+                      <span className="text-[9.5px] text-purple-300/80 block mt-0.5">
+                        WebGL2: {deviceInfo.hasWebGL2 ? 'Có hỗ trợ' : 'WebGL1'} • Texture Max: {deviceInfo.maxTextureSize}px
+                      </span>
+                    </div>
+
+                    <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                      <span className="text-purple-300/70 block text-[10px]">Màn hình & Tần số quét</span>
+                      <span className="font-bold text-white">{deviceInfo.screenResolution}</span>
+                      <span className="text-[9.5px] text-amber-300 block font-semibold">{deviceInfo.refreshRateHz}Hz (DPR: {deviceInfo.devicePixelRatio}x)</span>
+                    </div>
+
+                    <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                      <span className="text-purple-300/70 block text-[10px]">Hệ điều hành & Môi trường</span>
+                      <span className="font-bold text-white truncate block">{deviceInfo.osName}</span>
+                      <span className="text-[9.5px] text-slate-400 block">{deviceInfo.browserEngine}</span>
+                    </div>
+                  </div>
+
+                  <div className="text-[10px] text-purple-200/90 pt-1.5 border-t border-white/10 flex items-center justify-between">
+                    <span>Điểm đánh giá phần cứng: <strong className="text-amber-300">{deviceInfo.score}/100</strong></span>
+                    <span className="text-slate-400 italic">{deviceInfo.recommendation}</span>
+                  </div>
+                </div>
+              )}
+
               {benchmarkFeedback && (
-                <div className="text-[11px] p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 flex items-center gap-1.5">
-                  <Gauge className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                <div className="text-[11px] p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 flex items-center gap-2">
+                  <Gauge className="w-4 h-4 text-amber-300 shrink-0" />
                   <span>{benchmarkFeedback}</span>
                 </div>
               )}

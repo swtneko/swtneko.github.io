@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AppSettings, AIProvider, CustomApiKeys, TarotDeckStyle } from '../types';
-import { detectDeviceHardware, runLiveBenchmark, DeviceHardwareInfo } from '../utils/deviceBenchmark';
+import { detectDeviceHardware, runHardwareInspection, DeviceHardwareInfo } from '../utils/deviceBenchmark';
 
 interface SettingsContextType {
   settings: AppSettings;
@@ -78,10 +78,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   });
 
-  // Re-benchmark on mount in browser using live stress test
+  // Perform full hardware inspection on mount
   useEffect(() => {
     let isMounted = true;
-    runLiveBenchmark().then((hw) => {
+    runHardwareInspection().then((hw) => {
       if (!isMounted) return;
       setDeviceInfo(hw);
       if (settings.autoOptimizeHardware) {
@@ -132,7 +132,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const rebenchmarkDevice = async (): Promise<DeviceHardwareInfo> => {
     setIsBenchmarking(true);
     try {
-      const hw = await runLiveBenchmark();
+      const hw = await runHardwareInspection();
       setDeviceInfo(hw);
       if (settings.autoOptimizeHardware) {
         setSettings(prev => ({ ...prev, effectsEnabled: !hw.isLowEnd }));

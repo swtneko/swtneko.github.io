@@ -14,6 +14,7 @@ import { FollowUpSection } from './FollowUpSection';
 import { ShareModal } from './ShareModal';
 import { LiquidGlassCard } from './LiquidGlassCard';
 import { exportReadingToPdf } from '../services/pdfExport';
+import { getGuestReadings } from '../services/firebase';
 import { staggerContainer, staggerFast, cascadeItem, cascadeFade } from '../utils/motionVariants';
 
 interface ReadingScreenProps {
@@ -33,6 +34,15 @@ const loadingMessages = [
 const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initialReading, onReset }) => {
   const { settings } = useSettings();
   const { saveNewReading, updateFollowUps, currentUser, systemSettings, openAuthModal } = useAuth();
+
+  const isOwner = React.useMemo(() => {
+    if (!initialReading) return true;
+    if (initialReading.userId && initialReading.userId !== 'guest') {
+      return Boolean(currentUser && !currentUser.isAnonymous && currentUser.uid === initialReading.userId);
+    }
+    const guestList = getGuestReadings();
+    return guestList.some((r) => r && r.id === initialReading.id);
+  }, [initialReading, currentUser]);
 
   const [readingId, setReadingId] = useState<string>(initialReading ? initialReading.id : `reading-${Date.now()}`);
   const [step, setStep] = useState<'question' | 'spread' | 'shuffle' | 'result'>(
@@ -460,7 +470,7 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                     </span>
                   )}
                 </div>
-                {!isInterpreting && aiInterpretation && (
+                {!isInterpreting && aiInterpretation && isOwner && (
                   <button
                     onClick={handleReInterpret}
                     className="flex items-center space-x-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full border border-purple-300 hover:border-purple-600 text-purple-900 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-colors cursor-pointer"
@@ -586,6 +596,8 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                   userInfo={userInfo}
                   followUps={followUps}
                   onAddFollowUp={handleAddFollowUp}
+                  isOwner={isOwner}
+                  onStartNewReading={onReset}
                 />
               </motion.div>
             )}
@@ -595,6 +607,7 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
               isOpen={isShareModalOpen}
               onClose={() => setIsShareModalOpen(false)}
               readingId={readingId}
+              readingUserId={initialReading?.userId || (currentUser && !currentUser.isAnonymous ? currentUser.uid : 'guest')}
               question={question}
               userInfo={userInfo}
               drawnCards={drawnCards}

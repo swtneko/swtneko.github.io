@@ -49,11 +49,11 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({
   if (!isOpen) return null;
 
   const handleTestInGuide = async () => {
-    setGuideBenchmarkMsg('Đang thực hiện stress test 300 hạt & đo FPS...');
+    setGuideBenchmarkMsg('Đang quét thông số phần cứng thiết bị (CPU, RAM, GPU, Màn hình)...');
     const res = await rebenchmarkDevice();
-    const fpsText = res.measuredFps ? ` (${res.measuredFps} FPS)` : '';
-    setGuideBenchmarkMsg(`Kết quả: ${res.tier === 'high' ? 'Máy Khỏe 60FPS' : res.tier === 'medium' ? 'Cân bằng' : 'Tiết kiệm / Yếu'}${fpsText} - Đã cập nhật cài đặt!`);
-    setTimeout(() => setGuideBenchmarkMsg(null), 4000);
+    const hzText = res.refreshRateHz ? ` @ ${res.refreshRateHz}Hz` : '';
+    setGuideBenchmarkMsg(`Đã nhận diện: ${res.summary} (Điểm: ${res.score}/100)${hzText} - Đã tối ưu tự động!`);
+    setTimeout(() => setGuideBenchmarkMsg(null), 4500);
   };
 
   const handleCopyCurrentLink = () => {
@@ -474,17 +474,17 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({
               <div className="space-y-2">
                 <h3 className="font-bold text-base text-white flex items-center gap-2">
                   <Cpu className="w-4 h-4 text-amber-400" />
-                  Cơ Chế Tự Động Đo Cấu Hình Thiết Bị (Hardware Detection)
+                  Hệ Thống Tự Động Quét Cấu Hình Phần Cứng (Hardware Inspection)
                 </h3>
                 <p className="text-xs text-slate-300">
-                  Neko Tarot tích hợp thuật toán tự động nhận diện phần cứng điện thoại để cân chỉnh animation mượt mà nhất:
+                  Neko Tarot tích hợp công cụ chẩn đoán phần cứng chuyên sâu để nhận diện CPU, RAM, GPU card đồ họa và tần số quét màn hình:
                 </p>
               </div>
 
               {/* Real-time Hardware Card of Current User */}
               <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-950/60 via-purple-900/40 to-[#1b0d38] border border-purple-500/40 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-purple-300">Cấu hình máy của bạn hiện tại:</span>
+                  <span className="text-xs font-semibold text-purple-300">Thông số phần cứng thiết bị của bạn:</span>
                   <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
                     deviceInfo.tier === 'high' 
                       ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
@@ -492,53 +492,77 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({
                       ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
                       : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                   }`}>
-                    {deviceInfo.tier === 'high' ? '🟢 Máy Khỏe / Mượt' : deviceInfo.tier === 'medium' ? '🔵 Cấu Hình Cân Bằng' : '🟡 Tiết Kiệm Pin / Máy Yếu'}
+                    {deviceInfo.tier === 'high' ? '🟢 Cấu Hình Cao Cấp' : deviceInfo.tier === 'medium' ? '🔵 Cấu Hình Cân Bằng' : '🟡 Cấu Hình Tiết Kiệm / Nhẹ'}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                  <div className="p-2 rounded-xl bg-black/30 border border-white/5">
-                    <span className="text-[10px] text-purple-300 block">Số nhân CPU</span>
-                    <span className="font-bold text-white">{deviceInfo.cpuCores} Cores</span>
+                  <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
+                    <span className="text-[10px] text-purple-300 block">Bộ xử lý (CPU)</span>
+                    <span className="font-bold text-white">{deviceInfo.cpuCores} Luồng / Cores</span>
+                    <span className="text-[9px] text-slate-400 block">{deviceInfo.cpuArchitecture}</span>
                   </div>
-                  <div className="p-2 rounded-xl bg-black/30 border border-white/5">
+                  <div className="p-2.5 rounded-xl bg-black/30 border border-white/5">
                     <span className="text-[10px] text-purple-300 block">Bộ nhớ RAM</span>
-                    <span className="font-bold text-white">{deviceInfo.memoryGB ? `~${deviceInfo.memoryGB} GB` : 'Tiêu chuẩn'}</span>
+                    <span className="font-bold text-white text-[11px] block">{deviceInfo.memoryLabel || `${deviceInfo.memoryGB} GB RAM`}</span>
+                    {deviceInfo.jsHeapLimitMB ? (
+                      <span className="text-[9px] text-slate-400 block">Heap: {deviceInfo.jsHeapLimitMB}MB</span>
+                    ) : null}
                   </div>
-                  <div className="p-2 rounded-xl bg-black/30 border border-white/5 col-span-2">
-                    <span className="text-[10px] text-purple-300 block">Chip Đồ Họa (GPU)</span>
-                    <span className="font-bold text-white text-[11px] truncate block" title={deviceInfo.gpuRenderer}>
+                  <div className="p-2.5 rounded-xl bg-black/30 border border-white/5 col-span-2">
+                    <span className="text-[10px] text-purple-300 block">Card Đồ Họa (GPU)</span>
+                    <span className="font-bold text-amber-200 text-[11px] truncate block" title={deviceInfo.gpuRenderer}>
                       {deviceInfo.gpuRenderer}
+                    </span>
+                    <span className="text-[9px] text-purple-300/70 block">
+                      WebGL2: {deviceInfo.hasWebGL2 ? 'Hỗ trợ' : 'Không'} • Max Texture: {deviceInfo.maxTextureSize}px
                     </span>
                   </div>
                 </div>
 
-                <div className="text-xs text-purple-200/90 pt-1 border-t border-white/10 flex items-center justify-between">
-                  <span>Trạng thái: <strong>{settings.effectsEnabled ? 'Bật đầy đủ (Mượt mà 60FPS)' : 'Chế độ nhẹ (Tối ưu tiết kiệm pin)'}</strong></span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                  <div className="p-2 rounded-xl bg-black/20 border border-white/5">
+                    <span className="text-[10px] text-purple-300 block">Màn hình & Tần số quét</span>
+                    <span className="font-bold text-white text-[11px]">{deviceInfo.screenResolution} ({deviceInfo.refreshRateHz}Hz)</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-black/20 border border-white/5">
+                    <span className="text-[10px] text-purple-300 block">Hệ điều hành</span>
+                    <span className="font-bold text-white text-[11px] truncate block">{deviceInfo.osName}</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-black/20 border border-white/5 col-span-2 sm:col-span-1">
+                    <span className="text-[10px] text-purple-300 block">Điểm phần cứng</span>
+                    <span className="font-bold text-amber-300 text-[11px]">{deviceInfo.score} / 100 điểm</span>
+                  </div>
+                </div>
+
+                <div className="text-xs text-purple-200/90 pt-1.5 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span className="text-[11px]">
+                    Khuyến nghị: <strong>{deviceInfo.recommendation}</strong>
+                  </span>
                   <button
                     type="button"
                     disabled={isBenchmarking}
                     onClick={handleTestInGuide}
-                    className="px-3 py-1 rounded-xl bg-amber-500 text-black text-[11px] font-bold hover:bg-amber-400 transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                    className="px-3.5 py-1.5 rounded-xl bg-amber-500 text-black text-[11px] font-bold hover:bg-amber-400 transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 self-end sm:self-auto shrink-0 shadow-md"
                   >
                     <Cpu className="w-3.5 h-3.5" />
-                    <span>{isBenchmarking ? 'Đang đo FPS...' : 'Chạy Đo Cấu Hình Ngay'}</span>
+                    <span>{isBenchmarking ? 'Đang quét phần cứng...' : 'Quét Lại Phần Cứng Ngay'}</span>
                   </button>
                 </div>
 
                 {guideBenchmarkMsg && (
-                  <div className="text-[11px] p-2 rounded-xl bg-amber-400/20 border border-amber-400/40 text-amber-200">
+                  <div className="text-[11px] p-2.5 rounded-xl bg-amber-400/20 border border-amber-400/40 text-amber-200 font-medium">
                     {guideBenchmarkMsg}
                   </div>
                 )}
               </div>
 
               <div className="space-y-2 text-xs text-slate-300">
-                <h4 className="font-bold text-amber-300 text-xs sm:text-sm">Cách thức hoạt động thông minh:</h4>
+                <h4 className="font-bold text-amber-300 text-xs sm:text-sm">Cách thức tối ưu thông minh theo cấu hình máy:</h4>
                 <ul className="list-disc list-inside space-y-1.5">
-                  <li><strong>Đối với máy cấu hình khỏe (CPU ≥ 6 nhân, RAM ≥ 4GB, GPU Adreno 6xx/Apple GPU):</strong> Bật đầy đủ hiệu ứng tráo bài, xoay 3D, bụi sao vũ trụ lấp lánh ở tần số quét 60FPS.</li>
-                  <li><strong>Đối với máy phổ thông / máy cũ:</strong> Tự động giảm bớt các hiệu ứng đổ bóng mờ (heavy blur) và hạt bụi nền để máy không bị nóng, không hao pin và thao tác luôn nhạy bén.</li>
-                  <li><strong>Tùy biến tự do:</strong> Bạn luôn có thể tự bật/tắt thủ công trong mục <strong>Cài đặt (⚙️)</strong> bất kỳ lúc nào.</li>
+                  <li><strong>Đối với máy cấu hình cao (CPU ≥ 6-8 nhân, RAM ≥ 8GB, GPU Apple / Nvidia / Adreno 7xx-8xx):</strong> Kích hoạt toàn bộ hiệu ứng phản quang Liquid Glass, chiều sâu 3D và bụi sao với độ phân giải và tần số quét cao nhất (60Hz - 120Hz).</li>
+                  <li><strong>Đối với máy phổ thông / tiết kiệm pin (CPU 2-4 nhân, RAM ≤ 4GB, GPU tích hợp):</strong> Hệ thống tự động chuyển sang chế độ siêu nhẹ, tinh giản các lớp đổ bóng mờ nặng để máy mát, pin trâu và trải nghiệm lướt mượt mà nhất.</li>
+                  <li><strong>Tùy biến tự do:</strong> Bạn hoàn toàn có thể tự tay bật/tắt thủ công trong mục <strong>Cài đặt (⚙️)</strong> theo ý muốn.</li>
                 </ul>
               </div>
             </div>

@@ -20,7 +20,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getProviderStatus, fetchOpenRouterFreeModels, getCachedOpenRouterFreeModels, OpenRouterFreeModel } from '../services/geminiService';
+import { getProviderStatus, fetchOpenRouterFreeModels, getCachedOpenRouterFreeModels, OpenRouterFreeModel, fetchGeminiModelOptions, getCachedGeminiModels, ModelOption } from '../services/geminiService';
 import firebaseConfigJson from '../../firebase-applet-config.json';
 import { AIProvider, DeckType, TarotDeckStyle } from '../types';
 import { LiquidGlassCard } from './LiquidGlassCard';
@@ -58,6 +58,11 @@ export const AdminModal: React.FC = () => {
   const [isFetchingOpenRouter, setIsFetchingOpenRouter] = useState(false);
   const [fetchMsg, setFetchMsg] = useState<string | null>(null);
 
+  // Gemini Dynamic Models state
+  const [geminiModels, setGeminiModels] = useState<ModelOption[]>(() => getCachedGeminiModels());
+  const [isFetchingGemini, setIsFetchingGemini] = useState(false);
+  const [geminiFetchMsg, setGeminiFetchMsg] = useState<string | null>(null);
+
   const handleFetchOpenRouter = async () => {
     setIsFetchingOpenRouter(true);
     setFetchMsg(null);
@@ -71,6 +76,28 @@ export const AdminModal: React.FC = () => {
       setTimeout(() => setFetchMsg(null), 4000);
     } finally {
       setIsFetchingOpenRouter(false);
+    }
+  };
+
+  const handleFetchGemini = async () => {
+    setIsFetchingGemini(true);
+    setGeminiFetchMsg(null);
+    try {
+      const trimmed = geminiKey.trim();
+      if (!trimmed) {
+        setGeminiFetchMsg('Vui lòng nhập Gemini API Key vào ô cấu hình ở trên trước khi quét.');
+        setTimeout(() => setGeminiFetchMsg(null), 4000);
+        return;
+      }
+      const models = await fetchGeminiModelOptions(trimmed);
+      setGeminiModels(models);
+      setGeminiFetchMsg(`Đã tự động fetch và cập nhật ${models.length} model mới nhất từ Google Gemini!`);
+      setTimeout(() => setGeminiFetchMsg(null), 4000);
+    } catch (err: any) {
+      setGeminiFetchMsg(err?.message || 'Không thể kết nối đến Google API. Kiểm tra lại API key.');
+      setTimeout(() => setGeminiFetchMsg(null), 5000);
+    } finally {
+      setIsFetchingGemini(false);
     }
   };
 
@@ -404,6 +431,54 @@ VITE_FIREBASE_APP_ID=`;
                       <div className="text-[10px] opacity-70 mt-0.5">{p.sub}</div>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Google Gemini Model Selection (Dynamic & Latest-First) */}
+              <div className="p-4 rounded-2xl bg-blue-950/20 border border-blue-500/30 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4 text-blue-400" />
+                    <span className="font-semibold text-xs text-white">Mô hình Google Gemini (Tự Động Quét & Ưu Tiên Mới Nhất)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleFetchGemini}
+                    disabled={isFetchingGemini}
+                    className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] flex items-center gap-1.5 transition-all self-start sm:self-auto cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isFetchingGemini ? 'animate-spin' : ''}`} />
+                    <span>{isFetchingGemini ? 'Đang quét Google API...' : 'Quét Model Mới từ Google'}</span>
+                  </button>
+                </div>
+
+                {geminiFetchMsg && (
+                  <div className="text-[11px] text-blue-300 font-medium animate-pulse">
+                    {geminiFetchMsg}
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <select
+                    value={globalProvider === 'gemini' ? globalModel : 'auto'}
+                    onChange={(e) => {
+                      if (globalProvider === 'gemini') {
+                        setGlobalModel(e.target.value);
+                      }
+                    }}
+                    className="w-full text-xs p-2.5 rounded-xl bg-black/60 border border-white/10 text-white focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="auto">✨ Tự động ưu tiên bản mới nhất (Latest-First: 2.5 Flash / Pro)</option>
+                    {geminiModels.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} ({m.tag || 'Google AI'})
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex items-center justify-between text-[10px] text-gray-400">
+                    <span>Mô hình mặc định: <strong className="text-blue-300 font-mono">Gemini 2.5 Flash / Pro</strong></span>
+                    <span>{geminiModels.length} mô hình Google</span>
+                  </div>
                 </div>
               </div>
 

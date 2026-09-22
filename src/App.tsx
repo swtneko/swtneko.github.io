@@ -335,12 +335,23 @@ function AppContent() {
                 onClick={handleNavigateHome}
                 title="Về trang chủ Neko Tarot (/)"
               >
-                <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center transition-all duration-300 shrink-0 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] ${
+                <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center transition-all duration-300 shrink-0 overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] p-0.5 ${
                   settings.theme === 'dark' 
-                    ? 'border-white/30 bg-purple-500/20 group-hover:bg-purple-500/30 group-hover:border-purple-300' 
-                    : 'border-purple-300/80 bg-purple-100/60 group-hover:bg-purple-200/80 group-hover:border-purple-400'
+                    ? 'border-white/30 bg-purple-500/20 group-hover:bg-purple-500/30 group-hover:border-purple-300 ring-1 ring-purple-500/30' 
+                    : 'border-purple-300/80 bg-purple-100/60 group-hover:bg-purple-200/80 group-hover:border-purple-400 ring-1 ring-purple-300/40'
                 }`}>
-                  <Sparkles className={`w-4 h-4 sm:w-4.5 sm:h-4.5 ${settings.theme === 'dark' ? 'text-purple-300' : 'text-purple-700'}`} />
+                  <img
+                    src="/pwa-192x192.png"
+                    alt="Neko Tarot"
+                    className="w-full h-full object-contain rounded-full select-none"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (!target.src.includes('pwa-512x512.png')) {
+                        target.src = '/pwa-512x512.png';
+                      }
+                    }}
+                  />
                 </div>
                 <span className={`hidden min-[480px]:inline ml-2.5 text-base sm:text-lg font-serif tracking-wider uppercase whitespace-nowrap transition-colors font-extrabold ${
                   settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'

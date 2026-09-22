@@ -38,7 +38,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { AIProvider, DeckType, TarotDeckStyle, AuthUser } from '../types';
-import { PROVIDER_MODELS, fetchOpenRouterFreeModels, getCachedOpenRouterFreeModels, OpenRouterFreeModel } from '../services/geminiService';
+import { PROVIDER_MODELS, fetchOpenRouterFreeModels, getCachedOpenRouterFreeModels, OpenRouterFreeModel, fetchGeminiModelOptions, getCachedGeminiModels, ModelOption } from '../services/geminiService';
 import { getAllUsers, deleteUserAccount, updateUserAIModel } from '../services/firebase';
 import { AnnouncementBanner } from './AnnouncementBanner';
 import { LiquidGlassCard } from './LiquidGlassCard';
@@ -55,6 +55,7 @@ interface UserRowProps {
   onUpdateModel: (provider: string, model: string) => Promise<void>;
   updateSuccess: boolean;
   openrouterModels: OpenRouterFreeModel[];
+  geminiModels: ModelOption[];
 }
 
 const isSuperAdminEmail = (email: string | null): boolean => {
@@ -74,6 +75,7 @@ const UserRow: React.FC<UserRowProps> = ({
   onUpdateModel,
   updateSuccess,
   openrouterModels,
+  geminiModels,
 }) => {
   const [selectedProvider, setSelectedProvider] = useState(user.assignedProvider || 'openrouter');
   const [selectedModel, setSelectedModel] = useState(user.assignedModel || 'auto');
@@ -91,9 +93,11 @@ const UserRow: React.FC<UserRowProps> = ({
         ];
       case 'gemini':
         return [
-          { id: 'auto', label: 'Mặc định (Gemini 2.5 Flash)' },
-          { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-          { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (Tư duy)' },
+          { id: 'auto', label: 'Tự động ưu tiên bản mới nhất (Latest-First)' },
+          ...geminiModels.map(m => ({
+            id: m.id,
+            label: `${m.name} (${m.tag || 'Google AI'})`,
+          })),
         ];
       default:
         return [{ id: 'auto', label: 'Tự động' }];
@@ -304,6 +308,17 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
     return localStorage.getItem('celestial-openrouter-free-models-updated-at');
   });
 
+  // Google Gemini Dynamic Models state & fetching
+  const [geminiModels, setGeminiModels] = useState<ModelOption[]>(() => {
+    return getCachedGeminiModels();
+  });
+  const [isFetchingGemini, setIsFetchingGemini] = useState(false);
+  const [geminiFetchMsg, setGeminiFetchMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [geminiSearchQuery, setGeminiSearchQuery] = useState('');
+  const [geminiLastUpdated, setGeminiLastUpdated] = useState<string | null>(() => {
+    return localStorage.getItem('celestial-gemini-models-updated-at');
+  });
+
   const handleFetchOpenRouter = async () => {
     setIsFetchingOpenRouter(true);
     setOpenrouterFetchMsg(null);
@@ -326,6 +341,48 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
       setIsFetchingOpenRouter(false);
     }
   };
+
+  const handleFetchGemini = async () => {
+    setIsFetchingGemini(true);
+    setGeminiFetchMsg(null);
+    try {
+      const trimmed = geminiKey.trim();
+      if (!trimmed) {
+        setGeminiFetchMsg({
+          type: 'error',
+          text: 'Vui lòng nhập Gemini API Key vào ô "Khóa Gemini API" ở mục trên trước khi bấm quét model.',
+        });
+        return;
+      }
+      const models = await fetchGeminiModelOptions(trimmed);
+      setGeminiModels(models);
+      const nowStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setGeminiLastUpdated(nowStr);
+      setGeminiFetchMsg({
+        type: 'success',
+        text: `Đã cập nhật thành công ${models.length} mô hình Google Gemini mới nhất trực tiếp từ Google API! (Tự động ưu tiên bản mới nhất)`,
+      });
+      setTimeout(() => setGeminiFetchMsg(null), 6000);
+    } catch (err: any) {
+      setGeminiFetchMsg({
+        type: 'error',
+        text: err?.message || 'Không thể kết nối đến Google API. Vui lòng kiểm tra lại Gemini API key.',
+      });
+    } finally {
+      setIsFetchingGemini(false);
+    }
+  };
+
+  const filteredGeminiModels = geminiModels.filter((m) => {
+    if (!geminiSearchQuery.trim()) return true;
+    const q = geminiSearchQuery.toLowerCase().trim();
+    return (
+      m.name.toLowerCase().includes(q) ||
+      m.id.toLowerCase().includes(q) ||
+      (m.desc && m.desc.toLowerCase().includes(q)) ||
+      (m.tag && m.tag.toLowerCase().includes(q))
+    );
+  });
 
   const filteredOpenrouterModels = openrouterFreeModels.filter((m) => {
     if (!openrouterSearchQuery.trim()) return true;
@@ -820,6 +877,158 @@ VITE_FIREBASE_APP_ID=`;
                     </button>
                   );
                 })}
+              </div>
+
+              {/* KHÁM PHÁ & CHỌN MÔ HÌNH GOOGLE GEMINI MỚI NHẤT TỰ ĐỘNG */}
+              <div className="p-6 rounded-3xl bg-zinc-900/70 border border-blue-500/30 space-y-5 shadow-xl relative overflow-hidden mt-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="p-2 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400">
+                        <Sparkles className="w-5 h-5" />
+                      </span>
+                      <div>
+                        <h4 className="text-base font-bold text-white flex items-center gap-2">
+                          <span>Mô Hình Google Gemini (Tự Động Fetch & Ưu Tiên Mới Nhất)</span>
+                          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 font-semibold">
+                            {geminiModels.length} Model Google
+                          </span>
+                        </h4>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          Hệ thống tự động kết nối với Google Generative Language API, fetch toàn bộ model mới nhất và xếp phiên bản cao nhất lên trước. Bấm nút bên phải để làm mới danh sách.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fetch Button */}
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleFetchGemini}
+                      disabled={isFetchingGemini}
+                      className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-500/20 flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 active:scale-95"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isFetchingGemini ? 'animate-spin' : ''}`} />
+                      <span>{isFetchingGemini ? 'Đang quét Google API...' : 'Quét Model Mới từ Google'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Fetch Alert notification */}
+                {geminiFetchMsg && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`p-3.5 rounded-2xl text-xs flex items-center gap-2 ${
+                      geminiFetchMsg.type === 'success'
+                        ? 'bg-blue-950/50 border border-blue-500/40 text-blue-300'
+                        : 'bg-red-950/50 border border-red-500/40 text-red-300'
+                    }`}
+                  >
+                    {geminiFetchMsg.type === 'success' ? (
+                      <Check className="w-4 h-4 text-blue-400 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                    )}
+                    <span className="flex-1">{geminiFetchMsg.text}</span>
+                    <button
+                      type="button"
+                      onClick={() => setGeminiFetchMsg(null)}
+                      className="text-gray-400 hover:text-white p-1 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Current Selected Model Banner */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-black/50 border border-blue-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] uppercase font-bold text-blue-300 tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-3 h-3 text-amber-400" /> Cấu hình mô hình Gemini cho toàn hệ thống:
+                    </span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-sm font-bold text-white font-mono bg-black/60 px-2.5 py-1 rounded-lg border border-white/10">
+                        {globalProvider === 'gemini' ? (globalModel || 'auto') : 'auto (Tự động ưu tiên bản mới nhất)'}
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-medium">
+                        Latest-First Cascade
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {geminiLastUpdated && (
+                      <span className="text-[10px] text-gray-400 font-mono">
+                        Cập nhật lúc: {geminiLastUpdated}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Search & Grid of Gemini models */}
+                <div className="space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
+                      <input
+                        type="text"
+                        placeholder="Tìm kiếm model Google (Flash, Pro, 2.5, 2.0...)..."
+                        value={geminiSearchQuery}
+                        onChange={(e) => setGeminiSearchQuery(e.target.value)}
+                        className="text-xs pl-9 pr-4 py-2 w-full rounded-xl bg-black/40 border border-white/10 text-white focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
+                    {filteredGeminiModels.map((m) => {
+                      const isSelected = globalModel === m.id && globalProvider === 'gemini';
+                      return (
+                        <div
+                          key={m.id}
+                          onClick={() => {
+                            setGlobalProvider('gemini');
+                            setGlobalModel(m.id);
+                          }}
+                          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                            isSelected
+                              ? 'bg-blue-950/60 border-blue-500 ring-2 ring-blue-500/30 shadow-lg'
+                              : 'bg-black/30 border-white/10 hover:border-blue-400/40 hover:bg-black/50'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <span className="font-bold text-xs text-white truncate">{m.name}</span>
+                              {m.tag && (
+                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30 whitespace-nowrap">
+                                  {m.tag}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-blue-400 font-mono truncate mb-1">{m.id}</div>
+                            <p className="text-[11px] text-gray-400 line-clamp-2 leading-relaxed">{m.desc}</p>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-white/5">
+                            <span className={`text-[10px] font-bold flex items-center gap-1 ${
+                              isSelected ? 'text-blue-400' : 'text-gray-500'
+                            }`}>
+                              {isSelected ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5" /> Đang chọn
+                                </>
+                              ) : (
+                                'Nhấn để chọn'
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
               {/* KHÁM PHÁ & CHỌN MÔ HÌNH OPENROUTER FREE MỚI NHẤT */}
@@ -1972,6 +2181,7 @@ VITE_FIREBASE_APP_ID=`;
                               }}
                               updateSuccess={userModelUpdateSuccess === user.uid}
                               openrouterModels={openrouterFreeModels}
+                              geminiModels={geminiModels}
                             />
                           );
                         })}

@@ -229,18 +229,36 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 </motion.div>
               )}
 
-              {/* Central Mystic Emblem */}
-              <div className={`relative z-10 w-28 h-28 sm:w-32 sm:h-32 border-2 rounded-full flex items-center justify-center transition-colors duration-300 shadow-2xl ${
-                settings.theme === 'dark' 
-                  ? 'border-purple-400/40 bg-purple-950/40 shadow-purple-900/40' 
-                  : 'border-purple-300 bg-white/95 shadow-purple-500/20'
-              }`}>
-                {settings.theme === 'dark' ? (
-                  <Moon className={`w-14 h-14 text-purple-200 ${settings.effectsEnabled ? 'animate-bounce' : ''}`} />
-                ) : (
-                  <Sparkles className={`w-14 h-14 text-purple-600 ${settings.effectsEnabled ? 'animate-pulse' : ''}`} />
-                )}
-              </div>
+              {/* Central Mystic Emblem with Official Neko Tarot Logo */}
+              <motion.div
+                whileHover={settings.effectsEnabled ? { scale: 1.08, rotate: 2 } : { scale: 1.02 }}
+                whileTap={{ scale: 0.95 }}
+                className={`relative z-10 w-28 h-28 sm:w-34 sm:h-34 rounded-full p-2 border-2 flex items-center justify-center transition-all duration-300 shadow-2xl cursor-pointer group ${
+                  settings.theme === 'dark' 
+                    ? 'border-purple-400/50 bg-purple-950/70 shadow-purple-900/60 ring-2 ring-purple-400/20' 
+                    : 'border-purple-300 bg-white/95 shadow-purple-500/30 ring-2 ring-purple-200/50'
+                }`}
+                title="Neko Tarot - Vũ trụ & Chiêm tinh"
+              >
+                {/* Glowing Aura backdrop */}
+                <div className="absolute inset-1 rounded-full bg-gradient-to-tr from-purple-600/30 via-amber-400/20 to-indigo-600/30 blur-sm group-hover:blur-md transition-all pointer-events-none" />
+                
+                {/* Logo Image */}
+                <img
+                  src="/pwa-192x192.png"
+                  alt="Neko Tarot Logo"
+                  className={`relative z-10 w-full h-full object-contain rounded-full select-none transition-transform duration-300 ${
+                    settings.effectsEnabled ? 'group-hover:scale-105' : ''
+                  }`}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (!target.src.includes('pwa-512x512.png')) {
+                      target.src = '/pwa-512x512.png';
+                    }
+                  }}
+                />
+              </motion.div>
 
               {/* Orbiting Stars on Diagonal */}
               <motion.div

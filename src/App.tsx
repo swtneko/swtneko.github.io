@@ -23,6 +23,8 @@ function AppContent() {
   const [view, setView] = useState<'home' | 'reading' | 'tuvi' | 'admin'>('home');
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [deckType, setDeckType] = useState<DeckType>(DeckType.TAROT);
+  const [homeStep, setHomeStep] = useState<'welcome' | 'form'>('welcome');
+  const [homeDeckType, setHomeDeckType] = useState<DeckType>(DeckType.TAROT);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
@@ -70,37 +72,37 @@ function AppContent() {
       return;
     }
 
-    // 4. Tu Vi route
-    if (pathname === '/tuvi') {
+    // 4. Tu Vi route: /tuvi or /tu-vi
+    if (pathname === '/tuvi' || pathname === '/tu-vi') {
       setView('tuvi');
       setDeckType(DeckType.TU_VI);
-      if (!userInfo) {
-        setUserInfo({ fullName: currentUser?.displayName || 'Tín chủ', request: '' });
-      }
+      setSelectedReading(null);
       return;
     }
 
     // 5. Bai Tay (Playing Cards 52 cards) route
     if (pathname === '/bai-tay' || pathname === '/baitay' || pathname === '/playing-cards') {
-      setView('reading');
-      setDeckType(DeckType.PLAYING_CARDS);
-      if (!userInfo) {
-        setUserInfo({ fullName: currentUser?.displayName || 'Tín chủ', request: '' });
+      if (!selectedReading) {
+        setView('home');
+        setHomeDeckType(DeckType.PLAYING_CARDS);
+        setHomeStep('form');
+        setDeckType(DeckType.PLAYING_CARDS);
       }
       return;
     }
 
     // 6. Tarot route
     if (pathname === '/tarot') {
-      setView('reading');
-      setDeckType(DeckType.TAROT);
-      if (!userInfo) {
-        setUserInfo({ fullName: currentUser?.displayName || 'Tín chủ', request: '' });
+      if (!selectedReading) {
+        setView('home');
+        setHomeDeckType(DeckType.TAROT);
+        setHomeStep('form');
+        setDeckType(DeckType.TAROT);
       }
       return;
     }
 
-    // 6. Direct Reading link: /reading/:id or /ket-qua/:id or ?id=...
+    // 7. Direct Reading link: /reading/:id or /ket-qua/:id or ?id=...
     const readingMatch = pathname.match(/^\/(?:reading|ket-qua)\/([^/]+)/);
     const targetReadingId = readingMatch ? decodeURIComponent(readingMatch[1]) : qReadingId;
 
@@ -125,6 +127,7 @@ function AppContent() {
           setTimeout(() => setRouteError(null), 5000);
           navigateTo('/', true);
           setView('home');
+          setHomeStep('welcome');
           setSelectedReading(null);
         }
       } catch (err) {
@@ -132,18 +135,20 @@ function AppContent() {
         setRouteError('Có lỗi khi tải kết quả quẻ bói từ liên kết này.');
         navigateTo('/', true);
         setView('home');
+        setHomeStep('welcome');
       } finally {
         setIsLoadingDirectReading(false);
       }
       return;
     }
 
-    // 7. Default root
+    // 8. Default root
     if (pathname === '/' || pathname === '') {
       setView('home');
+      setHomeStep('welcome');
       setSelectedReading(null);
     }
-  }, [currentUser, navigateTo, selectedReading, userInfo]);
+  }, [currentUser, navigateTo, selectedReading]);
 
   // Listen to browser Back/Forward (popstate)
   useEffect(() => {
@@ -187,6 +192,22 @@ function AppContent() {
     setView('tuvi');
   };
 
+  const handleNavigateDeck = (type: DeckType) => {
+    setHomeDeckType(type);
+    setHomeStep('form');
+    setDeckType(type);
+    if (type === DeckType.PLAYING_CARDS) {
+      navigateTo('/bai-tay');
+    } else if (type === DeckType.TAROT) {
+      navigateTo('/tarot');
+    }
+  };
+
+  const handleBackToWelcome = () => {
+    setHomeStep('welcome');
+    navigateTo('/');
+  };
+
   const handleSelectHistoricalReading = (reading: ReadingResult) => {
     setSelectedReading(reading);
     setUserInfo(reading.userInfo);
@@ -201,6 +222,8 @@ function AppContent() {
 
   const handleNavigateHome = () => {
     setSelectedReading(null);
+    setUserInfo(null);
+    setHomeStep('welcome');
     navigateTo('/');
     setView('home');
   };
@@ -503,7 +526,14 @@ function AppContent() {
               exit={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
               className="liquid-glass-card-wrapper w-full"
             >
-              <HomeScreen onStart={handleStart} onStartTuVi={handleStartTuVi} />
+              <HomeScreen 
+                onStart={handleStart} 
+                onStartTuVi={handleStartTuVi}
+                initialDeckType={homeDeckType}
+                initialStep={homeStep}
+                onNavigateDeck={handleNavigateDeck}
+                onBackToWelcome={handleBackToWelcome}
+              />
             </motion.div>
           )}
 
@@ -524,7 +554,7 @@ function AppContent() {
             </motion.div>
           )}
 
-          {view === 'tuvi' && (userInfo || selectedReading) && (
+          {view === 'tuvi' && (
             <motion.div
               key={selectedReading ? selectedReading.id : 'tuvi'}
               initial={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}

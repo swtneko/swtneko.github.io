@@ -9,6 +9,10 @@ import { LiquidGlassCard } from './LiquidGlassCard';
 interface HomeScreenProps {
   onStart: (userInfo: UserInfo, deckType: DeckType) => void;
   onStartTuVi: (userInfo?: UserInfo) => void;
+  initialDeckType?: DeckType;
+  initialStep?: 'welcome' | 'form';
+  onNavigateDeck?: (type: DeckType) => void;
+  onBackToWelcome?: () => void;
 }
 
 const formContainerVariants: Variants = {
@@ -35,9 +39,29 @@ const formItemVariants: Variants = {
   },
 };
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ onStart, onStartTuVi }) => {
-  const [step, setStep] = useState<'welcome' | 'form'>('welcome');
-  const [deckType, setDeckType] = useState<DeckType>(DeckType.TAROT);
+const HomeScreen: React.FC<HomeScreenProps> = ({ 
+  onStart, 
+  onStartTuVi,
+  initialDeckType = DeckType.TAROT,
+  initialStep = 'welcome',
+  onNavigateDeck,
+  onBackToWelcome,
+}) => {
+  const [step, setStep] = useState<'welcome' | 'form'>(initialStep);
+  const [deckType, setDeckType] = useState<DeckType>(initialDeckType);
+
+  React.useEffect(() => {
+    if (initialStep) {
+      setStep(initialStep);
+    }
+  }, [initialStep]);
+
+  React.useEffect(() => {
+    if (initialDeckType) {
+      setDeckType(initialDeckType);
+    }
+  }, [initialDeckType]);
+
   const { settings } = useSettings();
   const { currentUser, systemSettings, openAuthModal } = useAuth();
   const [userInfo, setUserInfo] = useState<UserInfo>({
@@ -58,6 +82,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onStart, onStartTuVi }) => {
     }
     setDeckType(type);
     setStep('form');
+    onNavigateDeck?.(type);
+  };
+
+  const handleBack = () => {
+    setStep('welcome');
+    onBackToWelcome?.();
   };
 
   const handleBirthDateChange = (raw: string) => {
@@ -556,7 +586,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onStart, onStartTuVi }) => {
                     <motion.div
                       whileHover={{ scale: 1.02, x: -2 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => setStep('welcome')}
+                      onClick={handleBack}
                       className="flex-1 cursor-pointer"
                     >
                       <LiquidGlassCard

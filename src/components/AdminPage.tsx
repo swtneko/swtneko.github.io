@@ -362,7 +362,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
       setGeminiLastUpdated(nowStr);
       setGeminiFetchMsg({
         type: 'success',
-        text: `Đã cập nhật thành công ${models.length} mô hình Google Gemini mới nhất trực tiếp từ Google API! (Tự động ưu tiên bản mới nhất)`,
+        text: `Đã lọc và cập nhật ${models.length} mô hình văn bản Google Gemini (đã loại bỏ image/video, ưu tiên bản Latest)!`,
       });
       setTimeout(() => setGeminiFetchMsg(null), 6000);
     } catch (err: any) {
@@ -897,7 +897,7 @@ VITE_FIREBASE_APP_ID=`;
                           </span>
                         </h4>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          Hệ thống tự động kết nối với Google Generative Language API, fetch toàn bộ model mới nhất và xếp phiên bản cao nhất lên trước. Bấm nút bên phải để làm mới danh sách.
+                          Hệ thống tự động kết nối với Google Generative Language API, lọc lấy các mô hình chuyên văn bản (đã loại bỏ image/video), tự động ưu tiên các bản Latest và phiên bản mới nhất. Bấm nút bên phải để làm mới danh sách.
                         </p>
                       </div>
                     </div>

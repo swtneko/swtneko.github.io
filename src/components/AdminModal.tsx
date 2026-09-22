@@ -92,7 +92,7 @@ export const AdminModal: React.FC = () => {
       }
       const models = await fetchGeminiModelOptions(trimmed || undefined);
       setGeminiModels(models);
-      setGeminiFetchMsg(`Đã tự động fetch và cập nhật ${models.length} model mới nhất từ Google Gemini!`);
+      setGeminiFetchMsg(`Đã lọc và cập nhật ${models.length} model Gemini chuyên văn bản (đã loại bỏ image/video, ưu tiên bản Latest)!`);
       setTimeout(() => setGeminiFetchMsg(null), 4000);
     } catch (err: any) {
       setGeminiFetchMsg(err?.message || 'Không thể kết nối đến Google API. Kiểm tra lại API key.');

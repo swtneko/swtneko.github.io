@@ -20,7 +20,50 @@ export interface OpenRouterFreeModel {
 export const OPENROUTER_MODELS_CACHE_KEY = 'celestial-openrouter-free-models';
 export const GEMINI_MODELS_CACHE_KEY = 'celestial-gemini-fetched-models';
 
+// The essential "Latest" models requested to be preserved at all times
+export const GEMINI_LATEST_MODELS: ModelOption[] = [
+  {
+    id: 'gemini-pro-latest',
+    name: 'Gemini Pro Latest',
+    desc: 'Latest release of Gemini Pro - Context: 1M tokens',
+    tag: 'Chuyên sâu • Pro',
+  },
+  {
+    id: 'gemini-flash-latest',
+    name: 'Gemini Flash Latest',
+    desc: 'Latest release of Gemini Flash - Context: 1M tokens',
+    tag: 'Tốc độ cao',
+  },
+  {
+    id: 'gemini-flash-lite-latest',
+    name: 'Gemini Flash-Lite Latest',
+    desc: 'Latest release of Gemini Flash-Lite - Context: 1M tokens',
+    tag: 'Tiết kiệm',
+  },
+];
+
+// Helper to filter out non-text models (image, video, vision, audio, embedding, etc.)
+export const isNonTextGeminiModel = (id: string, displayName?: string): boolean => {
+  const target = `${id} ${displayName || ''}`.toLowerCase();
+  return (
+    target.includes('imagen') ||
+    target.includes('image-generation') ||
+    target.includes('image') ||
+    target.includes('video') ||
+    target.includes('veo') ||
+    target.includes('vision') ||
+    target.includes('embedding') ||
+    target.includes('aqa') ||
+    target.includes('audio') ||
+    target.includes('speech') ||
+    target.includes('tts') ||
+    target.includes('whisper') ||
+    target.includes('computer')
+  );
+};
+
 export const DEFAULT_GEMINI_MODELS: ModelOption[] = [
+  ...GEMINI_LATEST_MODELS,
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', desc: 'Mô hình thế hệ mới nhất của Google - Siêu nhanh, thông minh và phản hồi mượt', tag: 'Mới nhất • Khuyên dùng' },
   { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: 'Mô hình Pro cao cấp - Phân tích sâu sắc đa tầng quẻ bài Tarot & Tử Vi', tag: 'Pro • Chuyên sâu' },
   { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', desc: 'Tốc độ cực nhanh, phản hồi tức thì', tag: 'Tốc độ cao' },
@@ -35,7 +78,22 @@ export const getCachedGeminiModels = (): ModelOption[] => {
     if (cached) {
       const parsed = JSON.parse(cached);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+        // Filter out non-text models and ensure latest models are present
+        const textOnly = parsed.filter(m => !isNonTextGeminiModel(m.id, m.name));
+        for (const latestModel of GEMINI_LATEST_MODELS) {
+          const existingIdx = textOnly.findIndex(m => m.id === latestModel.id);
+          if (existingIdx === -1) {
+            textOnly.push(latestModel);
+          } else {
+            textOnly[existingIdx] = {
+              ...textOnly[existingIdx],
+              name: latestModel.name,
+              tag: latestModel.tag,
+              desc: latestModel.desc,
+            };
+          }
+        }
+        return sortGeminiModelOptions(textOnly);
       }
     }
   } catch (e) {}
@@ -413,13 +471,15 @@ const callOpenRouterApi = async (
 
 // Ranked descending model hierarchies for automatic cascading fallback (Fallback base)
 const GEMINI_DEFAULT_TIERS = [
-  "gemini-2.5-flash",       // Bậc 1: Flagship mới nhất, phân tích biểu tượng sâu và nhanh
-  "gemini-2.5-pro",         // Bậc 2: Bậc thầy suy luận Pro đa tầng
-  "gemini-2.0-flash",       // Bậc 3: Tốc độ cao
-  "gemini-2.0-flash-lite",  // Bậc 4: Tiết kiệm quota
-  "gemini-1.5-flash",       // Bậc 5: Ổn định
-  "gemini-1.5-pro",         // Bậc 6: Pro 1.5
-  "gemini-flash-latest",    // Bậc 7: Mặc định dự phòng chung
+  "gemini-flash-latest",    // Bậc 1: Tự động trỏ bản Flash mới nhất của Google
+  "gemini-pro-latest",      // Bậc 2: Tự động trỏ bản Pro mới nhất của Google
+  "gemini-flash-lite-latest", // Bậc 3: Tự động trỏ bản Flash-Lite mới nhất
+  "gemini-2.5-flash",       // Bậc 4: Flagship thế hệ 2.5
+  "gemini-2.5-pro",         // Bậc 5: Bậc thầy suy luận Pro đa tầng
+  "gemini-2.0-flash",       // Bậc 6: Tốc độ cao
+  "gemini-2.0-flash-lite",  // Bậc 7: Tiết kiệm quota
+  "gemini-1.5-flash",       // Bậc 8: Ổn định
+  "gemini-1.5-pro",         // Bậc 9: Pro 1.5
 ];
 
 // In-memory model discovery cache with 30-minute expiration
@@ -432,14 +492,62 @@ const extractVersion = (modelName: string): number => {
   return match ? parseFloat(match[1]) : 0;
 };
 
-// Smart model sorter: Newest version first -> Pro > Flash > Lite > Others
-const sortGeminiModels = (models: string[]): string[] => {
+// Smart model option sorter: Latest models first (Pro -> Flash -> Flash-Lite) -> Newest numeric version first -> Pro > Flash > Lite > Others
+export const sortGeminiModelOptions = (models: ModelOption[]): ModelOption[] => {
   return [...models].sort((a, b) => {
-    const verA = extractVersion(a);
-    const verB = extractVersion(b);
+    const isLatestA = a.id.endsWith('-latest');
+    const isLatestB = b.id.endsWith('-latest');
+
+    if (isLatestA && isLatestB) {
+      const getLatestWeight = (id: string): number => {
+        if (id.includes('pro')) return 3;
+        if (id.includes('flash-lite') || id.includes('lite')) return 1;
+        if (id.includes('flash')) return 2;
+        return 0;
+      };
+      return getLatestWeight(b.id) - getLatestWeight(a.id);
+    }
+    if (isLatestA) return -1;
+    if (isLatestB) return 1;
+
+    const verA = extractVersion(a.id);
+    const verB = extractVersion(b.id);
     if (verB !== verA) return verB - verA; // Phiên bản lớn hơn (mới hơn) đứng trước
 
     // Cùng phiên bản: Pro ưu tiên hơn Flash, Flash ưu tiên hơn Flash-Lite
+    const getTierWeight = (id: string): number => {
+      const lower = id.toLowerCase();
+      if (lower.includes('pro')) return 4;
+      if (lower.includes('flash-lite') || lower.includes('lite')) return 2;
+      if (lower.includes('flash')) return 3;
+      return 1;
+    };
+    return getTierWeight(b.id) - getTierWeight(a.id);
+  });
+};
+
+// Smart model ID sorter
+const sortGeminiModels = (models: string[]): string[] => {
+  return [...models].sort((a, b) => {
+    const isLatestA = a.endsWith('-latest');
+    const isLatestB = b.endsWith('-latest');
+
+    if (isLatestA && isLatestB) {
+      const getLatestWeight = (id: string): number => {
+        if (id.includes('pro')) return 3;
+        if (id.includes('flash-lite') || id.includes('lite')) return 1;
+        if (id.includes('flash')) return 2;
+        return 0;
+      };
+      return getLatestWeight(b) - getLatestWeight(a);
+    }
+    if (isLatestA) return -1;
+    if (isLatestB) return 1;
+
+    const verA = extractVersion(a);
+    const verB = extractVersion(b);
+    if (verB !== verA) return verB - verA;
+
     const getTierWeight = (name: string): number => {
       const lower = name.toLowerCase();
       if (lower.includes('pro')) return 4;
@@ -454,9 +562,35 @@ const sortGeminiModels = (models: string[]): string[] => {
 // Helper to convert a raw Gemini model into a rich ModelOption
 export const formatGeminiModelOption = (id: string, displayName?: string, description?: string, inputLimit?: number): ModelOption => {
   const cleanId = id.replace(/^models\//, '');
-  const ver = extractVersion(cleanId);
   const lower = cleanId.toLowerCase();
 
+  // Match exact presets for the latest series
+  if (cleanId === 'gemini-pro-latest') {
+    return {
+      id: 'gemini-pro-latest',
+      name: 'Gemini Pro Latest',
+      desc: description || 'Latest release of Gemini Pro - Context: 1M tokens',
+      tag: 'Chuyên sâu • Pro',
+    };
+  }
+  if (cleanId === 'gemini-flash-latest') {
+    return {
+      id: 'gemini-flash-latest',
+      name: 'Gemini Flash Latest',
+      desc: description || 'Latest release of Gemini Flash - Context: 1M tokens',
+      tag: 'Tốc độ cao',
+    };
+  }
+  if (cleanId === 'gemini-flash-lite-latest') {
+    return {
+      id: 'gemini-flash-lite-latest',
+      name: 'Gemini Flash-Lite Latest',
+      desc: description || 'Latest release of Gemini Flash-Lite - Context: 1M tokens',
+      tag: 'Tiết kiệm',
+    };
+  }
+
+  const ver = extractVersion(cleanId);
   let name = displayName || cleanId;
   if (!displayName) {
     if (lower.includes('2.5-flash')) name = 'Gemini 2.5 Flash';
@@ -466,7 +600,6 @@ export const formatGeminiModelOption = (id: string, displayName?: string, descri
     else if (lower.includes('1.5-flash')) name = 'Gemini 1.5 Flash';
     else if (lower.includes('1.5-pro')) name = 'Gemini 1.5 Pro';
     else {
-      // Capitalize words nicely
       name = cleanId.split(/[-_]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     }
   }
@@ -494,7 +627,7 @@ export const formatGeminiModelOption = (id: string, displayName?: string, descri
   };
 };
 
-// Dynamic model fetcher from Google Gemini API (Returns rich ModelOption array)
+// Dynamic model fetcher from Google Gemini API (Returns rich ModelOption array, text-only, preserves Latest models)
 export const fetchGeminiModelOptions = async (apiKey?: string): Promise<ModelOption[]> => {
   // Extract and sanitize candidate keys
   const candidateKeys: string[] = [];
@@ -556,49 +689,51 @@ export const fetchGeminiModelOptions = async (apiKey?: string): Promise<ModelOpt
         const rawIds: string[] = [];
 
         for (const m of data.models) {
-          const name = (m.name || '').toLowerCase();
           const methods = m.supportedGenerationMethods || [];
           const isGen = methods.includes('generateContent');
-          const isGemini = name.includes('gemini');
-          const isExcluded = name.includes('embedding') || name.includes('aqa') || name.includes('imagen') || name.includes('computer') || name.includes('whisper');
+          const isGemini = (m.name || '').toLowerCase().includes('gemini');
+          const cleanId = (m.name || '').replace(/^models\//, '');
+          const isExcluded = isNonTextGeminiModel(cleanId, m.displayName);
 
+          // Only keep pure text models (supports generateContent, exclude image/video/audio/etc.)
           if (isGemini && isGen && !isExcluded) {
-            const cleanId = m.name.replace(/^models\//, '');
             rawIds.push(cleanId);
             options.push(formatGeminiModelOption(cleanId, m.displayName, m.description, m.inputTokenLimit));
           }
         }
 
-        if (options.length > 0) {
-          // Sort with newest version first
-          options.sort((a, b) => {
-            const verA = extractVersion(a.id);
-            const verB = extractVersion(b.id);
-            if (verB !== verA) return verB - verA;
-
-            const getTierWeight = (id: string): number => {
-              const lower = id.toLowerCase();
-              if (lower.includes('pro')) return 4;
-              if (lower.includes('flash-lite') || lower.includes('lite')) return 2;
-              if (lower.includes('flash')) return 3;
-              return 1;
+        // Always keep and preserve the 3 Latest models (Gemini Pro Latest, Gemini Flash Latest, Gemini Flash-Lite Latest)
+        for (const latestModel of GEMINI_LATEST_MODELS) {
+          const existingIdx = options.findIndex(o => o.id === latestModel.id);
+          if (existingIdx === -1) {
+            options.push(latestModel);
+          } else {
+            options[existingIdx] = {
+              ...options[existingIdx],
+              name: latestModel.name,
+              desc: latestModel.desc,
+              tag: latestModel.tag,
             };
-            return getTierWeight(b.id) - getTierWeight(a.id);
-          });
+          }
+        }
+
+        if (options.length > 0) {
+          // Sort with Latest first, followed by newest numbered versions
+          const sortedOptions = sortGeminiModelOptions(options);
 
           // Update in-memory & persistent cache
-          PROVIDER_MODELS.gemini = options;
+          PROVIDER_MODELS.gemini = sortedOptions;
           try {
-            localStorage.setItem(GEMINI_MODELS_CACHE_KEY, JSON.stringify(options));
+            localStorage.setItem(GEMINI_MODELS_CACHE_KEY, JSON.stringify(sortedOptions));
             localStorage.setItem('celestial-gemini-models-updated-at', new Date().toISOString());
           } catch (e) {}
 
-          const sortedIds = options.map(o => o.id);
+          const sortedIds = sortedOptions.map(o => o.id);
           const cacheKey = `gemini_${key.slice(0, 8)}`;
           modelCache[cacheKey] = { models: sortedIds, timestamp: Date.now() };
 
-          console.info(`[Auto-Fetch] Đã cập nhật ${options.length} model Google Gemini mới nhất:`, sortedIds);
-          return options;
+          console.info(`[Auto-Fetch] Đã lọc ${sortedOptions.length} model text Google Gemini (đã loại bỏ image/video & ưu tiên Latest):`, sortedIds);
+          return sortedOptions;
         }
       }
     } catch (e: any) {

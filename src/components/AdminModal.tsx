@@ -20,7 +20,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getProviderStatus, fetchOpenRouterFreeModels, getCachedOpenRouterFreeModels, OpenRouterFreeModel, fetchGeminiModelOptions, getCachedGeminiModels, ModelOption } from '../services/geminiService';
+import { getProviderStatus, fetchOpenRouterFreeModels, getCachedOpenRouterFreeModels, OpenRouterFreeModel, fetchGeminiModelOptions, getCachedGeminiModels, ModelOption, getGeminiKeys } from '../services/geminiService';
 import firebaseConfigJson from '../../firebase-applet-config.json';
 import { AIProvider, DeckType, TarotDeckStyle } from '../types';
 import { LiquidGlassCard } from './LiquidGlassCard';
@@ -84,12 +84,13 @@ export const AdminModal: React.FC = () => {
     setGeminiFetchMsg(null);
     try {
       const trimmed = geminiKey.trim();
-      if (!trimmed) {
-        setGeminiFetchMsg('Vui lòng nhập Gemini API Key vào ô cấu hình ở trên trước khi quét.');
+      const detectedKeys = getGeminiKeys();
+      if (!trimmed && detectedKeys.length === 0) {
+        setGeminiFetchMsg('Chưa tìm thấy Gemini API Key trong hệ thống hoặc Vercel ENV. Vui lòng nhập khóa API vào ô cấu hình.');
         setTimeout(() => setGeminiFetchMsg(null), 4000);
         return;
       }
-      const models = await fetchGeminiModelOptions(trimmed);
+      const models = await fetchGeminiModelOptions(trimmed || undefined);
       setGeminiModels(models);
       setGeminiFetchMsg(`Đã tự động fetch và cập nhật ${models.length} model mới nhất từ Google Gemini!`);
       setTimeout(() => setGeminiFetchMsg(null), 4000);

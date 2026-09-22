@@ -296,11 +296,14 @@ export const getGeminiKeys = (): string[] => {
     // Ignore error
   }
 
-  // 3. Check environment variables (Vercel / Vite build)
+  // 3. Check environment variables (Vercel / Vite build / Container)
   const envKeys = [
     (process.env as any).GEMINI_API_KEYS,
     process.env.GEMINI_API_KEY,
     (import.meta as any).env?.VITE_GEMINI_API_KEY,
+    (import.meta as any).env?.VITE_GEMINI_API_KEYS,
+    (process.env as any).VITE_GEMINI_API_KEY,
+    (process.env as any).VITE_GEMINI_API_KEYS,
   ];
 
   for (const raw of envKeys) {

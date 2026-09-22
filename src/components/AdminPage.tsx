@@ -35,10 +35,11 @@ import {
   UserCheck,
   AlertCircle,
   X,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { AIProvider, DeckType, TarotDeckStyle, AuthUser } from '../types';
-import { PROVIDER_MODELS, fetchOpenRouterFreeModels, getCachedOpenRouterFreeModels, OpenRouterFreeModel, fetchGeminiModelOptions, getCachedGeminiModels, ModelOption } from '../services/geminiService';
+import { PROVIDER_MODELS, fetchOpenRouterFreeModels, getCachedOpenRouterFreeModels, OpenRouterFreeModel, fetchGeminiModelOptions, getCachedGeminiModels, ModelOption, getGeminiKeys } from '../services/geminiService';
 import { getAllUsers, deleteUserAccount, updateUserAIModel } from '../services/firebase';
 import { AnnouncementBanner } from './AnnouncementBanner';
 import { LiquidGlassCard } from './LiquidGlassCard';
@@ -347,14 +348,15 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
     setGeminiFetchMsg(null);
     try {
       const trimmed = geminiKey.trim();
-      if (!trimmed) {
+      const detectedKeys = getGeminiKeys();
+      if (!trimmed && detectedKeys.length === 0) {
         setGeminiFetchMsg({
           type: 'error',
-          text: 'Vui lòng nhập Gemini API Key vào ô "Khóa Gemini API" ở mục trên trước khi bấm quét model.',
+          text: 'Chưa tìm thấy Gemini API Key trong hệ thống hoặc Biến môi trường Vercel (GEMINI_API_KEY / VITE_GEMINI_API_KEY). Vui lòng dán khóa API vào ô phía trên rồi thử lại.',
         });
         return;
       }
-      const models = await fetchGeminiModelOptions(trimmed);
+      const models = await fetchGeminiModelOptions(trimmed || undefined);
       setGeminiModels(models);
       const nowStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setGeminiLastUpdated(nowStr);
@@ -1556,6 +1558,47 @@ VITE_FIREBASE_APP_ID=`;
                 <p className="text-[11px] text-gray-400">
                   Để trống nếu bạn muốn sử dụng bộ chỉ dẫn chiêm tinh học chuẩn mực mặc định của Neko Tarot.
                 </p>
+              </div>
+
+              {/* Logo HD & Brand Assets */}
+              <div className="p-4 sm:p-5 rounded-2xl border border-purple-500/30 bg-purple-950/30 space-y-3 mt-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <img src="/pwa-192x192.png" alt="Logo" className="w-9 h-9 rounded-full border border-purple-400/50 shadow-md object-contain" />
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Tài Nguyên Logo HD Siêu Nét</h4>
+                      <p className="text-[11px] text-purple-200/70">Bộ logo chính thức của Neko Tarot ở định dạng Vector SVG và PNG độ phân giải cao</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                  <a
+                    href="/icon.svg"
+                    download="neko-tarot-logo.svg"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-purple-900/40 hover:bg-purple-900/70 border border-purple-400/30 text-xs text-purple-100 font-medium transition-all group"
+                  >
+                    <span className="flex items-center">
+                      <Sparkles className="w-4 h-4 mr-2 text-amber-400 group-hover:rotate-12 transition-transform" />
+                      Logo Vector SVG (Nét Vô Hạn)
+                    </span>
+                    <Download className="w-3.5 h-3.5 text-purple-300" />
+                  </a>
+                  <a
+                    href="/pwa-512x512.png"
+                    download="neko-tarot-512x512.png"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-purple-900/40 hover:bg-purple-900/70 border border-purple-400/30 text-xs text-purple-100 font-medium transition-all group"
+                  >
+                    <span className="flex items-center">
+                      <ExternalLink className="w-4 h-4 mr-2 text-blue-400 group-hover:scale-110 transition-transform" />
+                      Logo PNG 512x512 HD
+                    </span>
+                    <Download className="w-3.5 h-3.5 text-purple-300" />
+                  </a>
+                </div>
               </div>
             </div>
           </div>

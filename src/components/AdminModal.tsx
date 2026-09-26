@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getProviderStatus, fetchOpenRouterFreeModels, getCachedOpenRouterFreeModels, OpenRouterFreeModel, fetchGeminiModelOptions, getCachedGeminiModels, ModelOption, getGeminiKeys } from '../services/geminiService';
+import { bulkUpdateUsersAIModel } from '../services/firebase';
 import firebaseConfigJson from '../../firebase-applet-config.json';
 import { AIProvider, DeckType, TarotDeckStyle } from '../types';
 import { LiquidGlassCard } from './LiquidGlassCard';
@@ -62,6 +63,38 @@ export const AdminModal: React.FC = () => {
   const [geminiModels, setGeminiModels] = useState<ModelOption[]>(() => getCachedGeminiModels());
   const [isFetchingGemini, setIsFetchingGemini] = useState(false);
   const [geminiFetchMsg, setGeminiFetchMsg] = useState<string | null>(null);
+
+  // Bulk model update state
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [bulkUpdateFeedback, setBulkUpdateFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleBulkUpdateAllUsers = async (provider: string, model: string) => {
+    setIsBulkUpdating(true);
+    setBulkUpdateFeedback(null);
+    try {
+      const res = await bulkUpdateUsersAIModel(provider, model);
+      const modelDisplay = provider === 'auto' ? 'Tự động (Kế thừa hệ thống)' : `${provider.toUpperCase()}: ${model}`;
+      setBulkUpdateFeedback({
+        type: 'success',
+        text: `Đã áp dụng thành công mô hình "${modelDisplay}" cho toàn bộ ${res.successCount} tài khoản người dùng!`,
+      });
+      const cachedStr = localStorage.getItem('celestial-synced-user');
+      if (cachedStr) {
+        const cached = JSON.parse(cachedStr);
+        cached.assignedProvider = provider;
+        cached.assignedModel = model;
+        localStorage.setItem('celestial-synced-user', JSON.stringify(cached));
+      }
+      setTimeout(() => setBulkUpdateFeedback(null), 8000);
+    } catch (e: any) {
+      setBulkUpdateFeedback({
+        type: 'error',
+        text: `Lỗi khi cập nhật hàng loạt: ${e?.message || 'Vui lòng thử lại'}`,
+      });
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  };
 
   const handleFetchOpenRouter = async () => {
     setIsFetchingOpenRouter(true);
@@ -432,6 +465,54 @@ VITE_FIREBASE_APP_ID=`;
                       <div className="text-[10px] opacity-70 mt-0.5">{p.sub}</div>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Default Model Manager & Bulk Apply for All Users Card */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-black/50 border border-purple-500/30 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span className="font-semibold text-xs text-white">Model Mặc Định Hệ Thống (Người dùng mới & Khách)</span>
+                  </div>
+                  <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-lg bg-black/60 border border-purple-500/30 text-amber-300 font-bold self-start sm:self-auto">
+                    {globalProvider === 'auto' ? 'Tự động (Auto Fallback)' : `${globalProvider.toUpperCase()} / ${globalModel || 'auto'}`}
+                  </span>
+                </div>
+
+                {bulkUpdateFeedback && (
+                  <div className={`p-2.5 rounded-xl text-xs flex items-center gap-2 ${
+                    bulkUpdateFeedback.type === 'success'
+                      ? 'bg-emerald-950/60 border border-emerald-500/40 text-emerald-300'
+                      : 'bg-red-950/60 border border-red-500/40 text-red-300'
+                  }`}>
+                    <span className="flex-1">{bulkUpdateFeedback.text}</span>
+                    <button type="button" onClick={() => setBulkUpdateFeedback(null)} className="text-gray-400 hover:text-white">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    disabled={isBulkUpdating}
+                    onClick={() => handleBulkUpdateAllUsers(globalProvider, globalModel)}
+                    className="p-2.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-white font-bold text-xs flex items-center justify-between transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <span>Áp dụng cho TẤT CẢ người dùng</span>
+                    <span className="text-amber-300 font-mono text-[10px]">Thực thi ⚡</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isBulkUpdating}
+                    onClick={() => handleBulkUpdateAllUsers('auto', 'auto')}
+                    className="p-2.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/40 text-white font-bold text-xs flex items-center justify-between transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <span>Đưa tất cả về 'Kế thừa hệ thống'</span>
+                    <span className="text-blue-300 font-mono text-[10px]">Auto 🔄</span>
+                  </button>
                 </div>
               </div>
 

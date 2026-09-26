@@ -163,22 +163,34 @@ export const syncUserProfile = async (authUser: AuthUser): Promise<AuthUser> => 
       return synced;
     } else {
       const isAdminUser = isSuperAdminEmail(authUser.email) || Boolean(authUser.isAdmin);
+      // Read current system settings for default provider & model
+      let defaultProvider = 'openrouter';
+      let defaultModel = 'auto';
+      try {
+        const sysRaw = localStorage.getItem('celestial-system-settings');
+        if (sysRaw) {
+          const sys = JSON.parse(sysRaw);
+          if (sys.globalAiProvider) defaultProvider = sys.globalAiProvider;
+          if (sys.globalAiModel) defaultModel = sys.globalAiModel;
+        }
+      } catch (e) {}
+
       const newProfile = {
         id: authUser.uid,
         email: authUser.email || '',
         displayName: authUser.displayName || 'Người tìm kiếm',
         photoURL: authUser.photoURL || '',
         createdAt: new Date().toISOString(),
-        assignedProvider: 'openrouter',
-        assignedModel: 'auto',
+        assignedProvider: defaultProvider,
+        assignedModel: defaultModel,
         role: isAdminUser ? 'admin' : (authUser.role || 'user'),
       };
       await setDoc(userRef, newProfile);
       
       const synced: AuthUser = {
         ...authUser,
-        assignedProvider: 'openrouter',
-        assignedModel: 'auto',
+        assignedProvider: defaultProvider,
+        assignedModel: defaultModel,
         role: newProfile.role as 'admin' | 'user',
         isAdmin: isAdminUser,
         createdAt: newProfile.createdAt,
@@ -255,6 +267,37 @@ export const updateUserAIModel = async (
     );
   } catch (err) {
     handleFirestoreError(err, OperationType.UPDATE, `users/${userId}`);
+  }
+};
+
+export const bulkUpdateUsersAIModel = async (
+  provider: string,
+  model: string
+): Promise<{ successCount: number; total: number }> => {
+  try {
+    const usersColl = collection(db, 'users');
+    const snap = await getDocs(usersColl);
+    let successCount = 0;
+    const promises: Promise<void>[] = [];
+    snap.forEach((docSnap) => {
+      promises.push(
+        setDoc(
+          docSnap.ref,
+          {
+            assignedProvider: provider,
+            assignedModel: model,
+          },
+          { merge: true }
+        ).then(() => {
+          successCount++;
+        })
+      );
+    });
+    await Promise.all(promises);
+    return { successCount, total: snap.size };
+  } catch (err) {
+    handleFirestoreError(err, OperationType.UPDATE, 'users');
+    return { successCount: 0, total: 0 };
   }
 };
 

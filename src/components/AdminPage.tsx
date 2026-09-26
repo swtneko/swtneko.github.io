@@ -40,7 +40,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { AIProvider, DeckType, TarotDeckStyle, AuthUser } from '../types';
 import { PROVIDER_MODELS, fetchOpenRouterFreeModels, getCachedOpenRouterFreeModels, OpenRouterFreeModel, fetchGeminiModelOptions, getCachedGeminiModels, ModelOption, getGeminiKeys } from '../services/geminiService';
-import { getAllUsers, deleteUserAccount, updateUserAIModel } from '../services/firebase';
+import { getAllUsers, deleteUserAccount, updateUserAIModel, bulkUpdateUsersAIModel } from '../services/firebase';
 import { AnnouncementBanner } from './AnnouncementBanner';
 import { LiquidGlassCard } from './LiquidGlassCard';
 import firebaseConfigJson from '../../firebase-applet-config.json';
@@ -268,6 +268,43 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
       console.error('Failed to fetch users:', e);
     } finally {
       setUsersLoading(false);
+    }
+  };
+
+  // Bulk model update states
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [bulkUpdateFeedback, setBulkUpdateFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [userTabBulkProvider, setUserTabBulkProvider] = useState<string>('auto');
+  const [userTabBulkModel, setUserTabBulkModel] = useState<string>('auto');
+
+  const handleBulkUpdateAllUsers = async (provider: string, model: string) => {
+    setIsBulkUpdating(true);
+    setBulkUpdateFeedback(null);
+    try {
+      const res = await bulkUpdateUsersAIModel(provider, model);
+      const modelDisplay = provider === 'auto' ? 'Tự động (Kế thừa hệ thống)' : `${provider.toUpperCase()}: ${model}`;
+      setBulkUpdateFeedback({
+        type: 'success',
+        text: `Đã cập nhật thành công mô hình "${modelDisplay}" cho toàn bộ ${res.successCount} tài khoản người dùng!`,
+      });
+      // Refresh user list if loaded
+      await fetchUsers();
+      // Update local storage cached user if self is affected
+      const cachedStr = localStorage.getItem('celestial-synced-user');
+      if (cachedStr) {
+        const cached = JSON.parse(cachedStr);
+        cached.assignedProvider = provider;
+        cached.assignedModel = model;
+        localStorage.setItem('celestial-synced-user', JSON.stringify(cached));
+      }
+      setTimeout(() => setBulkUpdateFeedback(null), 8000);
+    } catch (e: any) {
+      setBulkUpdateFeedback({
+        type: 'error',
+        text: `Lỗi khi cập nhật hàng loạt: ${e?.message || 'Vui lòng thử lại'}`,
+      });
+    } finally {
+      setIsBulkUpdating(false);
     }
   };
 
@@ -805,10 +842,119 @@ VITE_FIREBASE_APP_ID=`;
                 <Sparkles className="w-5 h-5" />
               </div>
               <div className="space-y-1">
-                <h4 className="text-sm font-bold text-white">Khóa API Toàn Hệ Thống</h4>
+                <h4 className="text-sm font-bold text-white">Khóa API & Mô Hình Mặc Định Toàn Hệ Thống</h4>
                 <p className="text-xs text-gray-300 leading-relaxed">
-                  Các khóa API thiết lập ở đây được lưu trực tiếp vào cơ sở dữ liệu đám mây Firebase. Khi người dùng hoặc khách truy cập vào trang web của bạn (kể cả trên Vercel), hệ thống sẽ dùng các khóa này để luận giải bài Tarot một cách mượt mà và tự động xoay tua khi có key bị giới hạn hạn mức (Rate Limit).
+                  Các khóa API và cấu hình mô hình thiết lập ở đây được lưu trực tiếp vào cơ sở dữ liệu đám mây Firebase. Khi người dùng hoặc khách truy cập vào trang web của bạn (kể cả trên Vercel), hệ thống sẽ tự động dùng mô hình mặc định này để luận giải bài Tarot mượt mà.
                 </p>
+              </div>
+            </div>
+
+            {/* TRUNG TÂM THIẾT LẬP MÔ HÌNH MẶC ĐỊNH (NGƯỜI DÙNG MỚI & TOÀN BỘ NGƯỜI DÙNG) */}
+            <div className="p-6 rounded-3xl bg-gradient-to-r from-purple-950/70 via-indigo-950/50 to-black/70 border border-purple-500/40 shadow-2xl relative overflow-hidden space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <span>Thiết Lập Model Mặc Định Cho Người Dùng Mới & Toàn Bộ Hệ Thống</span>
+                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold uppercase">
+                        Active Default
+                      </span>
+                    </h3>
+                    <p className="text-xs text-gray-300 mt-0.5">
+                      Mô hình được chọn bên dưới sẽ là <strong>Mặc định cho Khách & Người dùng mới đăng ký</strong>. Bạn cũng có thể bấm nút bên dưới để áp dụng hàng loạt ngay lập tức cho toàn bộ tài khoản hiện tại.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="px-4 py-2.5 rounded-2xl bg-black/60 border border-purple-500/30 flex items-center gap-2 shadow-inner">
+                    <span className="text-[10px] uppercase font-bold text-purple-300">Model Mặc Định:</span>
+                    <span className="text-xs font-mono font-bold text-amber-300">
+                      {globalProvider === 'auto' ? 'Tự động (Auto Fallback)' : `${globalProvider.toUpperCase()} / ${globalModel || 'auto'}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bulk feedback notification banner */}
+              {bulkUpdateFeedback && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`p-3.5 rounded-2xl text-xs flex items-center gap-2 ${
+                    bulkUpdateFeedback.type === 'success'
+                      ? 'bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 shadow-lg'
+                      : 'bg-red-950/60 border border-red-500/40 text-red-300 shadow-lg'
+                  }`}
+                >
+                  {bulkUpdateFeedback.type === 'success' ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                  )}
+                  <span className="flex-1 font-medium">{bulkUpdateFeedback.text}</span>
+                  <button
+                    type="button"
+                    onClick={() => setBulkUpdateFeedback(null)}
+                    className="text-gray-400 hover:text-white p-1 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </motion.div>
+              )}
+
+              {/* Action Buttons for Batch Applying */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <button
+                  type="button"
+                  disabled={isBulkUpdating}
+                  onClick={() => handleBulkUpdateAllUsers(globalProvider, globalModel)}
+                  className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-600/30 to-indigo-600/30 hover:from-purple-600/50 hover:to-indigo-600/50 border border-purple-500/40 text-white font-semibold text-xs transition-all flex items-center justify-between group cursor-pointer disabled:opacity-50 active:scale-95"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-2 rounded-xl bg-purple-500/20 text-purple-300 group-hover:scale-110 transition-transform">
+                      {isBulkUpdating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
+                    </span>
+                    <div className="text-left">
+                      <div className="font-bold text-white flex items-center gap-1.5">
+                        <span>Áp dụng Model này cho TẤT CẢ người dùng</span>
+                      </div>
+                      <div className="text-[10px] text-gray-400">
+                        Gán ngay {globalProvider === 'auto' ? 'Auto' : globalModel} cho toàn bộ tài khoản trong database
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20 whitespace-nowrap">
+                    Thực thi ⚡
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isBulkUpdating}
+                  onClick={() => handleBulkUpdateAllUsers('auto', 'auto')}
+                  className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-600/20 to-teal-600/20 hover:from-blue-600/40 hover:to-teal-600/40 border border-blue-500/40 text-white font-semibold text-xs transition-all flex items-center justify-between group cursor-pointer disabled:opacity-50 active:scale-95"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-2 rounded-xl bg-blue-500/20 text-blue-300 group-hover:scale-110 transition-transform">
+                      {isBulkUpdating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                    </span>
+                    <div className="text-left">
+                      <div className="font-bold text-white flex items-center gap-1.5">
+                        <span>Đưa tất cả về 'Kế thừa hệ thống' (Auto)</span>
+                      </div>
+                      <div className="text-[10px] text-gray-400">
+                        Tất cả người dùng sẽ luôn tự động nhận diện theo cài đặt Admin
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold text-blue-300 bg-blue-500/10 px-2.5 py-1 rounded-lg border border-blue-500/20 whitespace-nowrap">
+                    Đặt lại 🔄
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -2146,6 +2292,91 @@ VITE_FIREBASE_APP_ID=`;
                     title="Tải lại danh sách"
                   >
                     <RefreshCw className={`w-4 h-4 ${usersLoading ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Bulk Change AI Model for All Users Bar */}
+              <div className="p-5 rounded-2xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-black/50 border border-purple-500/30 space-y-3 shadow-lg">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-white flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                      <span>Đổi Nhanh Mô Hình Cho Toàn Bộ Thành Viên ({usersList.length} tài khoản)</span>
+                    </h4>
+                    <p className="text-[11px] text-gray-300 mt-0.5">
+                      Chọn nhà cung cấp và model rồi nhấn Áp dụng để cập nhật đồng loạt cho tất cả tài khoản trong cơ sở dữ liệu.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                  <select
+                    value={userTabBulkProvider}
+                    onChange={(e) => {
+                      const p = e.target.value;
+                      setUserTabBulkProvider(p);
+                      if (p === 'gemini') {
+                        setUserTabBulkModel(geminiModels[0]?.id || 'gemini-flash-latest');
+                      } else if (p === 'openrouter') {
+                        setUserTabBulkModel(openrouterFreeModels[0]?.id || 'openrouter/free');
+                      } else {
+                        setUserTabBulkModel('auto');
+                      }
+                    }}
+                    className="text-xs px-3 py-2 rounded-xl bg-black/60 border border-white/15 text-white focus:outline-none focus:border-purple-500 font-semibold cursor-pointer"
+                  >
+                    <option value="auto">🔄 Tự động (Kế thừa hệ thống)</option>
+                    <option value="gemini">✨ Google Gemini</option>
+                    <option value="openrouter">🌐 OpenRouter Free</option>
+                  </select>
+
+                  {userTabBulkProvider === 'gemini' && (
+                    <select
+                      value={userTabBulkModel}
+                      onChange={(e) => setUserTabBulkModel(e.target.value)}
+                      className="text-xs px-3 py-2 rounded-xl bg-black/60 border border-blue-500/40 text-blue-300 focus:outline-none focus:border-blue-500 font-mono max-w-xs cursor-pointer"
+                    >
+                      {geminiModels.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name} ({m.id})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  {userTabBulkProvider === 'openrouter' && (
+                    <select
+                      value={userTabBulkModel}
+                      onChange={(e) => setUserTabBulkModel(e.target.value)}
+                      className="text-xs px-3 py-2 rounded-xl bg-black/60 border border-purple-500/40 text-purple-300 focus:outline-none focus:border-purple-500 font-mono max-w-xs cursor-pointer"
+                    >
+                      <option value="openrouter/free">Tự động (openrouter/free)</option>
+                      {openrouterFreeModels.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  <button
+                    type="button"
+                    disabled={isBulkUpdating || usersList.length === 0}
+                    onClick={() => handleBulkUpdateAllUsers(userTabBulkProvider, userTabBulkModel)}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-purple-600/20 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer active:scale-95"
+                  >
+                    {isBulkUpdating ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Đang cập nhật...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Áp dụng cho tất cả {usersList.length} thành viên ⚡</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

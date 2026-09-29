@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
-import { Sparkles, Moon, Star, Sun, User, Calendar, MessageSquare, ChevronRight, Lock, Clock, Compass } from 'lucide-react';
+import { Sparkles, Moon, Star, Sun, User, Calendar, MessageSquare, ChevronRight, Lock, Clock, Compass, Zap, ZapOff } from 'lucide-react';
 import { DeckType, UserInfo } from '../types';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -62,7 +62,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
     }
   }, [initialDeckType]);
 
-  const { settings } = useSettings();
+  const { settings, toggleEffects } = useSettings();
   const { currentUser, systemSettings, openAuthModal } = useAuth();
   const [userInfo, setUserInfo] = useState<UserInfo>({
     fullName: '',
@@ -376,32 +376,87 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
               )}
 
               {/* Bói Tử Vi Button */}
-              <motion.div
-                variants={formItemVariants}
-                whileHover={{ scale: 1.05, y: -3, transition: { type: 'spring', stiffness: 450, damping: 15 } }}
-                whileTap={{ scale: 0.96 }}
-                onClick={() => {
-                  if (requiresAuth) {
-                    openAuthModal();
-                    return;
-                  }
-                  onStartTuVi(userInfo);
-                }}
-                className="cursor-pointer"
-              >
-                <LiquidGlassCard
-                  borderRadius="9999px"
-                  blurIntensity="md"
-                  borderIntensity="sm"
-                  shadowIntensity="lg"
-                  glowIntensity="md"
-                  className="bg-gradient-to-r from-amber-600/70 via-red-600/60 to-purple-700/70 text-white ring-1 ring-amber-300/40 cursor-pointer shadow-amber-900/30"
-                  contentClassName="px-7 sm:px-9 py-3.5 sm:py-4 font-bold tracking-wider uppercase flex items-center justify-center text-xs sm:text-sm text-white"
+              {(systemSettings.enabledDeckTypes?.[DeckType.TU_VI] ?? true) && (
+                <motion.div
+                  variants={formItemVariants}
+                  whileHover={{ scale: 1.05, y: -3, transition: { type: 'spring', stiffness: 450, damping: 15 } }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => {
+                    if (requiresAuth) {
+                      openAuthModal();
+                      return;
+                    }
+                    onStartTuVi(userInfo);
+                  }}
+                  className="cursor-pointer"
                 >
-                  {requiresAuth ? <Lock className="mr-2 w-4 h-4 text-amber-300" /> : null}
-                  Bói Tử Vi <Compass className="ml-2 w-4 h-4 text-amber-200 animate-spin-slow" />
-                </LiquidGlassCard>
-              </motion.div>
+                  <LiquidGlassCard
+                    borderRadius="9999px"
+                    blurIntensity="md"
+                    borderIntensity="sm"
+                    shadowIntensity="lg"
+                    glowIntensity="md"
+                    className="bg-gradient-to-r from-amber-600/70 via-red-600/60 to-purple-700/70 text-white ring-1 ring-amber-300/40 cursor-pointer shadow-amber-900/30"
+                    contentClassName="px-7 sm:px-9 py-3.5 sm:py-4 font-bold tracking-wider uppercase flex items-center justify-center text-xs sm:text-sm text-white"
+                  >
+                    {requiresAuth ? <Lock className="mr-2 w-4 h-4 text-amber-300" /> : null}
+                    Bói Tử Vi <Compass className="ml-2 w-4 h-4 text-amber-200 animate-spin-slow" />
+                  </LiquidGlassCard>
+                </motion.div>
+              )}
+            </motion.div>
+
+            {/* Quick Animation & Cosmic Effects Toggle directly on Main Screen */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="mt-7 flex flex-col items-center gap-1.5"
+            >
+              <button
+                type="button"
+                onClick={toggleEffects}
+                className={`group relative flex items-center gap-3 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border transition-all duration-300 text-xs sm:text-sm font-semibold backdrop-blur-md cursor-pointer shadow-xl select-none ${
+                  settings.effectsEnabled
+                    ? 'bg-purple-950/70 hover:bg-purple-900/80 border-purple-400/50 text-purple-100 shadow-purple-950/40 ring-1 ring-purple-400/30'
+                    : 'bg-slate-900/80 hover:bg-slate-800/90 border-slate-700/80 text-slate-300 shadow-black/50 ring-1 ring-white/10'
+                }`}
+                title={settings.effectsEnabled ? "Bấm để TẮT hiệu ứng chuyển động & vũ trụ (tối ưu hóa hiệu năng và tiết kiệm pin)" : "Bấm để BẬT hiệu ứng vũ trụ lung linh"}
+              >
+                {settings.effectsEnabled ? (
+                  <Sparkles className="w-4 h-4 text-amber-300 animate-pulse shrink-0" />
+                ) : (
+                  <ZapOff className="w-4 h-4 text-slate-400 shrink-0" />
+                )}
+                <span className="flex items-center gap-1.5">
+                  <span>Hiệu ứng chuyển động (Animation):</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
+                    settings.effectsEnabled
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                      : 'bg-slate-800 text-slate-400 border border-slate-700'
+                  }`}>
+                    {settings.effectsEnabled ? 'Đang Bật' : 'Đã Tắt'}
+                  </span>
+                </span>
+
+                {/* Animated Switch Pill */}
+                <div className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-200 flex items-center ${
+                  settings.effectsEnabled ? 'bg-purple-600 justify-end' : 'bg-slate-700 justify-start'
+                }`}>
+                  <motion.div 
+                    layout
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    className={`w-4 h-4 rounded-full shadow-md ${
+                      settings.effectsEnabled ? 'bg-amber-300' : 'bg-slate-400'
+                    }`} 
+                  />
+                </div>
+              </button>
+              <p className="text-[11px] text-purple-300/70 dark:text-purple-300/60 italic text-center px-4">
+                {settings.effectsEnabled 
+                  ? '✨ Bầu trời sao Cosmic & hiệu ứng phản quang Liquid Glass đang hoạt động' 
+                  : '⚡ Đã tắt animation: Trang web hoạt động với tốc độ tối đa, siêu mượt và tiết kiệm pin'}
+              </p>
             </motion.div>
           </motion.div>
         ) : (

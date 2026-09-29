@@ -13,7 +13,7 @@ import { AnnouncementBanner } from './components/AnnouncementBanner';
 import { LiquidGlassCard } from './components/LiquidGlassCard';
 import { PWAFloatingBubble } from './components/PWAFloatingBubble';
 import { OfflineIndicator } from './components/OfflineIndicator';
-import { Sparkles, Settings, History, LogIn, LogOut, User as UserIcon, ShieldCheck, Bell, Lock, BookOpen, AlertCircle, Loader2 } from 'lucide-react';
+import { Sparkles, Settings, History, LogIn, LogOut, User as UserIcon, ShieldCheck, Bell, Lock, BookOpen, AlertCircle, Loader2, Zap, ZapOff } from 'lucide-react';
 import { DeckType, UserInfo, ReadingResult } from './types';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -31,8 +31,9 @@ function AppContent() {
   const [selectedReading, setSelectedReading] = useState<ReadingResult | null>(null);
   const [isLoadingDirectReading, setIsLoadingDirectReading] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
+  const [animationToast, setAnimationToast] = useState<string | null>(null);
 
-  const { settings } = useSettings();
+  const { settings, toggleEffects } = useSettings();
   const { currentUser, openAuthModal, logout, readings, isAdmin, systemSettings } = useAuth();
 
   // URL Navigation helper
@@ -295,6 +296,29 @@ function AppContent() {
         )}
       </AnimatePresence>
 
+      {/* Animation Toggle Quick Toast Notification */}
+      <AnimatePresence>
+        {animationToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className={`fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl border shadow-2xl flex items-center gap-2 text-xs font-semibold backdrop-blur-md max-w-sm w-11/12 justify-center transition-all ${
+              settings.effectsEnabled
+                ? 'bg-purple-900/95 text-amber-200 border-amber-400/50 shadow-purple-950/60'
+                : 'bg-slate-900/95 text-slate-200 border-slate-700/70 shadow-black/60'
+            }`}
+          >
+            {settings.effectsEnabled ? (
+              <Sparkles className="w-4 h-4 text-amber-300 animate-pulse shrink-0" />
+            ) : (
+              <ZapOff className="w-4 h-4 text-slate-400 shrink-0" />
+            )}
+            <span>{animationToast}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Loading direct reading overlay */}
       {isLoadingDirectReading && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/70 backdrop-blur-md">
@@ -501,6 +525,51 @@ function AppContent() {
                     </LiquidGlassCard>
                   </motion.div>
                 )}
+
+                {/* Direct Animation Toggle Button in Header */}
+                <motion.div
+                  whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
+                  whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
+                  onClick={() => {
+                    const nextVal = !settings.effectsEnabled;
+                    toggleEffects();
+                    setAnimationToast(nextVal ? 'Đã bật hiệu ứng vũ trụ & chuyển động ✨' : 'Đã tắt animation (Tối ưu hiệu năng mượt nhẹ)');
+                    setTimeout(() => setAnimationToast(null), 2500);
+                  }}
+                  className="shrink-0 cursor-pointer"
+                  title={settings.effectsEnabled ? "Hiệu ứng & Animation: ĐANG BẬT (Bấm để tắt và tăng tốc tối đa)" : "Hiệu ứng & Animation: ĐANG TẮT (Bấm để bật hiệu ứng lung linh)"}
+                >
+                  <LiquidGlassCard
+                    borderRadius="9999px"
+                    blurIntensity="md"
+                    borderIntensity="xs"
+                    shadowIntensity="xs"
+                    className={`cursor-pointer transition-all duration-300 ${
+                      settings.effectsEnabled
+                        ? 'ring-1 ring-purple-400/40 bg-purple-500/15'
+                        : 'opacity-70 hover:opacity-100 bg-black/10'
+                    }`}
+                    contentClassName={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-bold ${
+                      settings.effectsEnabled
+                        ? (settings.theme === 'dark' ? 'text-amber-300' : 'text-purple-700')
+                        : 'text-slate-400 dark:text-slate-500'
+                    }`}
+                  >
+                    {settings.effectsEnabled ? (
+                      <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 animate-pulse shrink-0" />
+                    ) : (
+                      <ZapOff className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 shrink-0" />
+                    )}
+                    <span className="hidden sm:inline">
+                      {settings.effectsEnabled ? 'Hiệu ứng' : 'Hiệu ứng: Tắt'}
+                    </span>
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      settings.effectsEnabled
+                        ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]'
+                        : 'bg-slate-400 dark:bg-slate-600'
+                    }`} />
+                  </LiquidGlassCard>
+                </motion.div>
 
                 {/* Settings Button */}
                 <motion.div 

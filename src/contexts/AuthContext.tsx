@@ -13,6 +13,7 @@ import {
   deleteUserReading,
   migrateGuestReadingsToUser,
   getSystemSettings,
+  getCachedSystemSettings,
   saveSystemSettings as fbSaveSystemSettings,
   subscribeToSystemSettings,
   DEFAULT_SYSTEM_SETTINGS,
@@ -52,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [readings, setReadings] = useState<ReadingResult[]>([]);
-  const [systemSettings, setSystemSettings] = useState<SystemSettings>(DEFAULT_SYSTEM_SETTINGS);
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>(() => getCachedSystemSettings());
   const [manualAdminUnlocked, setManualAdminUnlocked] = useState<boolean>(() => {
     return localStorage.getItem('celestial-admin-unlocked') === 'true';
   });

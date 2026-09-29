@@ -448,7 +448,7 @@ VITE_FIREBASE_APP_ID=`;
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {[
                     { id: 'auto', label: 'Tự động', sub: 'Xoay tua key & fallback khi lỗi' },
-                    { id: 'gemini', label: 'Google Gemini', sub: 'Gemini 2.5 Flash / Pro' },
+                    { id: 'gemini', label: 'Google Gemini', sub: 'Gemini 3.8 Flash / 3.1 Pro' },
                     { id: 'openrouter', label: 'OpenRouter Free (Mặc định)', sub: 'openrouter/free (Router AI miễn phí 100%)' },
                   ].map((p) => (
                     <button
@@ -558,7 +558,7 @@ VITE_FIREBASE_APP_ID=`;
                     ))}
                   </select>
                   <div className="flex items-center justify-between text-[10px] text-gray-400">
-                    <span>Mô hình mặc định: <strong className="text-blue-300 font-mono">Gemini 2.5 Flash / Pro</strong></span>
+                    <span>Mô hình mặc định: <strong className="text-blue-300 font-mono">Gemini 3.8 Flash</strong></span>
                     <span>{geminiModels.length} mô hình Google</span>
                   </div>
                 </div>

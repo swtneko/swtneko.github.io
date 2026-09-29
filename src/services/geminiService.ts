@@ -23,21 +23,27 @@ export const GEMINI_MODELS_CACHE_KEY = 'celestial-gemini-fetched-models';
 // The essential "Latest" models requested to be preserved at all times
 export const GEMINI_LATEST_MODELS: ModelOption[] = [
   {
-    id: 'gemini-pro-latest',
-    name: 'Gemini Pro Latest',
-    desc: 'Latest release of Gemini Pro - Context: 1M tokens',
-    tag: 'Chuyên sâu • Pro',
+    id: 'gemini-flash-latest',
+    name: 'Gemini 3.8 Flash (Latest)',
+    desc: 'Bản mới nhất Google Gemini 3.8 Flash - Siêu nhanh, thông minh vượt trội, 1M context',
+    tag: 'Mới nhất • Khuyên dùng',
   },
   {
-    id: 'gemini-flash-latest',
-    name: 'Gemini Flash Latest',
-    desc: 'Latest release of Gemini Flash - Context: 1M tokens',
-    tag: 'Tốc độ cao',
+    id: 'gemini-3.8-flash',
+    name: 'Gemini 3.8 Flash',
+    desc: 'Mô hình thế hệ mới nhất Google Gemini 3.8 Flash - Tốc độ cao, phân tích bài sâu sắc',
+    tag: 'Mới nhất',
+  },
+  {
+    id: 'gemini-pro-latest',
+    name: 'Gemini Pro Latest (3.1 Pro)',
+    desc: 'Bản chuyên sâu cao cấp nhất Google - 1M tokens context',
+    tag: 'Chuyên sâu • Pro',
   },
   {
     id: 'gemini-flash-lite-latest',
     name: 'Gemini Flash-Lite Latest',
-    desc: 'Latest release of Gemini Flash-Lite - Context: 1M tokens',
+    desc: 'Mô hình gọn nhẹ, tiết kiệm quota - 1M tokens context',
     tag: 'Tiết kiệm',
   },
 ];
@@ -64,10 +70,6 @@ export const isNonTextGeminiModel = (id: string, displayName?: string): boolean 
 
 export const DEFAULT_GEMINI_MODELS: ModelOption[] = [
   ...GEMINI_LATEST_MODELS,
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', desc: 'Mô hình thế hệ mới nhất của Google - Siêu nhanh, thông minh và phản hồi mượt', tag: 'Mới nhất • Khuyên dùng' },
-  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: 'Mô hình Pro cao cấp - Phân tích sâu sắc đa tầng quẻ bài Tarot & Tử Vi', tag: 'Pro • Chuyên sâu' },
-  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', desc: 'Tốc độ cực nhanh, phản hồi tức thì', tag: 'Tốc độ cao' },
-  { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite', desc: 'Mô hình gọn nhẹ, tiết kiệm quota', tag: 'Tiết kiệm' },
   { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', desc: 'Mô hình tiêu chuẩn ổn định, hoạt động mượt mà' },
   { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', desc: 'Mô hình suy luận chuyên sâu 1.5' },
 ];
@@ -471,15 +473,12 @@ const callOpenRouterApi = async (
 
 // Ranked descending model hierarchies for automatic cascading fallback (Fallback base)
 const GEMINI_DEFAULT_TIERS = [
-  "gemini-flash-latest",    // Bậc 1: Tự động trỏ bản Flash mới nhất của Google
-  "gemini-pro-latest",      // Bậc 2: Tự động trỏ bản Pro mới nhất của Google
-  "gemini-flash-lite-latest", // Bậc 3: Tự động trỏ bản Flash-Lite mới nhất
-  "gemini-2.5-flash",       // Bậc 4: Flagship thế hệ 2.5
-  "gemini-2.5-pro",         // Bậc 5: Bậc thầy suy luận Pro đa tầng
-  "gemini-2.0-flash",       // Bậc 6: Tốc độ cao
-  "gemini-2.0-flash-lite",  // Bậc 7: Tiết kiệm quota
-  "gemini-1.5-flash",       // Bậc 8: Ổn định
-  "gemini-1.5-pro",         // Bậc 9: Pro 1.5
+  "gemini-flash-latest",    // Bậc 1: Google Gemini 3.8 Flash (bản mới nhất, phản hồi tức thì, quota dồi dào)
+  "gemini-3.8-flash",       // Bậc 2: Gemini 3.8 Flash direct
+  "gemini-flash-lite-latest", // Bậc 3: Flash-Lite tiết kiệm quota
+  "gemini-pro-latest",      // Bậc 4: Gemini 3.1 Pro
+  "gemini-1.5-flash",       // Bậc 5: Ổn định
+  "gemini-1.5-pro",         // Bậc 6: Pro 1.5
 ];
 
 // In-memory model discovery cache with 30-minute expiration
@@ -492,17 +491,23 @@ const extractVersion = (modelName: string): number => {
   return match ? parseFloat(match[1]) : 0;
 };
 
-// Smart model option sorter: Latest models first (Pro -> Flash -> Flash-Lite) -> Newest numeric version first -> Pro > Flash > Lite > Others
+// Smart model option sorter: Latest Flash 3.8 first -> Pro 3.1 -> Lite -> Older numeric versions
 export const sortGeminiModelOptions = (models: ModelOption[]): ModelOption[] => {
   return [...models].sort((a, b) => {
+    // Top priority: Gemini 3.8 Flash / gemini-flash-latest
+    const isTopFlashA = a.id === 'gemini-flash-latest' || a.id === 'gemini-3.8-flash';
+    const isTopFlashB = b.id === 'gemini-flash-latest' || b.id === 'gemini-3.8-flash';
+    if (isTopFlashA && !isTopFlashB) return -1;
+    if (!isTopFlashA && isTopFlashB) return 1;
+
     const isLatestA = a.id.endsWith('-latest');
     const isLatestB = b.id.endsWith('-latest');
 
     if (isLatestA && isLatestB) {
       const getLatestWeight = (id: string): number => {
-        if (id.includes('pro')) return 3;
         if (id.includes('flash-lite') || id.includes('lite')) return 1;
-        if (id.includes('flash')) return 2;
+        if (id.includes('flash')) return 3; // Flash has highest quota & performance
+        if (id.includes('pro')) return 2;
         return 0;
       };
       return getLatestWeight(b.id) - getLatestWeight(a.id);
@@ -512,15 +517,15 @@ export const sortGeminiModelOptions = (models: ModelOption[]): ModelOption[] => 
 
     const verA = extractVersion(a.id);
     const verB = extractVersion(b.id);
-    if (verB !== verA) return verB - verA; // Phiên bản lớn hơn (mới hơn) đứng trước
+    if (verB !== verA) return verB - verA; // Phiên bản lớn hơn (mới hơn) đứng trước (3.8 > 2.5 > 2.0 > 1.5)
 
-    // Cùng phiên bản: Pro ưu tiên hơn Flash, Flash ưu tiên hơn Flash-Lite
+    // Cùng phiên bản: Flash ưu tiên hơn
     const getTierWeight = (id: string): number => {
       const lower = id.toLowerCase();
-      if (lower.includes('pro')) return 4;
-      if (lower.includes('flash-lite') || lower.includes('lite')) return 2;
+      if (lower.includes('flash-lite') || lower.includes('lite')) return 1;
       if (lower.includes('flash')) return 3;
-      return 1;
+      if (lower.includes('pro')) return 2;
+      return 0;
     };
     return getTierWeight(b.id) - getTierWeight(a.id);
   });
@@ -529,14 +534,19 @@ export const sortGeminiModelOptions = (models: ModelOption[]): ModelOption[] => 
 // Smart model ID sorter
 const sortGeminiModels = (models: string[]): string[] => {
   return [...models].sort((a, b) => {
+    const isTopFlashA = a === 'gemini-flash-latest' || a === 'gemini-3.8-flash';
+    const isTopFlashB = b === 'gemini-flash-latest' || b === 'gemini-3.8-flash';
+    if (isTopFlashA && !isTopFlashB) return -1;
+    if (!isTopFlashA && isTopFlashB) return 1;
+
     const isLatestA = a.endsWith('-latest');
     const isLatestB = b.endsWith('-latest');
 
     if (isLatestA && isLatestB) {
       const getLatestWeight = (id: string): number => {
-        if (id.includes('pro')) return 3;
         if (id.includes('flash-lite') || id.includes('lite')) return 1;
-        if (id.includes('flash')) return 2;
+        if (id.includes('flash')) return 3;
+        if (id.includes('pro')) return 2;
         return 0;
       };
       return getLatestWeight(b) - getLatestWeight(a);
@@ -550,10 +560,10 @@ const sortGeminiModels = (models: string[]): string[] => {
 
     const getTierWeight = (name: string): number => {
       const lower = name.toLowerCase();
-      if (lower.includes('pro')) return 4;
-      if (lower.includes('flash-lite') || lower.includes('lite')) return 2;
+      if (lower.includes('flash-lite') || lower.includes('lite')) return 1;
       if (lower.includes('flash')) return 3;
-      return 1;
+      if (lower.includes('pro')) return 2;
+      return 0;
     };
     return getTierWeight(b) - getTierWeight(a);
   });
@@ -565,27 +575,35 @@ export const formatGeminiModelOption = (id: string, displayName?: string, descri
   const lower = cleanId.toLowerCase();
 
   // Match exact presets for the latest series
-  if (cleanId === 'gemini-pro-latest') {
-    return {
-      id: 'gemini-pro-latest',
-      name: 'Gemini Pro Latest',
-      desc: description || 'Latest release of Gemini Pro - Context: 1M tokens',
-      tag: 'Chuyên sâu • Pro',
-    };
-  }
   if (cleanId === 'gemini-flash-latest') {
     return {
       id: 'gemini-flash-latest',
-      name: 'Gemini Flash Latest',
-      desc: description || 'Latest release of Gemini Flash - Context: 1M tokens',
-      tag: 'Tốc độ cao',
+      name: 'Gemini 3.8 Flash (Latest)',
+      desc: description || 'Bản mới nhất Google Gemini 3.8 Flash - Siêu nhanh, thông minh vượt trội, 1M context',
+      tag: 'Mới nhất • Khuyên dùng',
+    };
+  }
+  if (cleanId === 'gemini-3.8-flash') {
+    return {
+      id: 'gemini-3.8-flash',
+      name: 'Gemini 3.8 Flash',
+      desc: description || 'Mô hình thế hệ mới nhất Google Gemini 3.8 Flash - Tốc độ cao, phân tích bài sâu sắc',
+      tag: 'Mới nhất',
+    };
+  }
+  if (cleanId === 'gemini-pro-latest') {
+    return {
+      id: 'gemini-pro-latest',
+      name: 'Gemini Pro Latest (3.1 Pro)',
+      desc: description || 'Bản chuyên sâu cao cấp nhất Google - 1M tokens context',
+      tag: 'Chuyên sâu • Pro',
     };
   }
   if (cleanId === 'gemini-flash-lite-latest') {
     return {
       id: 'gemini-flash-lite-latest',
       name: 'Gemini Flash-Lite Latest',
-      desc: description || 'Latest release of Gemini Flash-Lite - Context: 1M tokens',
+      desc: description || 'Mô hình gọn nhẹ, tiết kiệm quota - 1M tokens context',
       tag: 'Tiết kiệm',
     };
   }
@@ -593,10 +611,8 @@ export const formatGeminiModelOption = (id: string, displayName?: string, descri
   const ver = extractVersion(cleanId);
   let name = displayName || cleanId;
   if (!displayName) {
-    if (lower.includes('2.5-flash')) name = 'Gemini 2.5 Flash';
-    else if (lower.includes('2.5-pro')) name = 'Gemini 2.5 Pro';
-    else if (lower.includes('2.0-flash-lite')) name = 'Gemini 2.0 Flash Lite';
-    else if (lower.includes('2.0-flash')) name = 'Gemini 2.0 Flash';
+    if (lower.includes('3.8-flash') || (lower.includes('3.8') && lower.includes('flash'))) name = 'Gemini 3.8 Flash';
+    else if (lower.includes('3.1-pro') || (lower.includes('3.1') && lower.includes('pro'))) name = 'Gemini 3.1 Pro';
     else if (lower.includes('1.5-flash')) name = 'Gemini 1.5 Flash';
     else if (lower.includes('1.5-pro')) name = 'Gemini 1.5 Pro';
     else {
@@ -763,13 +779,27 @@ export const fetchDynamicGeminiModels = async (apiKey?: string): Promise<string[
     return cached.models;
   }
 
+  // 1. Immediately use local cached models to avoid blocking user generation requests!
+  const localCached = getCachedGeminiModels();
+  if (localCached && localCached.length > 0) {
+    const ids = localCached.map(m => m.id);
+    modelCache[cacheKey] = { models: ids, timestamp: Date.now() };
+    // Trigger background refresh silently
+    fetchGeminiModelOptions(key).catch(() => {});
+    return ids;
+  }
+
+  // 2. If no cache exists, attempt fast fetch with 2s timeout or fallback to safe defaults
   try {
-    const options = await fetchGeminiModelOptions(key);
+    const options = await Promise.race([
+      fetchGeminiModelOptions(key),
+      new Promise<ModelOption[]>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000))
+    ]);
     if (options && options.length > 0) {
       return options.map(o => o.id);
     }
   } catch (e) {
-    // Graceful fallback to default tiers
+    // Graceful immediate fallback
   }
 
   return GEMINI_DEFAULT_TIERS;
@@ -782,27 +812,48 @@ const callGeminiWithRotation = async (prompt: string, requestedModel?: string): 
     throw new Error("MISSING_GEMINI_KEY");
   }
 
-  // Sanitize invalid or old model names
-  let cleanRequestedModel = requestedModel;
-  if (cleanRequestedModel && (cleanRequestedModel.includes('3.8') || cleanRequestedModel.includes('3.1') || cleanRequestedModel === 'undefined' || cleanRequestedModel === 'null')) {
-    cleanRequestedModel = 'gemini-2.5-flash';
+  // Normalize requested model
+  const rawRequested = (requestedModel || '').trim();
+  const wantsFlash38 = !rawRequested || 
+    rawRequested === 'auto' || 
+    rawRequested === 'undefined' ||
+    rawRequested === 'null' ||
+    rawRequested.includes('3.8') || 
+    rawRequested.includes('flash-latest') ||
+    rawRequested.includes('2.5-flash') ||
+    rawRequested.includes('2.0-flash');
+
+  // Candidate models hierarchy starting with user's selection:
+  const candidateModels: string[] = [];
+
+  if (wantsFlash38) {
+    // gemini-flash-latest is Google's official active alias for Gemini 3.8 Flash, followed by direct gemini-3.8-flash
+    candidateModels.push('gemini-flash-latest', 'gemini-3.8-flash');
+  } else {
+    candidateModels.push(rawRequested);
   }
 
   // Auto-fetch latest dynamic models from Google API (using first key) or fallback gracefully
   const dynamicModels = await fetchDynamicGeminiModels(keys[0]);
+  for (const m of dynamicModels) {
+    if (!candidateModels.includes(m)) {
+      candidateModels.push(m);
+    }
+  }
 
-  // Model hierarchy: If a specific model was requested and is not 'auto', place it first, followed by descending tiers
-  const models = cleanRequestedModel && cleanRequestedModel !== 'auto'
-    ? [cleanRequestedModel, ...dynamicModels.filter(m => m !== cleanRequestedModel)]
-    : dynamicModels;
+  for (const tier of GEMINI_DEFAULT_TIERS) {
+    if (!candidateModels.includes(tier)) {
+      candidateModels.push(tier);
+    }
+  }
 
   let lastError: any = null;
 
   // STEP DOWN TIER BY TIER:
   // Try the best/newest model across ALL available API keys first.
   // If all keys run out of quota on that model, step down to the 2nd model and try all keys, then 3rd, etc.
-  for (let modelIndex = 0; modelIndex < models.length; modelIndex++) {
-    const model = models[modelIndex];
+  for (let modelIndex = 0; modelIndex < candidateModels.length; modelIndex++) {
+    const model = candidateModels[modelIndex];
     let quotaErrorCount = 0;
 
     for (let keyIndex = 0; keyIndex < keys.length; keyIndex++) {
@@ -816,8 +867,24 @@ const callGeminiWithRotation = async (prompt: string, requestedModel?: string): 
 
         if (response.text) {
           const rotationNote = keys.length > 1 ? ` *(Khóa ${keyIndex + 1}/${keys.length})*` : '';
-          const fallbackNote = modelIndex > 0 ? ` *(Tự hạ bậc ${model})*` : '';
-          return `${response.text}\n\n*✨ Diễn giải bởi Google Gemini (${model})${rotationNote}${fallbackNote}*`;
+          
+          const isCurrentFlash38 = model === 'gemini-flash-latest' || model === 'gemini-3.8-flash';
+          let displayModelName = model;
+          if (isCurrentFlash38) {
+            displayModelName = 'Gemini 3.8 Flash';
+          } else if (model === 'gemini-pro-latest') {
+            displayModelName = 'Gemini 3.1 Pro';
+          } else if (model === 'gemini-flash-lite-latest') {
+            displayModelName = 'Gemini Flash-Lite';
+          } else if (model === 'gemini-1.5-flash') {
+            displayModelName = 'Gemini 1.5 Flash';
+          }
+
+          // Only show fallback note if it genuinely downgraded below what user requested
+          const wasDowngraded = modelIndex > 0 && !(wantsFlash38 && isCurrentFlash38);
+          const fallbackNote = wasDowngraded ? ` *(Tự chuyển sang ${displayModelName})*` : '';
+
+          return `${response.text}\n\n*✨ Diễn giải bởi Google ${displayModelName}${rotationNote}${fallbackNote}*`;
         }
       } catch (err: any) {
         lastError = err;
@@ -829,15 +896,15 @@ const callGeminiWithRotation = async (prompt: string, requestedModel?: string): 
           quotaErrorCount++;
         }
 
-        // If model is not found or invalid API model name, skip trying other keys for this model
-        if (msg.includes('404') || msg.includes('not found') || msg.includes('not_found') || msg.includes('is not supported')) {
+        // If model is not found or no longer available, skip trying other keys for this invalid model
+        if (msg.includes('404') || msg.includes('not found') || msg.includes('not_found') || msg.includes('is not supported') || msg.includes('no longer available')) {
           break;
         }
       }
     }
 
     // If all keys failed on this model, loop automatically steps down to the next lower model in the hierarchy
-    console.info(`[Gemini Fallback] Đã thử hết ${keys.length} key trên model [${model}] -> Tự động chuyển xuống bậc thấp hơn: [${models[modelIndex + 1] || 'Hết bậc'}]`);
+    console.info(`[Gemini Fallback] Đã thử hết ${keys.length} key trên model [${model}] -> Tự động chuyển xuống bậc thấp hơn: [${candidateModels[modelIndex + 1] || 'Hết bậc'}]`);
   }
 
   throw lastError || new Error("Tất cả khóa và mô hình Gemini đều đã hết hạn mức (Quota Exceeded)");

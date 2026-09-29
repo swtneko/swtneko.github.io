@@ -8,6 +8,7 @@ interface SettingsContextType {
   isBenchmarking: boolean;
   toggleTheme: () => void;
   toggleEffects: () => void;
+  setEffectsEnabled: (enabled: boolean) => void;
   toggleSound: () => void;
   setAutoOptimizeHardware: (enabled: boolean) => void;
   rebenchmarkDevice: () => Promise<DeviceHardwareInfo>;
@@ -20,7 +21,7 @@ interface SettingsContextType {
 
 const getDefaultModelForProvider = (provider: AIProvider): string => {
   switch (provider) {
-    case 'gemini': return 'gemini-2.5-flash';
+    case 'gemini': return 'gemini-flash-latest';
     case 'openrouter': return 'openrouter/free';
     default: return 'auto';
   }
@@ -29,7 +30,7 @@ const getDefaultModelForProvider = (provider: AIProvider): string => {
 const defaultSettings: AppSettings = {
   theme: 'dark',
   effectsEnabled: true,
-  autoOptimizeHardware: true,
+  autoOptimizeHardware: false, // Default false to strictly preserve user's choice
   soundEnabled: true,
   aiProvider: 'openrouter',
   aiModel: 'openrouter/free',
@@ -45,20 +46,20 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isBenchmarking, setIsBenchmarking] = useState(false);
 
   const [settings, setSettings] = useState<AppSettings>(() => {
-    const detected = detectDeviceHardware();
     try {
       const saved = localStorage.getItem('celestial-settings');
       if (saved) {
         const parsed = JSON.parse(saved);
-        const autoOpt = parsed.autoOptimizeHardware ?? true;
-        // If auto-optimize is enabled and user hasn't explicitly locked effects, tune to hardware
-        const effectsVal = autoOpt ? !detected.isLowEnd : (parsed.effectsEnabled ?? !detected.isLowEnd);
+        // CRITICAL FIX: If user explicitly configured effectsEnabled, ALWAYS honor it without override!
+        const effectsVal = typeof parsed.effectsEnabled === 'boolean'
+          ? parsed.effectsEnabled
+          : true;
 
         return {
           ...defaultSettings,
           ...parsed,
           effectsEnabled: effectsVal,
-          autoOptimizeHardware: autoOpt,
+          autoOptimizeHardware: parsed.autoOptimizeHardware ?? false,
           aiModel: parsed.aiModel || getDefaultModelForProvider(parsed.aiProvider || 'auto'),
           allowFallback: parsed.allowFallback ?? true,
           customKeys: {
@@ -70,34 +71,38 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch (e) {
       console.error("Failed to parse settings", e);
     }
-    // Default initial load: adjust effects based on detected hardware
+    // Default initial load: effects enabled by default
     return {
       ...defaultSettings,
-      effectsEnabled: !detected.isLowEnd,
-      autoOptimizeHardware: true,
+      effectsEnabled: true,
+      autoOptimizeHardware: false,
     };
   });
 
-  // Perform full hardware inspection on mount
+  // Background hardware inspection for informational stats only - NEVER silently override user's effects setting!
   useEffect(() => {
     let isMounted = true;
     runHardwareInspection().then((hw) => {
       if (!isMounted) return;
       setDeviceInfo(hw);
-      if (settings.autoOptimizeHardware) {
-        setSettings(prev => ({
+      // Only tune if user explicitly enabled auto-hardware optimization and has NOT set effects manually
+      setSettings(prev => {
+        if (!prev.autoOptimizeHardware) return prev;
+        return {
           ...prev,
           effectsEnabled: !hw.isLowEnd,
-        }));
-      }
-    });
+        };
+      });
+    }).catch(() => {});
     return () => {
       isMounted = false;
     };
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('celestial-settings', JSON.stringify(settings));
+    try {
+      localStorage.setItem('celestial-settings', JSON.stringify(settings));
+    } catch (e) {}
     if (settings.theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
@@ -110,22 +115,46 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const toggleEffects = () => {
-    setSettings(prev => ({ 
-      ...prev, 
-      effectsEnabled: !prev.effectsEnabled,
-      // If user manually toggles effects, remember that they took manual control
-      autoOptimizeHardware: false 
-    }));
+    setSettings(prev => {
+      const nextVal = !prev.effectsEnabled;
+      const updated = {
+        ...prev,
+        effectsEnabled: nextVal,
+        autoOptimizeHardware: false, // User took manual control
+      };
+      try {
+        localStorage.setItem('celestial-settings', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  };
+
+  const setEffectsEnabled = (enabled: boolean) => {
+    setSettings(prev => {
+      const updated = {
+        ...prev,
+        effectsEnabled: enabled,
+        autoOptimizeHardware: false,
+      };
+      try {
+        localStorage.setItem('celestial-settings', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
   };
 
   const setAutoOptimizeHardware = (enabled: boolean) => {
     setSettings(prev => {
       const newEffects = enabled ? !deviceInfo.isLowEnd : prev.effectsEnabled;
-      return {
+      const updated = {
         ...prev,
         autoOptimizeHardware: enabled,
         effectsEnabled: newEffects,
       };
+      try {
+        localStorage.setItem('celestial-settings', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
     });
   };
 
@@ -185,6 +214,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isBenchmarking,
         toggleTheme,
         toggleEffects,
+        setEffectsEnabled,
         toggleSound,
         setAutoOptimizeHardware,
         rebenchmarkDevice,

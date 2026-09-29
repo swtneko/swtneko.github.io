@@ -975,7 +975,7 @@ VITE_FIREBASE_APP_ID=`;
                   {
                     id: 'gemini',
                     title: 'Google Gemini',
-                    desc: 'Gemini 2.5 Flash / Pro - Ngôn từ huyền bí sâu sắc, thấu suốt vũ trụ',
+                    desc: 'Gemini 3.8 Flash / 3.1 Pro - Ngôn từ huyền bí sâu sắc, thấu suốt vũ trụ',
                     badge: 'Chất lượng cao',
                   },
                   {

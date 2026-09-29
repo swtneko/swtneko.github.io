@@ -642,7 +642,7 @@ export const deleteUserReading = async (userId: string | undefined, readingId: s
   }
 };
 
-const SYSTEM_SETTINGS_KEY = 'celestial-system-settings';
+export const SYSTEM_SETTINGS_KEY = 'celestial-system-settings';
 
 export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   announcement: '✨ Chúc bạn một ngày thanh thản và đón nhận những thông điệp tích cực từ các vì sao.',
@@ -676,32 +676,47 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   updatedBy: 'system',
 };
 
-export const getSystemSettings = async (): Promise<SystemSettings> => {
-  try {
-    const docRef = doc(db, 'system', 'settings');
-    const snap = await getDoc(docRef);
-    if (snap.exists()) {
-      const data = snap.data() as SystemSettings;
-      localStorage.setItem(SYSTEM_SETTINGS_KEY, JSON.stringify(data));
-      return { ...DEFAULT_SYSTEM_SETTINGS, ...data };
-    }
-  } catch (err) {
-    console.warn('Cannot fetch system settings from Firestore, using cached/default:', err);
-  }
-
+export const getCachedSystemSettings = (): SystemSettings => {
   try {
     const cached = localStorage.getItem(SYSTEM_SETTINGS_KEY);
     if (cached) return { ...DEFAULT_SYSTEM_SETTINGS, ...JSON.parse(cached) };
   } catch (e) {}
-
   return DEFAULT_SYSTEM_SETTINGS;
+};
+
+export const getSystemSettings = async (): Promise<SystemSettings> => {
+  // Always get immediate local cache first
+  const fallback = getCachedSystemSettings();
+
+  try {
+    const docRef = doc(db, 'system', 'settings');
+    // Guard with a 2500ms timeout so network stumbles never hang the app
+    const fetchPromise = getDoc(docRef);
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('FIRESTORE_TIMEOUT')), 2500)
+    );
+
+    const snap = await Promise.race([fetchPromise, timeoutPromise]);
+    if (snap && snap.exists()) {
+      const data = snap.data() as SystemSettings;
+      const merged = { ...DEFAULT_SYSTEM_SETTINGS, ...data };
+      try {
+        localStorage.setItem(SYSTEM_SETTINGS_KEY, JSON.stringify(merged));
+      } catch (e) {}
+      return merged;
+    }
+  } catch (err) {
+    // Graceful fallback to local cache
+  }
+
+  return fallback;
 };
 
 export const saveSystemSettings = async (
   partial: Partial<SystemSettings>,
   updatedBy: string = 'admin'
 ): Promise<SystemSettings> => {
-  const current = await getSystemSettings();
+  const current = getCachedSystemSettings();
   const updated: SystemSettings = {
     ...current,
     ...partial,
@@ -709,7 +724,9 @@ export const saveSystemSettings = async (
     updatedBy,
   };
 
-  localStorage.setItem(SYSTEM_SETTINGS_KEY, JSON.stringify(updated));
+  try {
+    localStorage.setItem(SYSTEM_SETTINGS_KEY, JSON.stringify(updated));
+  } catch (e) {}
 
   try {
     const docRef = doc(db, 'system', 'settings');
@@ -722,6 +739,10 @@ export const saveSystemSettings = async (
 };
 
 export const subscribeToSystemSettings = (callback: (settings: SystemSettings) => void) => {
+  // 1. Immediately provide local cached settings synchronously (0ms delay)
+  callback(getCachedSystemSettings());
+
+  // 2. Connect snapshot listener for live real-time cloud updates
   try {
     const docRef = doc(db, 'system', 'settings');
     return onSnapshot(
@@ -730,20 +751,19 @@ export const subscribeToSystemSettings = (callback: (settings: SystemSettings) =
         if (snapshot.exists()) {
           const data = snapshot.data() as SystemSettings;
           const merged = { ...DEFAULT_SYSTEM_SETTINGS, ...data };
-          localStorage.setItem(SYSTEM_SETTINGS_KEY, JSON.stringify(merged));
+          try {
+            localStorage.setItem(SYSTEM_SETTINGS_KEY, JSON.stringify(merged));
+          } catch (e) {}
           callback(merged);
-        } else {
-          callback(DEFAULT_SYSTEM_SETTINGS);
         }
       },
       (error) => {
-        console.warn('System settings listener error, fallback to local:', error);
-        getSystemSettings().then(callback);
+        // Fallback silently without throwing or blocking
+        callback(getCachedSystemSettings());
       }
     );
   } catch (err) {
-    console.warn('Cannot subscribe to system settings, using local:', err);
-    getSystemSettings().then(callback);
+    callback(getCachedSystemSettings());
     return () => {};
   }
 };

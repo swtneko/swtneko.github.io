@@ -473,12 +473,12 @@ const callOpenRouterApi = async (
 
 // Ranked descending model hierarchies for automatic cascading fallback (Fallback base)
 const GEMINI_DEFAULT_TIERS = [
-  "gemini-flash-latest",    // Bậc 1: Google Gemini 3.8 Flash (bản mới nhất, phản hồi tức thì, quota dồi dào)
-  "gemini-3.8-flash",       // Bậc 2: Gemini 3.8 Flash direct
-  "gemini-flash-lite-latest", // Bậc 3: Flash-Lite tiết kiệm quota
-  "gemini-pro-latest",      // Bậc 4: Gemini 3.1 Pro
-  "gemini-1.5-flash",       // Bậc 5: Ổn định
-  "gemini-1.5-pro",         // Bậc 6: Pro 1.5
+  "gemini-3.8-flash",       // Bậc 1: Gemini 3.8 Flash direct (Bản mới nhất, ưu tiên tuyệt đối)
+  "gemini-flash-latest",    // Bậc 2: Google Gemini Flash Latest alias
+  "gemini-3.1-pro-preview", // Bậc 3: Gemini 3.1 Pro (suy luận sâu sắc)
+  "gemini-pro-latest",      // Bậc 4: Gemini Pro Latest
+  "gemini-flash-lite-latest", // Bậc 5: Flash-Lite tiết kiệm quota
+  "gemini-1.5-flash",       // Bậc 6: Ổn định
 ];
 
 // In-memory model discovery cache with 30-minute expiration
@@ -806,7 +806,11 @@ export const fetchDynamicGeminiModels = async (apiKey?: string): Promise<string[
 };
 
 // Gemini generation with dynamic auto-fetched descending smart model tiers + multi-key rotation
-const callGeminiWithRotation = async (prompt: string, requestedModel?: string): Promise<string> => {
+const callGeminiWithRotation = async (
+  prompt: string, 
+  requestedModel?: string,
+  allowFallback: boolean = true
+): Promise<string> => {
   const keys = getGeminiKeys();
   if (keys.length === 0) {
     throw new Error("MISSING_GEMINI_KEY");
@@ -814,100 +818,132 @@ const callGeminiWithRotation = async (prompt: string, requestedModel?: string): 
 
   // Normalize requested model
   const rawRequested = (requestedModel || '').trim();
-  const wantsFlash38 = !rawRequested || 
-    rawRequested === 'auto' || 
-    rawRequested === 'undefined' ||
-    rawRequested === 'null' ||
-    rawRequested.includes('3.8') || 
-    rawRequested.includes('flash-latest') ||
-    rawRequested.includes('2.5-flash') ||
-    rawRequested.includes('2.0-flash');
+  const isAuto = !rawRequested || rawRequested === 'auto' || rawRequested === 'undefined' || rawRequested === 'null';
 
   // Candidate models hierarchy starting with user's selection:
   const candidateModels: string[] = [];
 
-  if (wantsFlash38) {
-    // gemini-flash-latest is Google's official active alias for Gemini 3.8 Flash, followed by direct gemini-3.8-flash
+  if (isAuto) {
+    // Default smart auto: prioritize Gemini 3.8 Flash direct first
+    candidateModels.push('gemini-3.8-flash', 'gemini-flash-latest');
+  } else if (rawRequested === 'gemini-3.8-flash') {
+    // User explicitly picked Gemini 3.8 Flash -> MUST BE #1 PRIORITY!
+    candidateModels.push('gemini-3.8-flash');
+  } else if (rawRequested === 'gemini-flash-latest') {
     candidateModels.push('gemini-flash-latest', 'gemini-3.8-flash');
   } else {
     candidateModels.push(rawRequested);
   }
 
-  // Auto-fetch latest dynamic models from Google API (using first key) or fallback gracefully
-  const dynamicModels = await fetchDynamicGeminiModels(keys[0]);
-  for (const m of dynamicModels) {
-    if (!candidateModels.includes(m)) {
-      candidateModels.push(m);
+  // If fallback is allowed, append backups in descending capability order
+  if (allowFallback) {
+    // Auto-fetch latest dynamic models from Google API (using first key) or fallback gracefully
+    const dynamicModels = await fetchDynamicGeminiModels(keys[0]);
+    for (const m of dynamicModels) {
+      if (!candidateModels.includes(m)) {
+        candidateModels.push(m);
+      }
     }
-  }
 
-  for (const tier of GEMINI_DEFAULT_TIERS) {
-    if (!candidateModels.includes(tier)) {
-      candidateModels.push(tier);
+    for (const tier of GEMINI_DEFAULT_TIERS) {
+      if (!candidateModels.includes(tier)) {
+        candidateModels.push(tier);
+      }
     }
   }
 
   let lastError: any = null;
+  let primaryModelErrorMsg: string | null = null;
+  const requestedModelName = isAuto 
+    ? 'Gemini 3.8 Flash' 
+    : (rawRequested === 'gemini-3.8-flash' ? 'Gemini 3.8 Flash' : rawRequested);
+
+  // Helper sleep for quick backoff
+  const waitMs = (ms: number) => new Promise(res => setTimeout(res, ms));
 
   // STEP DOWN TIER BY TIER:
   // Try the best/newest model across ALL available API keys first.
-  // If all keys run out of quota on that model, step down to the 2nd model and try all keys, then 3rd, etc.
   for (let modelIndex = 0; modelIndex < candidateModels.length; modelIndex++) {
     const model = candidateModels[modelIndex];
-    let quotaErrorCount = 0;
 
     for (let keyIndex = 0; keyIndex < keys.length; keyIndex++) {
       const currentKey = keys[keyIndex];
-      try {
-        const ai = new GoogleGenAI({ apiKey: currentKey });
-        const response = await ai.models.generateContent({
-          model,
-          contents: prompt,
-        });
 
-        if (response.text) {
-          const rotationNote = keys.length > 1 ? ` *(Khóa ${keyIndex + 1}/${keys.length})*` : '';
-          
-          const isCurrentFlash38 = model === 'gemini-flash-latest' || model === 'gemini-3.8-flash';
-          let displayModelName = model;
-          if (isCurrentFlash38) {
-            displayModelName = 'Gemini 3.8 Flash';
-          } else if (model === 'gemini-pro-latest') {
-            displayModelName = 'Gemini 3.1 Pro';
-          } else if (model === 'gemini-flash-lite-latest') {
-            displayModelName = 'Gemini Flash-Lite';
-          } else if (model === 'gemini-1.5-flash') {
-            displayModelName = 'Gemini 1.5 Flash';
+      // Try with 1 automatic retry on temporary 503 / 429
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          const ai = new GoogleGenAI({ apiKey: currentKey });
+          const response = await ai.models.generateContent({
+            model,
+            contents: prompt,
+          });
+
+          if (response.text) {
+            const rotationNote = keys.length > 1 ? ` *(Khóa ${keyIndex + 1}/${keys.length})*` : '';
+            
+            const isCurrentFlash38 = model === 'gemini-flash-latest' || model === 'gemini-3.8-flash';
+            let displayModelName = model;
+            if (isCurrentFlash38) {
+              displayModelName = 'Gemini 3.8 Flash';
+            } else if (model === 'gemini-3.1-pro-preview' || model === 'gemini-pro-latest') {
+              displayModelName = 'Gemini 3.1 Pro';
+            } else if (model === 'gemini-flash-lite-latest' || model === 'gemini-3.1-flash-lite') {
+              displayModelName = 'Gemini Flash-Lite';
+            } else if (model === 'gemini-1.5-flash') {
+              displayModelName = 'Gemini 1.5 Flash';
+            }
+
+            // Did the system downgrade from user requested model?
+            const wasDowngraded = modelIndex > 0 && !(isAuto && isCurrentFlash38) && !(rawRequested === 'gemini-3.8-flash' && isCurrentFlash38);
+
+            let fallbackNote = '';
+            if (wasDowngraded) {
+              fallbackNote = `\n\n> ℹ️ **Lưu ý:** Bạn đã chọn **${requestedModelName}** (token vẫn còn đầy đủ). Tuy nhiên máy chủ Google tạm thời báo tải cao (*${primaryModelErrorMsg || 'HTTP 503: Quá tải tạm thời'}*). Hệ thống đã tự động chuyển sang **${displayModelName}** để không làm gián đoạn quẻ bài. Bạn có thể bấm nút **"✨ Suy luận lại"** bên dưới bất cứ lúc nào!`;
+            }
+
+            return `${response.text}\n\n*✨ Diễn giải bởi Google ${displayModelName}${rotationNote}*${fallbackNote}`;
+          }
+        } catch (err: any) {
+          lastError = err;
+          const msg = String(err?.message || "").toLowerCase();
+          console.warn(`[Gemini Fallback] Model ${model} (Key #${keyIndex + 1}/${keys.length}, Lần thử ${attempt}/2) gặp lỗi:`, err?.message || err);
+
+          if (modelIndex === 0 && !primaryModelErrorMsg) {
+            if (msg.includes('503') || msg.includes('high demand') || msg.includes('unavailable')) {
+              primaryModelErrorMsg = 'Máy chủ Google đang quá tải tạm thời (HTTP 503 High Demand)';
+            } else if (msg.includes('429') || msg.includes('quota') || msg.includes('resource exhausted')) {
+              primaryModelErrorMsg = 'Hạn mức lượt gọi (Rate Limit / Quota) của key đang tạm hết';
+            } else {
+              primaryModelErrorMsg = err?.message || 'Lỗi kết nối từ máy chủ Google';
+            }
           }
 
-          // Only show fallback note if it genuinely downgraded below what user requested
-          const wasDowngraded = modelIndex > 0 && !(wantsFlash38 && isCurrentFlash38);
-          const fallbackNote = wasDowngraded ? ` *(Tự chuyển sang ${displayModelName})*` : '';
+          // If 503 or 429 and attempt 1, wait 900ms and retry once on this same model
+          if (attempt === 1 && (msg.includes('503') || msg.includes('high demand') || msg.includes('429') || msg.includes('unavailable'))) {
+            await waitMs(900);
+            continue;
+          }
 
-          return `${response.text}\n\n*✨ Diễn giải bởi Google ${displayModelName}${rotationNote}${fallbackNote}*`;
-        }
-      } catch (err: any) {
-        lastError = err;
-        const msg = String(err?.message || "").toLowerCase();
-        console.warn(`[Gemini Fallback] Model ${model} (Key #${keyIndex + 1}/${keys.length}) gặp lỗi:`, err?.message || err);
+          // If model is not found or unsupported, skip trying other keys for this invalid model
+          if (msg.includes('404') || msg.includes('not found') || msg.includes('not_found') || msg.includes('is not supported')) {
+            break;
+          }
 
-        // If rate limited or quota exceeded, try next key
-        if (msg.includes('429') || msg.includes('quota') || msg.includes('resource exhausted') || msg.includes('limit')) {
-          quotaErrorCount++;
-        }
-
-        // If model is not found or no longer available, skip trying other keys for this invalid model
-        if (msg.includes('404') || msg.includes('not found') || msg.includes('not_found') || msg.includes('is not supported') || msg.includes('no longer available')) {
+          // Break to next key
           break;
         }
       }
     }
 
-    // If all keys failed on this model, loop automatically steps down to the next lower model in the hierarchy
+    // If fallback is disabled by user/admin, do NOT try lower models!
+    if (!allowFallback) {
+      throw lastError || new Error(`Mô hình ${requestedModelName} tạm thời không phản hồi. (Chế độ Fallback đang tắt)`);
+    }
+
     console.info(`[Gemini Fallback] Đã thử hết ${keys.length} key trên model [${model}] -> Tự động chuyển xuống bậc thấp hơn: [${candidateModels[modelIndex + 1] || 'Hết bậc'}]`);
   }
 
-  throw lastError || new Error("Tất cả khóa và mô hình Gemini đều đã hết hạn mức (Quota Exceeded)");
+  throw lastError || new Error("Tất cả khóa và mô hình Gemini đều đã hết hạn mức hoặc không phản hồi (Quota Exceeded / 503 High Demand)");
 };
 
 // Core multi-provider dispatcher with fallback & rotation
@@ -971,8 +1007,8 @@ export const dispatchAiPrompt = async (
   } catch (e) {}
 
   // Determine effective target provider:
-  // User's assigned provider > Explicit option > Admin's global setting (if not 'auto') > First in aiProviderPriority > 'auto'
-  let targetProvider: AIProvider = (assignedProvider as AIProvider) || options?.provider || 'auto';
+  // Priority: Explicit options > User assigned > User local preference > Admin global > 'auto'
+  let targetProvider: AIProvider = options?.provider || (assignedProvider as AIProvider) || (userProvider !== 'auto' ? userProvider : 'auto');
   if (targetProvider === 'auto') {
     if (globalProvider !== 'auto') {
       targetProvider = globalProvider;
@@ -980,13 +1016,8 @@ export const dispatchAiPrompt = async (
   }
 
   // Determine effective target model:
-  // User's assigned model > Explicit option > Admin's global setting > 'auto'
-  let targetModel: string = assignedModel || options?.model || 'auto';
-  if (targetModel === 'auto') {
-    if (globalModel && globalModel !== 'auto') {
-      targetModel = globalModel;
-    }
-  }
+  // Priority: Explicit options > User assigned > User local preference > Admin global > 'auto'
+  let targetModel: string = options?.model || (assignedModel && assignedModel !== 'auto' ? assignedModel : '') || (userModel && userModel !== 'auto' ? userModel : '') || (globalModel && globalModel !== 'auto' ? globalModel : 'auto');
 
   // Filter priority chain to only enabled providers
   const activePriorityChain: AIProvider[] = aiProviderPriority.filter(p => {
@@ -1016,7 +1047,7 @@ export const dispatchAiPrompt = async (
       if (geminiKeys.length === 0) {
         throw new Error("Chưa có Google Gemini API Key khả dụng (vui lòng dán key tại Cài đặt hoặc Admin Panel)");
       }
-      return await callGeminiWithRotation(finalPrompt, modelToUse);
+      return await callGeminiWithRotation(finalPrompt, modelToUse, allowFallback);
     }
 
     if (provider === 'openrouter') {
@@ -1107,7 +1138,8 @@ export const interpretReading = async (
   spreadType: SpreadType,
   drawnCards: DrawnCard[],
   deckType: DeckType,
-  userInfo: UserInfo
+  userInfo: UserInfo,
+  options?: { provider?: AIProvider; model?: string; allowFallback?: boolean }
 ): Promise<string> => {
   const cardsInfo = drawnCards.map((c, i) => {
     const pos = c.positionName ? ` (Vị trí: ${c.positionName === 'Past' ? 'Quá khứ' : c.positionName === 'Present' ? 'Hiện tại' : 'Tương lai'})` : '';
@@ -1164,7 +1196,7 @@ export const interpretReading = async (
     7. Độ dài khoảng 300-400 từ để đảm bảo sự chi tiết.
   `;
 
-  return await dispatchAiPrompt(prompt);
+  return await dispatchAiPrompt(prompt, options);
 };
 
 // Follow-up question direct interpretation
@@ -1175,7 +1207,8 @@ export const interpretFollowUp = async (
   originalInterpretation: string,
   followUpQuestion: string,
   deckType: DeckType,
-  userInfo: UserInfo
+  userInfo: UserInfo,
+  options?: { provider?: AIProvider; model?: string; allowFallback?: boolean }
 ): Promise<string> => {
   const cardsInfo = originalCards.map((c, i) =>
     `${i + 1}. ${c.card.name} (${c.isReversed ? 'Ngược' : 'Xuôi'})`
@@ -1210,7 +1243,7 @@ export const interpretFollowUp = async (
     5. Trả lời bằng tiếng Việt, súc tích, sâu sắc (khoảng 200-300 từ).
   `;
 
-  return await dispatchAiPrompt(prompt);
+  return await dispatchAiPrompt(prompt, options);
 };
 
 // Follow-up question with newly drawn clarification card(s)
@@ -1222,7 +1255,8 @@ export const interpretFollowUpWithNewCards = async (
   followUpQuestion: string,
   newCards: DrawnCard[],
   deckType: DeckType,
-  userInfo: UserInfo
+  userInfo: UserInfo,
+  options?: { provider?: AIProvider; model?: string; allowFallback?: boolean }
 ): Promise<string> => {
   const oldCards = originalCards.map((c) => `${c.card.name} (${c.isReversed ? 'Ngược' : 'Xuôi'})`).join(', ');
   const newCardsInfo = newCards.map((c, i) =>
@@ -1257,13 +1291,14 @@ export const interpretFollowUpWithNewCards = async (
     5. Trả lời bằng tiếng Việt, sâu sắc và truyền cảm hứng (khoảng 250-350 từ).
   `;
 
-  return await dispatchAiPrompt(prompt);
+  return await dispatchAiPrompt(prompt, options);
 };
 
 // Tử Vi Đẩu Số Master interpretation
 export const interpretTuViReading = async (
   laSoData: import('../types').LaSoTuViData,
-  customQuestion?: string
+  customQuestion?: string,
+  options?: { provider?: AIProvider; model?: string; allowFallback?: boolean }
 ): Promise<string> => {
   const { chuSo, cungList } = laSoData;
 
@@ -1337,14 +1372,15 @@ ${cungSummaryText}
 - Trình bày dạng Markdown với tiêu đề rõ ràng, gạch đầu dòng mạch lạc, in đậm các thuật ngữ sao quan trọng.
 `;
 
-  return await dispatchAiPrompt(prompt);
+  return await dispatchAiPrompt(prompt, options);
 };
 
 // Follow-up consultation for Tử Vi
 export const interpretTuViFollowUp = async (
   laSoData: import('../types').LaSoTuViData,
   originalInterpretation: string,
-  followUpQuestion: string
+  followUpQuestion: string,
+  options?: { provider?: AIProvider; model?: string; allowFallback?: boolean }
 ): Promise<string> => {
   const { chuSo } = laSoData;
 
@@ -1366,5 +1402,5 @@ YÊU CẦU LUẬN GIẢI:
 4. Trình bày Markdown gọn gàng, súc tích (khoảng 250-350 từ).
 `;
 
-  return await dispatchAiPrompt(prompt);
+  return await dispatchAiPrompt(prompt, options);
 };

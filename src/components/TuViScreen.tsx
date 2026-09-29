@@ -143,6 +143,7 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
   const [isAnsweringFollowUp, setIsAnsweringFollowUp] = useState(false);
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isReInterpreting, setIsReInterpreting] = useState(false);
 
   // Live parsed time preview
   const parsedTimePreview = parseBirthTime(birthTime);
@@ -415,6 +416,42 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
       console.error('Follow-up error:', err);
     } finally {
       setIsAnsweringFollowUp(false);
+    }
+  };
+
+  const handleReInterpretTuVi = async () => {
+    if (isReInterpreting || !laSoData) return;
+    setIsReInterpreting(true);
+    setApiError(null);
+    try {
+      const res = await interpretTuViReading(laSoData, question.trim());
+      setInterpretation(res);
+      const resultObj: ReadingResult = {
+        id: readingId,
+        userId: currentUser?.uid || 'guest',
+        timestamp: Date.now(),
+        question: question || 'Luận giải toàn diện Lá số Tử Vi Đẩu Số',
+        theme: ReadingTheme.OVERVIEW,
+        spreadType: SpreadType.CELTIC_CROSS,
+        deckType: DeckType.TU_VI,
+        userInfo: {
+          fullName,
+          gender,
+          birthDate,
+          birthTime,
+          request: question.trim(),
+        },
+        drawnCards: [],
+        aiInterpretation: res,
+        followUps,
+        tuViData: laSoData,
+      };
+      await saveNewReading(resultObj);
+    } catch (err: any) {
+      console.error('Error re-interpreting Tu Vi:', err);
+      setApiError(err?.message || String(err));
+    } finally {
+      setIsReInterpreting(false);
     }
   };
 
@@ -987,16 +1024,31 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
                     </div>
                   </div>
 
-                  {interpretation && (
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={handleCopyInterpretation}
-                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-900/40 hover:bg-purple-800/60 border border-purple-400/30 text-purple-200 text-xs font-semibold cursor-pointer transition-all"
-                    >
-                      {isCopiedInterpretation ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{isCopiedInterpretation ? 'Đã sao chép' : 'Sao chép bài giải'}</span>
-                    </motion.button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {interpretation && (
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        disabled={isReInterpreting}
+                        onClick={handleReInterpretTuVi}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-400/40 text-purple-200 text-xs font-semibold cursor-pointer transition-all disabled:opacity-50"
+                        title="Yêu cầu AI suy luận lại lá số tử vi"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 text-amber-300 ${isReInterpreting ? 'animate-spin' : ''}`} />
+                        <span>{isReInterpreting ? 'Đang suy luận...' : '✨ Suy luận lại'}</span>
+                      </motion.button>
+                    )}
+
+                    {interpretation && (
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleCopyInterpretation}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-900/40 hover:bg-purple-800/60 border border-purple-400/30 text-purple-200 text-xs font-semibold cursor-pointer transition-all"
+                      >
+                        {isCopiedInterpretation ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{isCopiedInterpretation ? 'Đã sao chép' : 'Sao chép bài giải'}</span>
+                      </motion.button>
+                    )}
+                  </div>
                 </div>
 
                 {apiError ? (
@@ -1005,11 +1057,41 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
                     <div>
                       <div className="font-bold">Không thể lấy luận giải AI:</div>
                       <div>{apiError}</div>
+                      <button
+                        onClick={handleReInterpretTuVi}
+                        className="mt-3 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        <span>Thử suy luận lại</span>
+                      </button>
                     </div>
                   </div>
+                ) : isReInterpreting ? (
+                  <div className="text-center py-12 text-purple-300 space-y-3">
+                    <RefreshCw className="w-8 h-8 mx-auto animate-spin text-amber-400" />
+                    <div className="font-serif text-lg font-bold text-white">Đang suy luận lại Lá Số Tử Vi...</div>
+                    <div className="text-xs text-purple-300/80 italic">Bậc thầy Tử Vi đang kết nối các tinh đẩu và phân tích sâu hơn</div>
+                  </div>
                 ) : interpretation ? (
-                  <div className="prose prose-invert prose-purple max-w-none text-left text-purple-100 text-sm sm:text-base leading-relaxed space-y-4">
-                    <ReactMarkdown>{interpretation}</ReactMarkdown>
+                  <div>
+                    <div className="prose prose-invert prose-purple max-w-none text-left text-purple-100 text-sm sm:text-base leading-relaxed space-y-4">
+                      <ReactMarkdown>{interpretation}</ReactMarkdown>
+                    </div>
+
+                    <div className="mt-8 pt-6 border-t border-purple-500/20 flex flex-wrap items-center justify-between gap-3">
+                      <div className="text-xs text-purple-300/80 italic">
+                        Muốn khám phá thêm góc nhìn hoặc đối chiếu lại cách cục tinh đẩu?
+                      </div>
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        disabled={isReInterpreting}
+                        onClick={handleReInterpretTuVi}
+                        className="px-4 py-2 rounded-2xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-400/40 text-purple-200 text-xs font-bold cursor-pointer transition-all flex items-center gap-2"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 text-amber-300" />
+                        <span>✨ Suy luận lại Lá Số Tử Vi</span>
+                      </motion.button>
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-10 text-purple-300/70">

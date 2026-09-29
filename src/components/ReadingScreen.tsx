@@ -6,7 +6,7 @@ import { playingCards } from '../data/playingCards';
 import ShuffleDeck from './ShuffleDeck';
 import TarotCard from './TarotCard';
 import { interpretReading } from '../services/geminiService';
-import { Sparkles, ArrowLeft, Send, RefreshCw, BookmarkCheck, Lock, LogIn, Share2, AlertCircle, Settings, FileDown, Loader2 } from 'lucide-react';
+import { Sparkles, ArrowLeft, Send, RefreshCw, BookmarkCheck, Lock, LogIn, Share2, AlertCircle, Settings, FileDown, Loader2, ChevronDown, Check, Cpu } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -29,6 +29,37 @@ const loadingMessages = [
   'Đang lắng nghe thông điệp từ Vũ Trụ...',
   'Đang phân tích ý nghĩa biểu tượng & chiêm tinh...',
   'Đang đúc kết lời khuyên chân thành cho bạn...',
+];
+
+export const RE_INTERPRET_MODELS = [
+  {
+    id: 'gemini-3.8-flash',
+    provider: 'gemini' as const,
+    name: 'Google Gemini 3.8 Flash',
+    badge: 'Mới nhất • Khuyên dùng',
+    desc: 'Bản 3.8 mới nhất của Google, suy luận sắc sảo, tốc độ siêu tốc',
+  },
+  {
+    id: 'gemini-3.1-pro-preview',
+    provider: 'gemini' as const,
+    name: 'Google Gemini 3.1 Pro',
+    badge: 'Chuyên sâu • Pro',
+    desc: 'Mô hình phân tích triết lý sâu rộng, lập luận vững chắc',
+  },
+  {
+    id: 'gemini-flash-lite-latest',
+    provider: 'gemini' as const,
+    name: 'Google Gemini Flash-Lite',
+    badge: 'Tiết kiệm Quota',
+    desc: 'Mô hình siêu nhẹ, tiết kiệm hạn mức token',
+  },
+  {
+    id: 'openrouter/free',
+    provider: 'openrouter' as const,
+    name: 'OpenRouter Free',
+    badge: 'Miễn phí 100%',
+    desc: 'Router AI mã nguồn mở miễn phí không lo hết hạn mức',
+  },
 ];
 
 const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initialReading, onReset }) => {
@@ -61,6 +92,9 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [reInterpretModel, setReInterpretModel] = useState<string>('gemini-3.8-flash');
+  const [showModelPicker, setShowModelPicker] = useState<boolean>(false);
+  const [reInterpretNotice, setReInterpretNotice] = useState<string | null>(null);
 
   const handleExportPdfDirect = async () => {
     if (!drawnCards || drawnCards.length === 0) return;
@@ -175,17 +209,29 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
     });
   };
 
-  const handleReInterpret = () => {
+  const handleReInterpret = (chosenModel?: string) => {
     if (isInterpreting || drawnCards.length === 0) return;
+    const modelToUse = chosenModel || reInterpretModel || 'gemini-3.8-flash';
+    const isOp = modelToUse.startsWith('openrouter');
+    const provider = isOp ? 'openrouter' : 'gemini';
+
     setIsInterpreting(true);
     setApiError(null);
-    interpretReading(question, theme, spreadType, drawnCards, deckType, userInfo).then(async (res) => {
+    setReInterpretNotice(null);
+
+    interpretReading(question, theme, spreadType, drawnCards, deckType, userInfo, {
+      provider,
+      model: modelToUse,
+    }).then(async (res) => {
       setAiInterpretation(res);
       setIsInterpreting(false);
+      const modelLabel = RE_INTERPRET_MODELS.find(m => m.id === modelToUse)?.name || modelToUse;
+      setReInterpretNotice(`✨ Đã hoàn tất suy luận lại bằng ${modelLabel}!`);
+      setTimeout(() => setReInterpretNotice(null), 4500);
 
       const record: ReadingResult = {
         id: readingId,
-        userId: '',
+        userId: currentUser?.uid || '',
         timestamp: Date.now(),
         question,
         theme,
@@ -470,14 +516,14 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                     </span>
                   )}
                 </div>
-                {!isInterpreting && aiInterpretation && isOwner && (
+                {!isInterpreting && aiInterpretation && (
                   <button
-                    onClick={handleReInterpret}
-                    className="flex items-center space-x-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full border border-purple-300 hover:border-purple-600 text-purple-900 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-colors cursor-pointer"
-                    title="Yêu cầu AI phân tích lại hoặc thử lại với API dự phòng"
+                    onClick={() => handleReInterpret()}
+                    className="flex items-center space-x-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full border border-purple-400/40 hover:border-purple-500 bg-purple-600/15 hover:bg-purple-600/25 text-purple-900 dark:text-purple-200 transition-all cursor-pointer shadow-sm active:scale-95"
+                    title="Yêu cầu AI suy luận lại quẻ bài theo năng lượng mới"
                   >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Giải lại bằng AI</span>
+                    <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                    <span>✨ Suy luận lại</span>
                   </button>
                 )}
               </div>
@@ -502,11 +548,11 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                     </div>
                     <div className="flex flex-wrap items-center gap-3 pt-2">
                       <button
-                        onClick={handleReInterpret}
+                        onClick={() => handleReInterpret()}
                         className="flex items-center space-x-1.5 text-xs font-bold px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white transition-colors cursor-pointer"
                       >
                         <RefreshCw className="w-3.5 h-3.5 animate-spin-hover" />
-                        <span>Thử lại bằng AI</span>
+                        <span>Thử suy luận lại</span>
                       </button>
                       <div className="text-[11px] text-purple-900/60 dark:text-purple-300/60 font-sans flex items-center">
                         <Settings className="w-3.5 h-3.5 mr-1" />
@@ -573,10 +619,115 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                     </div>
                   </div>
                 ) : (
-                  <div className={`text-sm sm:text-base leading-relaxed markdown-body font-normal ${
-                    settings.theme === 'dark' ? 'text-purple-100/90' : 'text-slate-900'
-                  }`}>
-                    <ReactMarkdown>{aiInterpretation || ''}</ReactMarkdown>
+                  <div>
+                    <div className={`text-sm sm:text-base leading-relaxed markdown-body font-normal ${
+                      settings.theme === 'dark' ? 'text-purple-100/90' : 'text-slate-900'
+                    }`}>
+                      <ReactMarkdown>{aiInterpretation || ''}</ReactMarkdown>
+                    </div>
+
+                    {/* Toast notification when re-interpretation completes */}
+                    {reInterpretNotice && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="my-4 p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2 not-prose"
+                      >
+                        <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>{reInterpretNotice}</span>
+                      </motion.div>
+                    )}
+
+                    {/* Bảng điều khiển Suy Luận Lại Quẻ Bài Chuyên Sâu */}
+                    <div className="mt-8 pt-6 border-t border-purple-500/20 space-y-4 not-prose">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <span className="p-2 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                            <Sparkles className="w-4 h-4 text-amber-300" />
+                          </span>
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                              <span>Suy luận lại quẻ bài với AI</span>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono font-semibold">
+                                Re-reasoning
+                              </span>
+                            </h4>
+                            <p className="text-[11px] text-slate-600 dark:text-purple-300/80 mt-0.5">
+                              Bạn muốn một góc nhìn mới hoặc chủ động chọn mô hình AI để đối chiếu thông điệp?
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Model Selector Pill Dropdown */}
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setShowModelPicker(!showModelPicker)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-purple-900/30 hover:bg-purple-900/50 border border-purple-400/30 text-xs text-purple-200 font-semibold transition-all cursor-pointer"
+                            title="Chọn mô hình AI để suy luận lại"
+                          >
+                            <Cpu className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <span className="max-w-[170px] truncate">
+                              {RE_INTERPRET_MODELS.find(m => m.id === reInterpretModel)?.name || reInterpretModel}
+                            </span>
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
+                          </button>
+
+                          {showModelPicker && (
+                            <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-zinc-900/95 border border-purple-500/30 shadow-2xl p-2 z-50 backdrop-blur-xl space-y-1">
+                              <div className="px-2 py-1.5 text-[10px] uppercase font-bold tracking-wider text-purple-400">
+                                Chọn mô hình AI suy luận lại:
+                              </div>
+                              {RE_INTERPRET_MODELS.map((m) => {
+                                const isCurrent = reInterpretModel === m.id;
+                                return (
+                                  <button
+                                    key={m.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setReInterpretModel(m.id);
+                                      setShowModelPicker(false);
+                                    }}
+                                    className={`w-full p-2.5 rounded-xl text-left transition-all flex flex-col justify-between cursor-pointer ${
+                                      isCurrent
+                                        ? 'bg-purple-600/20 border border-purple-500/50 text-white'
+                                        : 'hover:bg-white/5 border border-transparent text-gray-300'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between gap-1 w-full mb-0.5">
+                                      <span className="font-bold text-xs text-white flex items-center gap-1.5">
+                                        {m.name}
+                                        {isCurrent && <Check className="w-3 h-3 text-purple-400" />}
+                                      </span>
+                                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-medium">
+                                        {m.badge}
+                                      </span>
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 leading-tight">{m.desc}</p>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3 pt-1">
+                        <button
+                          type="button"
+                          disabled={isInterpreting}
+                          onClick={() => handleReInterpret()}
+                          className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-purple-600/20 flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 active:scale-95"
+                        >
+                          <RefreshCw className={`w-3.5 h-3.5 ${isInterpreting ? 'animate-spin' : ''}`} />
+                          <span>Bắt đầu suy luận lại với {RE_INTERPRET_MODELS.find(m => m.id === reInterpretModel)?.name || 'AI'}</span>
+                        </button>
+
+                        <span className="text-[11px] text-slate-500 dark:text-purple-300/70 italic">
+                          (Giữ nguyên các lá bài đã rút, AI sẽ lập luận và phân tích sâu hơn)
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

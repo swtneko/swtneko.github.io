@@ -303,10 +303,10 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
       });
       setLaSoData(chart);
 
-      // 2. Request AI Master Interpretation following the detailed prompt with Gemini 3.8 Flash
+      // 2. Request AI Master Interpretation following the detailed prompt with Google Gemini Flash Latest
       const aiResponse = await interpretTuViReading(chart, question.trim(), {
         provider: 'gemini',
-        model: 'gemini-3.8-flash',
+        model: 'gemini-flash-latest',
       });
       setInterpretation(aiResponse);
 
@@ -427,7 +427,7 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
     setIsReInterpreting(true);
     setApiError(null);
     try {
-      const modelToUse = typeof chosenModel === 'string' ? chosenModel : 'gemini-3.8-flash';
+      const modelToUse = typeof chosenModel === 'string' ? chosenModel : 'gemini-flash-latest';
       const isOp = modelToUse.startsWith('openrouter');
       const res = await interpretTuViReading(laSoData, question.trim(), {
         provider: isOp ? 'openrouter' : 'gemini',
@@ -1098,19 +1098,27 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
                                 </span>
                               </h4>
                               <p className="text-xs text-amber-200/90 mt-1 leading-relaxed">
-                                Bạn đã chọn <strong>Gemini 3.8 Flash</strong>. Lúc gửi yêu cầu, máy chủ Google báo tải cao tạm thời (HTTP 503) nên hệ thống đã tự động chuyển sang bản Flash-Lite để bạn không phải chờ. Hiện máy chủ đã sẵn sàng trở lại!
+                                Bạn đã chọn <strong>Google Gemini Flash Latest / 3.8 Flash</strong>. Lúc gửi yêu cầu, máy chủ Google báo tải cao tạm thời (HTTP 503) nên hệ thống đã tự động chuyển sang bản Flash-Lite để bạn không phải chờ. Hiện máy chủ đã sẵn sàng trở lại!
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0 w-full md:w-auto">
+                          <div className="flex flex-wrap items-center gap-2 shrink-0 w-full md:w-auto">
+                            <button
+                              type="button"
+                              disabled={isReInterpreting}
+                              onClick={() => handleReInterpretTuVi('gemini-flash-latest')}
+                              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                            >
+                              <RefreshCw className={`w-3.5 h-3.5 ${isReInterpreting ? 'animate-spin' : ''}`} />
+                              <span>✨ Suy luận với Google Flash Latest</span>
+                            </button>
                             <button
                               type="button"
                               disabled={isReInterpreting}
                               onClick={() => handleReInterpretTuVi('gemini-3.8-flash')}
-                              className="w-full md:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                              className="px-3.5 py-2.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-400/40 text-purple-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
                             >
-                              <RefreshCw className={`w-3.5 h-3.5 ${isReInterpreting ? 'animate-spin' : ''}`} />
-                              <span>✨ Suy luận lại ngay với Gemini 3.8 Flash</span>
+                              <span>3.8 Flash</span>
                             </button>
                           </div>
                         </div>

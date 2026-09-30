@@ -95,7 +95,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenAd
     {
       id: 'gemini',
       label: 'Google Gemini',
-      desc: 'Gemini 2.5 Flash / Pro (Hỗ trợ xoay tua nhiều key)',
+      desc: 'Google Flash Latest / Gemini 3.8 Flash (Hỗ trợ xoay tua nhiều key)',
       badge: status.gemini.configured ? `${status.gemini.count} key khả dụng` : 'Chưa có key',
     },
     {

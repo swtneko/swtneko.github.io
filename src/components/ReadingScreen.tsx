@@ -33,11 +33,18 @@ const loadingMessages = [
 
 export const RE_INTERPRET_MODELS = [
   {
+    id: 'gemini-flash-latest',
+    provider: 'gemini' as const,
+    name: 'Google Gemini Flash Latest',
+    badge: 'Mới nhất • Khuyên dùng',
+    desc: 'Bản Google Gemini Flash mới nhất liên tục cập nhật phiên bản tân tiến nhất từ Google',
+  },
+  {
     id: 'gemini-3.8-flash',
     provider: 'gemini' as const,
     name: 'Google Gemini 3.8 Flash',
-    badge: 'Mặc định • Khuyên dùng',
-    desc: 'Bản 3.8 mới nhất của Google, suy luận sắc sảo, tốc độ siêu tốc',
+    badge: 'Bản 3.8 Flash',
+    desc: 'Mô hình thế hệ mới nhất Google Gemini 3.8 Flash - Siêu nhanh, thông minh vượt trội',
   },
   {
     id: 'gemini-3.7-flash',
@@ -106,7 +113,7 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
-  const [reInterpretModel, setReInterpretModel] = useState<string>('gemini-3.8-flash');
+  const [reInterpretModel, setReInterpretModel] = useState<string>('gemini-flash-latest');
   const [showModelPicker, setShowModelPicker] = useState<boolean>(false);
   const [reInterpretNotice, setReInterpretNotice] = useState<string | null>(null);
 
@@ -190,10 +197,10 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
     setReadingId(newId);
     setFollowUps([]);
     
-    // Start AI interpretation with explicit model preference
+    // Start AI interpretation with explicit model preference (Google Flash Latest)
     setIsInterpreting(true);
     setApiError(null);
-    const initialModel = reInterpretModel || 'gemini-3.8-flash';
+    const initialModel = reInterpretModel || 'gemini-flash-latest';
     const isOp = initialModel.startsWith('openrouter');
     const initialProvider = isOp ? 'openrouter' : 'gemini';
 
@@ -232,7 +239,7 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
 
   const handleReInterpret = (chosenModel?: string) => {
     if (isInterpreting || drawnCards.length === 0) return;
-    const modelToUse = chosenModel || reInterpretModel || 'gemini-3.8-flash';
+    const modelToUse = chosenModel || reInterpretModel || 'gemini-flash-latest';
     const isOp = modelToUse.startsWith('openrouter');
     const provider = isOp ? 'openrouter' : 'gemini';
 
@@ -657,19 +664,27 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                                 </span>
                               </h4>
                               <p className="text-xs text-amber-200/90 mt-1 leading-relaxed">
-                                Bạn đã chọn <strong>Gemini 3.8 Flash</strong>. Lúc gửi yêu cầu, máy chủ Google báo tải cao tạm thời (HTTP 503) nên hệ thống đã tự động chuyển sang bản Flash-Lite để bạn không phải chờ. Hiện máy chủ đã sẵn sàng trở lại!
+                                Bạn đã chọn mô hình Google Gemini mới nhất. Lúc gửi yêu cầu, máy chủ Google báo tải cao tạm thời (HTTP 503) nên hệ thống đã tự động chuyển sang bản Flash-Lite để bạn không phải chờ. Hiện máy chủ đã sẵn sàng!
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0 w-full md:w-auto">
+                          <div className="flex flex-wrap items-center gap-2 shrink-0 w-full md:w-auto">
+                            <button
+                              type="button"
+                              disabled={isInterpreting}
+                              onClick={() => handleReInterpret('gemini-flash-latest')}
+                              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                            >
+                              <RefreshCw className={`w-3.5 h-3.5 ${isInterpreting ? 'animate-spin' : ''}`} />
+                              <span>✨ Suy luận với Google Flash Latest</span>
+                            </button>
                             <button
                               type="button"
                               disabled={isInterpreting}
                               onClick={() => handleReInterpret('gemini-3.8-flash')}
-                              className="w-full md:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                              className="px-3.5 py-2.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-400/40 text-purple-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
                             >
-                              <RefreshCw className={`w-3.5 h-3.5 ${isInterpreting ? 'animate-spin' : ''}`} />
-                              <span>✨ Suy luận lại ngay với Gemini 3.8 Flash</span>
+                              <span>3.8 Flash</span>
                             </button>
                           </div>
                         </div>

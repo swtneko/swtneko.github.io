@@ -23,10 +23,16 @@ export const GEMINI_MODELS_CACHE_KEY = 'celestial-gemini-fetched-models';
 // Official Google Gemini models matching Google AI Studio Chat Settings dropdown
 export const OFFICIAL_GEMINI_MODELS: ModelOption[] = [
   {
+    id: 'gemini-flash-latest',
+    name: 'Google Gemini Flash Latest',
+    desc: 'Bản Google Gemini Flash mới nhất liên tục cập nhật phiên bản tân tiến nhất từ Google',
+    tag: 'Latest • Khuyên dùng',
+  },
+  {
     id: 'gemini-3.8-flash',
-    name: 'Gemini 3.8 Flash (Mặc định)',
+    name: 'Google Gemini 3.8 Flash',
     desc: 'Mô hình thế hệ mới nhất Google Gemini 3.8 Flash - Siêu nhanh, thông minh vượt trội, 1M context',
-    tag: 'Mặc định • Khuyên dùng',
+    tag: 'Bản 3.8 Flash',
   },
   {
     id: 'gemini-3.7-flash',
@@ -63,12 +69,6 @@ export const OFFICIAL_GEMINI_MODELS: ModelOption[] = [
     name: 'Gemini 3 Flash Preview',
     desc: 'Bản xem trước Gemini 3 Flash của Google',
     tag: 'Preview',
-  },
-  {
-    id: 'gemini-flash-latest',
-    name: 'Gemini Flash Latest',
-    desc: 'Bản Flash mới nhất liên tục cập nhật từ Google',
-    tag: 'Latest Alias',
   },
   {
     id: 'gemini-flash-lite-latest',
@@ -487,12 +487,17 @@ const callOpenRouterApi = async (
 
 // Ranked descending model hierarchies for automatic cascading fallback (Fallback base)
 const GEMINI_DEFAULT_TIERS = [
-  "gemini-3.8-flash",       // Bậc 1: Gemini 3.8 Flash direct (Bản mới nhất, ưu tiên tuyệt đối)
-  "gemini-flash-latest",    // Bậc 2: Google Gemini Flash Latest alias
-  "gemini-3.1-pro-preview", // Bậc 3: Gemini 3.1 Pro (suy luận sâu sắc)
-  "gemini-pro-latest",      // Bậc 4: Gemini Pro Latest
-  "gemini-flash-lite-latest", // Bậc 5: Flash-Lite tiết kiệm quota
-  "gemini-1.5-flash",       // Bậc 6: Ổn định
+  "gemini-flash-latest",    // Bậc 1: Google Gemini Flash Latest (Bản mới nhất liên tục cập nhật)
+  "gemini-3.8-flash",       // Bậc 2: Google Gemini 3.8 Flash
+  "gemini-3.7-flash",       // Bậc 3: Google Gemini 3.7 Flash
+  "gemini-3.6-flash",       // Bậc 4: Google Gemini 3.6 Flash
+  "gemini-3.5-flash",       // Bậc 5: Google Gemini 3.5 Flash
+  "gemini-3.5-flash-lite",  // Bậc 6: Google Gemini 3.5 Flash Lite
+  "gemini-3.1-pro-preview", // Bậc 7: Google Gemini 3.1 Pro (suy luận sâu sắc)
+  "gemini-3.1-flash-lite",  // Bậc 8: Google Gemini 3.1 Flash Lite
+  "gemini-3-flash-preview", // Bậc 9: Google Gemini 3 Flash Preview
+  "gemini-pro-latest",      // Bậc 10: Google Gemini Pro Latest
+  "gemini-flash-lite-latest", // Bậc 11: Flash-Lite tiết kiệm quota
 ];
 
 // In-memory model discovery cache with 30-minute expiration
@@ -691,13 +696,12 @@ const callGeminiWithRotation = async (
   const candidateModels: string[] = [];
 
   if (isAuto) {
-    // Default smart auto: prioritize Gemini 3.8 Flash direct first
-    candidateModels.push('gemini-3.8-flash', 'gemini-flash-latest');
-  } else if (rawRequested === 'gemini-3.8-flash') {
-    // User explicitly picked Gemini 3.8 Flash -> MUST BE #1 PRIORITY!
-    candidateModels.push('gemini-3.8-flash');
+    // Default smart auto: prioritize Gemini Flash Latest direct first, followed by Gemini 3.8 Flash
+    candidateModels.push('gemini-flash-latest', 'gemini-3.8-flash');
   } else if (rawRequested === 'gemini-flash-latest') {
     candidateModels.push('gemini-flash-latest', 'gemini-3.8-flash');
+  } else if (rawRequested === 'gemini-3.8-flash') {
+    candidateModels.push('gemini-3.8-flash', 'gemini-flash-latest');
   } else {
     candidateModels.push(rawRequested);
   }
@@ -714,8 +718,8 @@ const callGeminiWithRotation = async (
   let lastError: any = null;
   let primaryModelErrorMsg: string | null = null;
   const requestedModelName = isAuto 
-    ? 'Gemini 3.8 Flash' 
-    : (rawRequested === 'gemini-3.8-flash' ? 'Gemini 3.8 Flash' : rawRequested);
+    ? 'Google Gemini Flash Latest' 
+    : (rawRequested === 'gemini-flash-latest' ? 'Google Gemini Flash Latest' : rawRequested === 'gemini-3.8-flash' ? 'Google Gemini 3.8 Flash' : rawRequested);
 
   // Helper sleep for quick backoff
   const waitMs = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -729,7 +733,7 @@ const callGeminiWithRotation = async (
       const currentKey = keys[keyIndex];
 
       // Give top priority / requested models up to 3 retry attempts with progressive backoff
-      const isPrimary = modelIndex === 0 || model === 'gemini-3.8-flash';
+      const isPrimary = modelIndex === 0 || model === 'gemini-flash-latest' || model === 'gemini-3.8-flash';
       const maxAttempts = isPrimary ? 3 : 2;
 
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -743,10 +747,19 @@ const callGeminiWithRotation = async (
           if (response.text) {
             const rotationNote = keys.length > 1 ? ` *(Khóa ${keyIndex + 1}/${keys.length})*` : '';
             
-            const isCurrentFlash38 = model === 'gemini-flash-latest' || model === 'gemini-3.8-flash';
             let displayModelName = model;
-            if (isCurrentFlash38) {
+            if (model === 'gemini-flash-latest') {
+              displayModelName = 'Gemini Flash Latest';
+            } else if (model === 'gemini-3.8-flash') {
               displayModelName = 'Gemini 3.8 Flash';
+            } else if (model === 'gemini-3.7-flash') {
+              displayModelName = 'Gemini 3.7 Flash';
+            } else if (model === 'gemini-3.6-flash') {
+              displayModelName = 'Gemini 3.6 Flash';
+            } else if (model === 'gemini-3.5-flash') {
+              displayModelName = 'Gemini 3.5 Flash';
+            } else if (model === 'gemini-3.5-flash-lite') {
+              displayModelName = 'Gemini 3.5 Flash Lite';
             } else if (model === 'gemini-3.1-pro-preview' || model === 'gemini-pro-latest') {
               displayModelName = 'Gemini 3.1 Pro';
             } else if (model === 'gemini-flash-lite-latest' || model === 'gemini-3.1-flash-lite') {
@@ -756,7 +769,7 @@ const callGeminiWithRotation = async (
             }
 
             // Did the system downgrade from user requested model?
-            const wasDowngraded = modelIndex > 0 && !(isAuto && isCurrentFlash38) && !(rawRequested === 'gemini-3.8-flash' && isCurrentFlash38);
+            const wasDowngraded = modelIndex > 0 && !isAuto && rawRequested !== model;
 
             let fallbackNote = '';
             if (wasDowngraded) {

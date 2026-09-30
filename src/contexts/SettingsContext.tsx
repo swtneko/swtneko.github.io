@@ -27,16 +27,29 @@ const getDefaultModelForProvider = (provider: AIProvider): string => {
   }
 };
 
-const defaultSettings: AppSettings = {
-  theme: 'dark',
-  effectsEnabled: true,
-  autoOptimizeHardware: false, // Default false to strictly preserve user's choice
-  soundEnabled: true,
-  aiProvider: 'openrouter',
-  aiModel: 'openrouter/free',
-  allowFallback: true,
-  customKeys: {},
-  tarotDeckStyle: 'rider-waite',
+const getInitialDefaultSettings = (): AppSettings => {
+  let provider: AIProvider = 'gemini';
+  let model = 'gemini-flash-latest';
+  try {
+    const raw = localStorage.getItem('celestial-system-settings');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.globalAiProvider) provider = parsed.globalAiProvider;
+      if (parsed.globalAiModel) model = parsed.globalAiModel;
+    }
+  } catch (e) {}
+
+  return {
+    theme: 'dark',
+    effectsEnabled: true,
+    autoOptimizeHardware: false,
+    soundEnabled: true,
+    aiProvider: provider,
+    aiModel: model || getDefaultModelForProvider(provider),
+    allowFallback: true,
+    customKeys: {},
+    tarotDeckStyle: 'rider-waite',
+  };
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -46,6 +59,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isBenchmarking, setIsBenchmarking] = useState(false);
 
   const [settings, setSettings] = useState<AppSettings>(() => {
+    const baseDefaults = getInitialDefaultSettings();
     try {
       const saved = localStorage.getItem('celestial-settings');
       if (saved) {
@@ -56,14 +70,15 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           : true;
 
         return {
-          ...defaultSettings,
+          ...baseDefaults,
           ...parsed,
           effectsEnabled: effectsVal,
           autoOptimizeHardware: parsed.autoOptimizeHardware ?? false,
-          aiModel: parsed.aiModel || getDefaultModelForProvider(parsed.aiProvider || 'auto'),
+          aiProvider: parsed.aiProvider || baseDefaults.aiProvider,
+          aiModel: parsed.aiModel || getDefaultModelForProvider(parsed.aiProvider || baseDefaults.aiProvider),
           allowFallback: parsed.allowFallback ?? true,
           customKeys: {
-            ...defaultSettings.customKeys,
+            ...baseDefaults.customKeys,
             ...(parsed.customKeys || {}),
           },
         };
@@ -72,11 +87,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       console.error("Failed to parse settings", e);
     }
     // Default initial load: effects enabled by default
-    return {
-      ...defaultSettings,
-      effectsEnabled: true,
-      autoOptimizeHardware: false,
-    };
+    return baseDefaults;
   });
 
   // Background hardware inspection for informational stats only - NEVER silently override user's effects setting!

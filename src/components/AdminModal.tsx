@@ -440,9 +440,9 @@ VITE_FIREBASE_APP_ID=`;
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {[
-                    { id: 'auto', label: 'Tự động', sub: 'Xoay tua key & fallback khi lỗi' },
-                    { id: 'gemini', label: 'Google Gemini', sub: 'Gemini 3.8 Flash / 3.1 Pro' },
-                    { id: 'openrouter', label: 'OpenRouter Free (Mặc định)', sub: 'openrouter/free (Router AI miễn phí 100%)' },
+                    { id: 'auto', label: 'Tự động', sub: 'Tự động chọn Gemini & fallback OpenRouter' },
+                    { id: 'gemini', label: 'Google Gemini', sub: 'Gemini Flash Latest / 3.8 Flash' },
+                    { id: 'openrouter', label: 'OpenRouter Free', sub: 'openrouter/free (Miễn phí 100%)' },
                   ].map((p) => (
                     <button
                       key={p.id}
@@ -471,6 +471,73 @@ VITE_FIREBASE_APP_ID=`;
                   <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-lg bg-black/60 border border-purple-500/30 text-amber-300 font-bold self-start sm:self-auto">
                     {globalProvider === 'auto' ? 'Tự động (Auto Fallback)' : `${globalProvider.toUpperCase()} / ${globalModel || 'auto'}`}
                   </span>
+                </div>
+
+                {/* Quick Presets for New Users */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGlobalProvider('gemini');
+                      setGlobalModel('gemini-flash-latest');
+                    }}
+                    className={`p-2 rounded-lg border text-left transition-all text-[11px] ${
+                      globalProvider === 'gemini' && globalModel === 'gemini-flash-latest'
+                        ? 'bg-blue-600/30 border-blue-400 text-white font-bold'
+                        : 'bg-black/30 border-white/10 text-gray-300 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="text-blue-300 font-semibold">⚡ Flash Latest</div>
+                    <div className="text-[9px] text-gray-400">Khuyên dùng</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGlobalProvider('gemini');
+                      setGlobalModel('gemini-3.8-flash');
+                    }}
+                    className={`p-2 rounded-lg border text-left transition-all text-[11px] ${
+                      globalProvider === 'gemini' && globalModel === 'gemini-3.8-flash'
+                        ? 'bg-purple-600/30 border-purple-400 text-white font-bold'
+                        : 'bg-black/30 border-white/10 text-gray-300 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="text-purple-300 font-semibold">🚀 3.8 Flash</div>
+                    <div className="text-[9px] text-gray-400">Thế hệ mới</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGlobalProvider('auto');
+                      setGlobalModel('auto');
+                    }}
+                    className={`p-2 rounded-lg border text-left transition-all text-[11px] ${
+                      globalProvider === 'auto'
+                        ? 'bg-emerald-600/30 border-emerald-400 text-white font-bold'
+                        : 'bg-black/30 border-white/10 text-gray-300 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="text-emerald-300 font-semibold">🌟 Tự Động</div>
+                    <div className="text-[9px] text-gray-400">Auto Fallback</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGlobalProvider('openrouter');
+                      setGlobalModel('openrouter/free');
+                    }}
+                    className={`p-2 rounded-lg border text-left transition-all text-[11px] ${
+                      globalProvider === 'openrouter' && globalModel === 'openrouter/free'
+                        ? 'bg-amber-600/30 border-amber-400 text-white font-bold'
+                        : 'bg-black/30 border-white/10 text-gray-300 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="text-amber-300 font-semibold">🌐 OpenRouter</div>
+                    <div className="text-[9px] text-gray-400">Free Router</div>
+                  </button>
                 </div>
 
                 {bulkUpdateFeedback && (

@@ -151,10 +151,14 @@ export const syncUserProfile = async (authUser: AuthUser): Promise<AuthUser> => 
     if (snap.exists()) {
       const existingData = snap.data();
       const isAdminUser = isSuperAdminEmail(authUser.email) || existingData.role === 'admin' || Boolean(authUser.isAdmin);
+      const sysSettings = getCachedSystemSettings();
+      const defaultProvider = sysSettings.globalAiProvider || 'gemini';
+      const defaultModel = sysSettings.globalAiModel || 'gemini-flash-latest';
+
       const synced: AuthUser = {
         ...authUser,
-        assignedProvider: existingData.assignedProvider || 'openrouter',
-        assignedModel: existingData.assignedModel || 'auto',
+        assignedProvider: existingData.assignedProvider || defaultProvider,
+        assignedModel: existingData.assignedModel || defaultModel,
         role: isAdminUser ? 'admin' : (existingData.role || authUser.role || 'user'),
         isAdmin: isAdminUser,
         createdAt: existingData.createdAt,
@@ -163,9 +167,10 @@ export const syncUserProfile = async (authUser: AuthUser): Promise<AuthUser> => 
       return synced;
     } else {
       const isAdminUser = isSuperAdminEmail(authUser.email) || Boolean(authUser.isAdmin);
-      // Read current system settings for default provider & model
-      let defaultProvider = 'openrouter';
-      let defaultModel = 'auto';
+      // Read current system settings for default provider & model for new users
+      const sysSettings = getCachedSystemSettings();
+      let defaultProvider = sysSettings.globalAiProvider || 'gemini';
+      let defaultModel = sysSettings.globalAiModel || 'gemini-flash-latest';
       try {
         const sysRaw = localStorage.getItem('celestial-system-settings');
         if (sysRaw) {
@@ -661,9 +666,9 @@ export const SYSTEM_SETTINGS_KEY = 'celestial-system-settings';
 export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   announcement: '✨ Chúc bạn một ngày thanh thản và đón nhận những thông điệp tích cực từ các vì sao.',
   announcementActive: false,
-  globalAiProvider: 'openrouter',
-  globalAiModel: 'openrouter/free',
-  aiProviderPriority: ['openrouter', 'gemini'],
+  globalAiProvider: 'gemini',
+  globalAiModel: 'gemini-flash-latest',
+  aiProviderPriority: ['gemini', 'openrouter'],
   allowFallback: true,
   enableGuestReadings: true,
   enableClarificationCards: true,

@@ -855,7 +855,7 @@ VITE_FIREBASE_APP_ID=`;
                       </span>
                     </h3>
                     <p className="text-xs text-gray-300 mt-0.5">
-                      Mô hình được chọn bên dưới sẽ là <strong>Mặc định cho Khách & Người dùng mới đăng ký</strong>. Bạn cũng có thể bấm nút bên dưới để áp dụng hàng loạt ngay lập tức cho toàn bộ tài khoản hiện tại.
+                      Mô hình được chọn bên dưới sẽ là <strong>Mặc định cho Khách & Người dùng mới đăng ký</strong> (không bắt buộc dùng OpenRouter). Bạn có thể chọn Google Gemini Flash, Auto hoặc bất kỳ mô hình nào.
                     </p>
                   </div>
                 </div>
@@ -867,6 +867,101 @@ VITE_FIREBASE_APP_ID=`;
                       {globalProvider === 'auto' ? 'Tự động (Auto Fallback)' : `${globalProvider.toUpperCase()} / ${globalModel || 'auto'}`}
                     </span>
                   </div>
+                </div>
+              </div>
+
+              {/* Quick Presets for New Users & Guests */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  Chọn nhanh cấu hình mặc định cho Người dùng mới & Khách vãng lai:
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGlobalProvider('gemini');
+                      setGlobalModel('gemini-flash-latest');
+                    }}
+                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                      globalProvider === 'gemini' && globalModel === 'gemini-flash-latest'
+                        ? 'bg-blue-600/30 border-blue-400 text-white shadow-lg ring-1 ring-blue-400'
+                        : 'bg-black/30 border-white/10 text-gray-300 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-xs text-white flex items-center gap-1">
+                        <span>⚡ Gemini Flash Latest</span>
+                      </span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-semibold">Khuyên dùng</span>
+                    </div>
+                    <div className="text-[10px] text-gray-400 leading-snug">
+                      Luôn trỏ bản Flash mới nhất của Google, không bao giờ lo bị khai tử
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGlobalProvider('gemini');
+                      setGlobalModel('gemini-3.8-flash');
+                    }}
+                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                      globalProvider === 'gemini' && globalModel === 'gemini-3.8-flash'
+                        ? 'bg-purple-600/30 border-purple-400 text-white shadow-lg ring-1 ring-purple-400'
+                        : 'bg-black/30 border-white/10 text-gray-300 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-xs text-white">🚀 Gemini 3.8 Flash</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-semibold">Thế hệ 3.8</span>
+                    </div>
+                    <div className="text-[10px] text-gray-400 leading-snug">
+                      Mô hình thế hệ mới nhất của Google, thông minh vượt trội, 1M context
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGlobalProvider('auto');
+                      setGlobalModel('auto');
+                    }}
+                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                      globalProvider === 'auto'
+                        ? 'bg-emerald-600/30 border-emerald-400 text-white shadow-lg ring-1 ring-emerald-400'
+                        : 'bg-black/30 border-white/10 text-gray-300 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-xs text-white">🌟 Tự Động Thông Minh</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold">Auto Fallback</span>
+                    </div>
+                    <div className="text-[10px] text-gray-400 leading-snug">
+                      Tự động chọn Gemini, xoay tua nhiều key và dự phòng OpenRouter khi nghẽn
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGlobalProvider('openrouter');
+                      setGlobalModel('openrouter/free');
+                    }}
+                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                      globalProvider === 'openrouter' && globalModel === 'openrouter/free'
+                        ? 'bg-amber-600/30 border-amber-400 text-white shadow-lg ring-1 ring-amber-400'
+                        : 'bg-black/30 border-white/10 text-gray-300 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-xs text-white">🌐 OpenRouter Free</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold">Miễn phí 100%</span>
+                    </div>
+                    <div className="text-[10px] text-gray-400 leading-snug">
+                      Router AI miễn phí kết nối đến các mô hình mã nguồn mở trên OpenRouter
+                    </div>
+                  </button>
                 </div>
               </div>
 
@@ -947,6 +1042,55 @@ VITE_FIREBASE_APP_ID=`;
                   </span>
                 </button>
               </div>
+
+              {/* EXPLANATORY CARD: WHAT IF GOOGLE SUNSETS A MODEL */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-purple-950/40 border border-blue-500/30 space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-blue-500/20 text-blue-300">
+                    <Shield className="w-4 h-4" />
+                  </span>
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                    💡 Giả dụ nếu Google khai tử (Sunset/Deprecate) một model cũ thì sao?
+                  </h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-[11px] text-gray-300">
+                  <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
+                    <div className="font-semibold text-blue-300 flex items-center gap-1.5">
+                      <span>🛡️ 1. Miễn nhiễm bằng 'gemini-flash-latest'</span>
+                    </div>
+                    <p className="text-gray-400 leading-relaxed text-[10px]">
+                      Đây là canonical moving pointer của Google. Khi Google phát hành bản Flash mới (ví dụ 3.9, 4.0...) và khai tử bản cũ, Google sẽ tự động chuyển hướng pointer này sang bản mới mà không cần sửa code.
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
+                    <div className="font-semibold text-amber-300 flex items-center gap-1.5">
+                      <span>⚡ 2. Cơ chế Auto-Healing tức thì</span>
+                    </div>
+                    <p className="text-gray-400 leading-relaxed text-[10px]">
+                      Nếu một người dùng chọn model cụ thể bị Google khai tử (lỗi 404 / Deprecated), hệ thống tự động phát hiện và nhảy ngay sang Flash Latest, đảm bảo quẻ bài không bao giờ bị đứt đoạn.
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
+                    <div className="font-semibold text-emerald-300 flex items-center gap-1.5">
+                      <span>🔄 3. Tự vá dữ liệu trình duyệt người dùng</span>
+                    </div>
+                    <p className="text-gray-400 leading-relaxed text-[10px]">
+                      Ngay khi phát hiện model cũ đã bị khai tử, hệ thống tự động ghi đè cài đặt đã lưu trong trình duyệt người dùng sang Flash Latest, loại bỏ hoàn toàn các lỗi gọi lại model chết trong tương lai.
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
+                    <div className="font-semibold text-purple-300 flex items-center gap-1.5">
+                      <span>👥 4. Admin 1-Click Sync toàn hệ thống</span>
+                    </div>
+                    <p className="text-gray-400 leading-relaxed text-[10px]">
+                      Nếu Google có đợt đổi model diện rộng, bạn chỉ cần chọn model mới mong muốn và bấm nút "Áp dụng Model này cho TẤT CẢ người dùng" ở phía trên để cập nhật hàng nghìn tài khoản trong 1 giây.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Provider Grid Selector */}
@@ -966,14 +1110,14 @@ VITE_FIREBASE_APP_ID=`;
                   {
                     id: 'gemini',
                     title: 'Google Gemini',
-                    desc: 'Gemini 3.8 Flash / 3.1 Pro - Ngôn từ huyền bí sâu sắc, thấu suốt vũ trụ',
-                    badge: 'Chất lượng cao',
+                    desc: 'Gemini Flash Latest / 3.8 Flash / 3.1 Pro - Phản hồi siêu tốc, chất lượng cao từ Google',
+                    badge: 'Khuyên dùng cho người mới',
                   },
                   {
                     id: 'openrouter',
-                    title: 'OpenRouter Free (Mặc định toàn trang)',
+                    title: 'OpenRouter Free',
                     desc: 'Cổng đa mô hình AI miễn phí 100% - Tùy chọn model mới nhất từ danh sách API bên dưới',
-                    badge: 'Mặc định',
+                    badge: 'Miễn phí',
                   },
                 ].map((p) => {
                   const isSelected = globalProvider === p.id;

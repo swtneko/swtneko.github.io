@@ -717,6 +717,7 @@ const callGeminiWithRotation = async (
 
   let lastError: any = null;
   let primaryModelErrorMsg: string | null = null;
+  let wasModelSunset = false;
   const requestedModelName = isAuto 
     ? 'Google Gemini Flash Latest' 
     : (rawRequested === 'gemini-flash-latest' ? 'Google Gemini Flash Latest' : rawRequested === 'gemini-3.8-flash' ? 'Google Gemini 3.8 Flash' : rawRequested);
@@ -768,11 +769,24 @@ const callGeminiWithRotation = async (
               displayModelName = 'Gemini 1.5 Flash';
             }
 
-            // Did the system downgrade from user requested model?
+            // Did the system downgrade or auto-heal from user requested model?
             const wasDowngraded = modelIndex > 0 && !isAuto && rawRequested !== model;
 
             let fallbackNote = '';
-            if (wasDowngraded) {
+            if (wasModelSunset) {
+              fallbackNote = `\n\n> ⚠️ **Thông báo an toàn:** Mô hình **${requestedModelName}** trước đây đã được Google khai tử / dừng cung cấp (*${primaryModelErrorMsg || 'Đã kết thúc vòng đời'}*). Hệ thống đã tự động chuyển sang **${displayModelName}** để quẻ bài luôn trọn vẹn và không gián đoạn.`;
+              // Auto-heal local storage preference so future calls use the active model
+              try {
+                const saved = localStorage.getItem('celestial-settings');
+                if (saved) {
+                  const parsed = JSON.parse(saved);
+                  if (parsed.aiModel === rawRequested) {
+                    parsed.aiModel = 'gemini-flash-latest';
+                    localStorage.setItem('celestial-settings', JSON.stringify(parsed));
+                  }
+                }
+              } catch (e) {}
+            } else if (wasDowngraded) {
               fallbackNote = `\n\n> ℹ️ **Lưu ý:** Bạn đã chọn **${requestedModelName}** (token vẫn còn đầy đủ). Tuy nhiên máy chủ Google tạm thời báo tải cao (*${primaryModelErrorMsg || 'HTTP 503: Quá tải tạm thời'}*). Hệ thống đã tự động chuyển sang **${displayModelName}** để không làm gián đoạn quẻ bài. Bạn có thể bấm nút **"✨ Suy luận lại"** bên dưới bất cứ lúc nào!`;
             }
 
@@ -783,7 +797,22 @@ const callGeminiWithRotation = async (
           const msg = String(err?.message || "").toLowerCase();
           console.warn(`[Gemini Fallback] Model ${model} (Key #${keyIndex + 1}/${keys.length}, Lần thử ${attempt}/${maxAttempts}) gặp lỗi:`, err?.message || err);
 
-          if (modelIndex === 0 && !primaryModelErrorMsg) {
+          const isDiscontinuedOrNotFound = 
+            msg.includes('404') || 
+            msg.includes('not found') || 
+            msg.includes('not_found') || 
+            msg.includes('is not supported') ||
+            msg.includes('deprecated') ||
+            msg.includes('discontinued') ||
+            msg.includes('sunset') ||
+            msg.includes('no longer available') ||
+            msg.includes('invalid model');
+
+          if (isDiscontinuedOrNotFound && modelIndex === 0) {
+            wasModelSunset = true;
+            primaryModelErrorMsg = 'Mô hình này đã bị Google khai tử / dừng hỗ trợ hoặc không tồn tại';
+            console.warn(`[Gemini Auto-Heal] Phát hiện mô hình [${model}] đã bị khai tử bởi Google. Kích hoạt cơ chế tự phục hồi sang Flash Latest.`);
+          } else if (modelIndex === 0 && !primaryModelErrorMsg) {
             if (msg.includes('503') || msg.includes('high demand') || msg.includes('unavailable')) {
               primaryModelErrorMsg = 'Máy chủ Google đang quá tải tạm thời (HTTP 503 High Demand)';
             } else if (msg.includes('429') || msg.includes('quota') || msg.includes('resource exhausted')) {
@@ -800,8 +829,8 @@ const callGeminiWithRotation = async (
             continue;
           }
 
-          // If model is not found or unsupported, skip trying other keys for this invalid model
-          if (msg.includes('404') || msg.includes('not found') || msg.includes('not_found') || msg.includes('is not supported')) {
+          // If model is discontinued or not found or unsupported, skip trying other keys for this dead model
+          if (isDiscontinuedOrNotFound) {
             break;
           }
 
@@ -811,13 +840,13 @@ const callGeminiWithRotation = async (
       }
     }
 
-    // If user explicitly chose a model and allowFallback is false, never downgrade
-    if (!allowFallback && modelIndex === 0) {
+    // If user explicitly chose a model and allowFallback is false, never downgrade UNLESS model was discontinued by Google
+    if (!allowFallback && modelIndex === 0 && !wasModelSunset) {
       throw new Error(primaryModelErrorMsg || `Không thể kết nối đến mô hình Google ${requestedModelName}. Vui lòng bấm "Suy luận lại" để thử lại.`);
     }
 
-    // If fallback is disabled by user/admin, do NOT try lower models!
-    if (!allowFallback) {
+    // If fallback is disabled by user/admin, do NOT try lower models UNLESS model was sunsetted!
+    if (!allowFallback && !wasModelSunset) {
       throw lastError || new Error(`Mô hình ${requestedModelName} tạm thời không phản hồi. (Chế độ Fallback đang tắt)`);
     }
 

@@ -384,28 +384,19 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
     setIsFetchingGemini(true);
     setGeminiFetchMsg(null);
     try {
-      const trimmed = geminiKey.trim();
-      const detectedKeys = getGeminiKeys();
-      if (!trimmed && detectedKeys.length === 0) {
-        setGeminiFetchMsg({
-          type: 'error',
-          text: 'Chưa tìm thấy Gemini API Key trong hệ thống hoặc Biến môi trường Vercel (GEMINI_API_KEY / VITE_GEMINI_API_KEY). Vui lòng dán khóa API vào ô phía trên rồi thử lại.',
-        });
-        return;
-      }
-      const models = await fetchGeminiModelOptions(trimmed || undefined);
+      const models = await fetchGeminiModelOptions();
       setGeminiModels(models);
       const nowStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setGeminiLastUpdated(nowStr);
       setGeminiFetchMsg({
         type: 'success',
-        text: `Đã lọc và cập nhật ${models.length} mô hình văn bản Google Gemini (đã loại bỏ image/video, ưu tiên bản Latest)!`,
+        text: `Đã khôi phục danh sách chuẩn ${models.length} mô hình Google Gemini chính thức theo Google AI Studio (không fetch qua mạng)!`,
       });
-      setTimeout(() => setGeminiFetchMsg(null), 6000);
+      setTimeout(() => setGeminiFetchMsg(null), 5000);
     } catch (err: any) {
       setGeminiFetchMsg({
         type: 'error',
-        text: err?.message || 'Không thể kết nối đến Google API. Vui lòng kiểm tra lại Gemini API key.',
+        text: err?.message || 'Lỗi khi cập nhật danh sách mô hình.',
       });
     } finally {
       setIsFetchingGemini(false);
@@ -1037,19 +1028,19 @@ VITE_FIREBASE_APP_ID=`;
                       </span>
                       <div>
                         <h4 className="text-base font-bold text-white flex items-center gap-2">
-                          <span>Mô Hình Google Gemini (Tự Động Fetch & Ưu Tiên Mới Nhất)</span>
+                          <span>Mô Hình Google Gemini (Chuẩn Google AI Studio)</span>
                           <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 font-semibold">
-                            {geminiModels.length} Model Google
+                            {geminiModels.length} Model Chuẩn
                           </span>
                         </h4>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          Hệ thống tự động kết nối với Google Generative Language API, lọc lấy các mô hình chuyên văn bản (đã loại bỏ image/video), tự động ưu tiên các bản Latest và phiên bản mới nhất. Bấm nút bên phải để làm mới danh sách.
+                          Danh sách mô hình Gemini cố định chính thức theo Google AI Studio (đã tắt hoàn toàn tính năng quét qua mạng), đảm bảo ổn định và tối ưu tốc độ.
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Fetch Button */}
+                  {/* Reset/Sync Button */}
                   <div className="flex items-center gap-2.5 shrink-0">
                     <button
                       type="button"
@@ -1058,7 +1049,7 @@ VITE_FIREBASE_APP_ID=`;
                       className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-500/20 flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 active:scale-95"
                     >
                       <RefreshCw className={`w-4 h-4 ${isFetchingGemini ? 'animate-spin' : ''}`} />
-                      <span>{isFetchingGemini ? 'Đang quét Google API...' : 'Quét Model Mới từ Google'}</span>
+                      <span>Đặt lại danh sách chuẩn</span>
                     </button>
                   </div>
                 </div>

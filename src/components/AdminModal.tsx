@@ -116,19 +116,12 @@ export const AdminModal: React.FC = () => {
     setIsFetchingGemini(true);
     setGeminiFetchMsg(null);
     try {
-      const trimmed = geminiKey.trim();
-      const detectedKeys = getGeminiKeys();
-      if (!trimmed && detectedKeys.length === 0) {
-        setGeminiFetchMsg('Chưa tìm thấy Gemini API Key trong hệ thống hoặc Vercel ENV. Vui lòng nhập khóa API vào ô cấu hình.');
-        setTimeout(() => setGeminiFetchMsg(null), 4000);
-        return;
-      }
-      const models = await fetchGeminiModelOptions(trimmed || undefined);
+      const models = await fetchGeminiModelOptions();
       setGeminiModels(models);
-      setGeminiFetchMsg(`Đã lọc và cập nhật ${models.length} model Gemini chuyên văn bản (đã loại bỏ image/video, ưu tiên bản Latest)!`);
+      setGeminiFetchMsg(`Đã khôi phục danh sách chuẩn ${models.length} model Google Gemini theo chuẩn Google AI Studio (không fetch qua mạng)!`);
       setTimeout(() => setGeminiFetchMsg(null), 4000);
     } catch (err: any) {
-      setGeminiFetchMsg(err?.message || 'Không thể kết nối đến Google API. Kiểm tra lại API key.');
+      setGeminiFetchMsg(err?.message || 'Lỗi khi cập nhật danh sách mô hình.');
       setTimeout(() => setGeminiFetchMsg(null), 5000);
     } finally {
       setIsFetchingGemini(false);
@@ -516,12 +509,12 @@ VITE_FIREBASE_APP_ID=`;
                 </div>
               </div>
 
-              {/* Google Gemini Model Selection (Dynamic & Latest-First) */}
+              {/* Google Gemini Model Selection (Official Google AI Studio Models) */}
               <div className="p-4 rounded-2xl bg-blue-950/20 border border-blue-500/30 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center space-x-2">
                     <Sparkles className="w-4 h-4 text-blue-400" />
-                    <span className="font-semibold text-xs text-white">Mô hình Google Gemini (Tự Động Quét & Ưu Tiên Mới Nhất)</span>
+                    <span className="font-semibold text-xs text-white">Mô hình Google Gemini (Chuẩn Google AI Studio)</span>
                   </div>
                   <button
                     type="button"
@@ -530,7 +523,7 @@ VITE_FIREBASE_APP_ID=`;
                     className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] flex items-center gap-1.5 transition-all self-start sm:self-auto cursor-pointer disabled:opacity-50"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isFetchingGemini ? 'animate-spin' : ''}`} />
-                    <span>{isFetchingGemini ? 'Đang quét Google API...' : 'Quét Model Mới từ Google'}</span>
+                    <span>Đặt lại danh sách chuẩn</span>
                   </button>
                 </div>
 

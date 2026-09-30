@@ -36,8 +36,29 @@ export const RE_INTERPRET_MODELS = [
     id: 'gemini-3.8-flash',
     provider: 'gemini' as const,
     name: 'Google Gemini 3.8 Flash',
-    badge: 'Mới nhất • Khuyên dùng',
+    badge: 'Mặc định • Khuyên dùng',
     desc: 'Bản 3.8 mới nhất của Google, suy luận sắc sảo, tốc độ siêu tốc',
+  },
+  {
+    id: 'gemini-3.7-flash',
+    provider: 'gemini' as const,
+    name: 'Google Gemini 3.7 Flash',
+    badge: 'Thế hệ 3.7',
+    desc: 'Bản 3.7 Flash tốc độ cao, khả năng suy luận xuất sắc',
+  },
+  {
+    id: 'gemini-3.5-flash-lite',
+    provider: 'gemini' as const,
+    name: 'Google Gemini 3.5 Flash Lite',
+    badge: 'Tiết kiệm',
+    desc: 'Mô hình siêu nhẹ, phản hồi tức thì, tiết kiệm hạn mức quota',
+  },
+  {
+    id: 'gemini-3.6-flash',
+    provider: 'gemini' as const,
+    name: 'Google Gemini 3.6 Flash',
+    badge: 'Thế hệ 3.6',
+    desc: 'Cân bằng hoàn hảo giữa tốc độ và độ sâu phân tích',
   },
   {
     id: 'gemini-3.1-pro-preview',
@@ -45,13 +66,6 @@ export const RE_INTERPRET_MODELS = [
     name: 'Google Gemini 3.1 Pro',
     badge: 'Chuyên sâu • Pro',
     desc: 'Mô hình phân tích triết lý sâu rộng, lập luận vững chắc',
-  },
-  {
-    id: 'gemini-flash-lite-latest',
-    provider: 'gemini' as const,
-    name: 'Google Gemini Flash-Lite',
-    badge: 'Tiết kiệm Quota',
-    desc: 'Mô hình siêu nhẹ, tiết kiệm hạn mức token',
   },
   {
     id: 'openrouter/free',
@@ -176,10 +190,17 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
     setReadingId(newId);
     setFollowUps([]);
     
-    // Start AI interpretation
+    // Start AI interpretation with explicit model preference
     setIsInterpreting(true);
     setApiError(null);
-    interpretReading(question, theme, spreadType, selected, deckType, userInfo).then(async (res) => {
+    const initialModel = reInterpretModel || 'gemini-3.8-flash';
+    const isOp = initialModel.startsWith('openrouter');
+    const initialProvider = isOp ? 'openrouter' : 'gemini';
+
+    interpretReading(question, theme, spreadType, selected, deckType, userInfo, {
+      provider: initialProvider,
+      model: initialModel,
+    }).then(async (res) => {
       setAiInterpretation(res);
       setIsInterpreting(false);
 
@@ -620,6 +641,41 @@ const ReadingScreen: React.FC<ReadingScreenProps> = ({ userInfo, deckType, initi
                   </div>
                 ) : (
                   <div>
+                    {/* Interactive Fallback/Downgrade Notice Card with 1-click Re-inference */}
+                    {aiInterpretation && (aiInterpretation.includes('Lưu ý:') || aiInterpretation.includes('tự động chuyển sang') || aiInterpretation.includes('Flash-Lite')) && (
+                      <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/15 to-amber-500/15 border border-amber-500/40 text-amber-200 shadow-xl not-prose">
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                          <div className="flex items-start gap-3">
+                            <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-300 shrink-0 mt-0.5 border border-amber-500/30">
+                              <Sparkles className="w-5 h-5 text-amber-300" />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                                <span>Chế độ dự phòng: Google Gemini Flash-Lite</span>
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold font-mono">
+                                  Auto-Fallback
+                                </span>
+                              </h4>
+                              <p className="text-xs text-amber-200/90 mt-1 leading-relaxed">
+                                Bạn đã chọn <strong>Gemini 3.8 Flash</strong>. Lúc gửi yêu cầu, máy chủ Google báo tải cao tạm thời (HTTP 503) nên hệ thống đã tự động chuyển sang bản Flash-Lite để bạn không phải chờ. Hiện máy chủ đã sẵn sàng trở lại!
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0 w-full md:w-auto">
+                            <button
+                              type="button"
+                              disabled={isInterpreting}
+                              onClick={() => handleReInterpret('gemini-3.8-flash')}
+                              className="w-full md:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                            >
+                              <RefreshCw className={`w-3.5 h-3.5 ${isInterpreting ? 'animate-spin' : ''}`} />
+                              <span>✨ Suy luận lại ngay với Gemini 3.8 Flash</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className={`text-sm sm:text-base leading-relaxed markdown-body font-normal ${
                       settings.theme === 'dark' ? 'text-purple-100/90' : 'text-slate-900'
                     }`}>

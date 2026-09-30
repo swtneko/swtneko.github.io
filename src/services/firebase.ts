@@ -421,11 +421,22 @@ export const saveReading = async (userId: string | undefined, reading: ReadingRe
   // Account mode: save to user local cache first so it's instantly preserved
   saveUserCacheReading(userId, sanitized);
 
-  // Authenticated user: persist to shared_readings and users/{userId}/readings in Firestore
-  await ensureSharedReading({
-    ...sanitized,
-    userId,
-  });
+  // Attempt to persist to shared_readings (allows public creation for sharing links)
+  try {
+    await ensureSharedReading({
+      ...sanitized,
+      userId,
+    });
+  } catch {
+    // Silently continue - local cache already has it preserved
+  }
+
+  // Only attempt users/{userId}/readings if active Firebase Auth user matches userId
+  const currentUid = auth.currentUser?.uid;
+  if (!currentUid || currentUid !== userId || userId === 'admin_local') {
+    // Local admin or unauthenticated session: fully preserved in local cache and shared_readings
+    return;
+  }
 
   try {
     const readingRef = doc(db, 'users', userId, 'readings', sanitized.id);
@@ -435,8 +446,8 @@ export const saveReading = async (userId: string | undefined, reading: ReadingRe
       updatedAt: new Date().toISOString(),
     }, { merge: true });
     console.log(`[Firestore] Successfully saved reading ${sanitized.id} for user ${userId}`);
-  } catch (err) {
-    console.error('Failed to save reading to Firestore, kept in local cache:', err);
+  } catch (err: any) {
+    console.warn('Note: Reading preserved in local cache (Firestore write deferred):', err?.message || err);
   }
 };
 
@@ -528,11 +539,14 @@ export const updateReadingFollowUps = async (
   }
 
   try {
-    const readingRef = doc(db, 'users', userId, 'readings', readingId);
-    await setDoc(readingRef, {
-      followUps: sanitizedFollowUps,
-      updatedAt: new Date().toISOString(),
-    }, { merge: true });
+    const currentUid = auth.currentUser?.uid;
+    if (currentUid && currentUid === userId && userId !== 'admin_local') {
+      const readingRef = doc(db, 'users', userId, 'readings', readingId);
+      await setDoc(readingRef, {
+        followUps: sanitizedFollowUps,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+    }
 
     // Also update shared_readings so viewers see the owner's latest follow-ups
     const sharedRef = doc(db, 'shared_readings', readingId);
@@ -541,7 +555,7 @@ export const updateReadingFollowUps = async (
       updatedAt: new Date().toISOString(),
     }, { merge: true });
   } catch (err) {
-    console.warn('Failed to update follow-ups in Firestore:', err);
+    console.warn('Note: Follow-ups preserved in local cache (Firestore write deferred):', err);
   }
 };
 

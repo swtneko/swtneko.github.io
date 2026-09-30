@@ -20,33 +20,78 @@ export interface OpenRouterFreeModel {
 export const OPENROUTER_MODELS_CACHE_KEY = 'celestial-openrouter-free-models';
 export const GEMINI_MODELS_CACHE_KEY = 'celestial-gemini-fetched-models';
 
-// The essential "Latest" models requested to be preserved at all times
-export const GEMINI_LATEST_MODELS: ModelOption[] = [
-  {
-    id: 'gemini-flash-latest',
-    name: 'Gemini 3.8 Flash (Latest)',
-    desc: 'Bản mới nhất Google Gemini 3.8 Flash - Siêu nhanh, thông minh vượt trội, 1M context',
-    tag: 'Mới nhất • Khuyên dùng',
-  },
+// Official Google Gemini models matching Google AI Studio Chat Settings dropdown
+export const OFFICIAL_GEMINI_MODELS: ModelOption[] = [
   {
     id: 'gemini-3.8-flash',
-    name: 'Gemini 3.8 Flash',
-    desc: 'Mô hình thế hệ mới nhất Google Gemini 3.8 Flash - Tốc độ cao, phân tích bài sâu sắc',
-    tag: 'Mới nhất',
+    name: 'Gemini 3.8 Flash (Mặc định)',
+    desc: 'Mô hình thế hệ mới nhất Google Gemini 3.8 Flash - Siêu nhanh, thông minh vượt trội, 1M context',
+    tag: 'Mặc định • Khuyên dùng',
   },
   {
-    id: 'gemini-pro-latest',
-    name: 'Gemini Pro Latest (3.1 Pro)',
-    desc: 'Bản chuyên sâu cao cấp nhất Google - 1M tokens context',
-    tag: 'Chuyên sâu • Pro',
+    id: 'gemini-3.7-flash',
+    name: 'Gemini 3.7 Flash',
+    desc: 'Bản Gemini 3.7 Flash tốc độ cao, khả năng suy luận và xử lý ngôn ngữ sắc bén',
+    tag: 'Thế hệ 3.7',
+  },
+  {
+    id: 'gemini-3.5-flash-lite',
+    name: 'Gemini 3.5 Flash Lite',
+    desc: 'Mô hình 3.5 Flash Lite cực nhẹ, phản hồi tức thì, tiết kiệm quota',
+    tag: 'Tiết kiệm',
+  },
+  {
+    id: 'gemini-3.6-flash',
+    name: 'Gemini 3.6 Flash',
+    desc: 'Mô hình 3.6 Flash cân bằng hoàn hảo giữa tốc độ và độ sâu phân tích',
+    tag: 'Thế hệ 3.6',
+  },
+  {
+    id: 'gemini-3.5-flash',
+    name: 'Gemini 3.5 Flash',
+    desc: 'Mô hình 3.5 Flash mạnh mẽ và ổn định cho việc luận giải',
+    tag: 'Thế hệ 3.5',
+  },
+  {
+    id: 'gemini-3.1-flash-lite',
+    name: 'Gemini 3.1 Flash Lite',
+    desc: 'Bản 3.1 Flash Lite gọn nhẹ, độ trễ cực thấp',
+    tag: 'Gọn nhẹ',
+  },
+  {
+    id: 'gemini-3-flash-preview',
+    name: 'Gemini 3 Flash Preview',
+    desc: 'Bản xem trước Gemini 3 Flash của Google',
+    tag: 'Preview',
+  },
+  {
+    id: 'gemini-flash-latest',
+    name: 'Gemini Flash Latest',
+    desc: 'Bản Flash mới nhất liên tục cập nhật từ Google',
+    tag: 'Latest Alias',
   },
   {
     id: 'gemini-flash-lite-latest',
     name: 'Gemini Flash-Lite Latest',
-    desc: 'Mô hình gọn nhẹ, tiết kiệm quota - 1M tokens context',
-    tag: 'Tiết kiệm',
+    desc: 'Bản Flash-Lite mới nhất tự động cập nhật',
+    tag: 'Lite Latest',
+  },
+  {
+    id: 'gemini-3.1-pro-preview',
+    name: 'Gemini 3.1 Pro Preview',
+    desc: 'Mô hình suy luận chuyên sâu cao cấp nhất Google - 1M tokens context',
+    tag: 'Chuyên sâu • Pro',
+  },
+  {
+    id: 'gemini-pro-latest',
+    name: 'Gemini Pro Latest',
+    desc: 'Bản Pro mới nhất của Google',
+    tag: 'Pro Latest',
   },
 ];
+
+export const GEMINI_LATEST_MODELS: ModelOption[] = OFFICIAL_GEMINI_MODELS.slice(0, 4);
+export const DEFAULT_GEMINI_MODELS: ModelOption[] = OFFICIAL_GEMINI_MODELS;
 
 // Helper to filter out non-text models (image, video, vision, audio, embedding, etc.)
 export const isNonTextGeminiModel = (id: string, displayName?: string): boolean => {
@@ -68,39 +113,8 @@ export const isNonTextGeminiModel = (id: string, displayName?: string): boolean 
   );
 };
 
-export const DEFAULT_GEMINI_MODELS: ModelOption[] = [
-  ...GEMINI_LATEST_MODELS,
-  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', desc: 'Mô hình tiêu chuẩn ổn định, hoạt động mượt mà' },
-  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', desc: 'Mô hình suy luận chuyên sâu 1.5' },
-];
-
 export const getCachedGeminiModels = (): ModelOption[] => {
-  try {
-    const cached = localStorage.getItem(GEMINI_MODELS_CACHE_KEY);
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        // Filter out non-text models and ensure latest models are present
-        const textOnly = parsed.filter(m => !isNonTextGeminiModel(m.id, m.name));
-        for (const latestModel of GEMINI_LATEST_MODELS) {
-          const existingIdx = textOnly.findIndex(m => m.id === latestModel.id);
-          if (existingIdx === -1) {
-            textOnly.push(latestModel);
-          } else {
-            textOnly[existingIdx] = {
-              ...textOnly[existingIdx],
-              name: latestModel.name,
-              tag: latestModel.tag,
-              desc: latestModel.desc,
-            };
-          }
-        }
-        return sortGeminiModelOptions(textOnly);
-      }
-    }
-  } catch (e) {}
-
-  return DEFAULT_GEMINI_MODELS;
+  return OFFICIAL_GEMINI_MODELS;
 };
 
 export const DEFAULT_OPENROUTER_FREE_MODELS: OpenRouterFreeModel[] = [
@@ -643,169 +657,22 @@ export const formatGeminiModelOption = (id: string, displayName?: string, descri
   };
 };
 
-// Dynamic model fetcher from Google Gemini API (Returns rich ModelOption array, text-only, preserves Latest models)
-export const fetchGeminiModelOptions = async (apiKey?: string): Promise<ModelOption[]> => {
-  // Extract and sanitize candidate keys
-  const candidateKeys: string[] = [];
-  if (apiKey) {
-    apiKey.split(/[\n,;\s]+/).map(k => k.trim().replace(/^Bearer\s+/i, '').replace(/["']/g, '')).forEach(k => {
-      if (k.length > 5 && k !== 'MY_GEMINI_API_KEY' && k !== 'undefined') candidateKeys.push(k);
-    });
-  }
-  
-  if (candidateKeys.length === 0) {
-    getGeminiKeys().forEach(k => {
-      if (k.length > 5 && k !== 'MY_GEMINI_API_KEY') candidateKeys.push(k);
-    });
-  }
-
-  if (candidateKeys.length === 0) {
-    throw new Error('Chưa tìm thấy Gemini API Key. Vui lòng nhập khóa API (bắt đầu bằng AIzaSy...) vào ô bên trên rồi thử lại.');
-  }
-
-  let lastError: Error | null = null;
-
-  for (const key of candidateKeys) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-
-    try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': key,
-        },
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-
-      if (!res.ok) {
-        let detailedMsg = '';
-        try {
-          const errJson = await res.json();
-          if (errJson.error?.message) {
-            detailedMsg = `: ${errJson.error.message}`;
-          }
-        } catch {}
-
-        if (res.status === 400) {
-          throw new Error(`Google API (Mã lỗi 400 - Khóa API không hợp lệ hoặc sai cấu hình)${detailedMsg}`);
-        } else if (res.status === 403) {
-          throw new Error(`Google API (Mã lỗi 403 - Quyền truy cập bị từ chối)${detailedMsg}`);
-        } else if (res.status === 429) {
-          throw new Error(`Google API (Mã lỗi 429 - Hết hạn mức Quota)${detailedMsg}`);
-        }
-        throw new Error(`Google API trả về mã lỗi HTTP ${res.status}${detailedMsg}`);
-      }
-
-      const data = await res.json();
-      if (Array.isArray(data.models)) {
-        const options: ModelOption[] = [];
-        const rawIds: string[] = [];
-
-        for (const m of data.models) {
-          const methods = m.supportedGenerationMethods || [];
-          const isGen = methods.includes('generateContent');
-          const isGemini = (m.name || '').toLowerCase().includes('gemini');
-          const cleanId = (m.name || '').replace(/^models\//, '');
-          const isExcluded = isNonTextGeminiModel(cleanId, m.displayName);
-
-          // Only keep pure text models (supports generateContent, exclude image/video/audio/etc.)
-          if (isGemini && isGen && !isExcluded) {
-            rawIds.push(cleanId);
-            options.push(formatGeminiModelOption(cleanId, m.displayName, m.description, m.inputTokenLimit));
-          }
-        }
-
-        // Always keep and preserve the 3 Latest models (Gemini Pro Latest, Gemini Flash Latest, Gemini Flash-Lite Latest)
-        for (const latestModel of GEMINI_LATEST_MODELS) {
-          const existingIdx = options.findIndex(o => o.id === latestModel.id);
-          if (existingIdx === -1) {
-            options.push(latestModel);
-          } else {
-            options[existingIdx] = {
-              ...options[existingIdx],
-              name: latestModel.name,
-              desc: latestModel.desc,
-              tag: latestModel.tag,
-            };
-          }
-        }
-
-        if (options.length > 0) {
-          // Sort with Latest first, followed by newest numbered versions
-          const sortedOptions = sortGeminiModelOptions(options);
-
-          // Update in-memory & persistent cache
-          PROVIDER_MODELS.gemini = sortedOptions;
-          try {
-            localStorage.setItem(GEMINI_MODELS_CACHE_KEY, JSON.stringify(sortedOptions));
-            localStorage.setItem('celestial-gemini-models-updated-at', new Date().toISOString());
-          } catch (e) {}
-
-          const sortedIds = sortedOptions.map(o => o.id);
-          const cacheKey = `gemini_${key.slice(0, 8)}`;
-          modelCache[cacheKey] = { models: sortedIds, timestamp: Date.now() };
-
-          console.info(`[Auto-Fetch] Đã lọc ${sortedOptions.length} model text Google Gemini (đã loại bỏ image/video & ưu tiên Latest):`, sortedIds);
-          return sortedOptions;
-        }
-      }
-    } catch (e: any) {
-      clearTimeout(timeout);
-      lastError = e;
-      // Try next key if available
-      continue;
-    }
-  }
-
-  if (lastError) {
-    console.warn('[Auto-Fetch] Không thể fetch danh sách model Gemini trực tiếp từ API:', lastError);
-    throw lastError;
-  }
-
-  return getCachedGeminiModels();
+// Fixed official Google Gemini models list matching Google AI Studio (No dynamic network fetching)
+export const fetchGeminiModelOptions = async (_apiKey?: string): Promise<ModelOption[]> => {
+  PROVIDER_MODELS.gemini = OFFICIAL_GEMINI_MODELS;
+  try {
+    localStorage.setItem(GEMINI_MODELS_CACHE_KEY, JSON.stringify(OFFICIAL_GEMINI_MODELS));
+    localStorage.setItem('celestial-gemini-models-updated-at', new Date().toISOString());
+  } catch (e) {}
+  return OFFICIAL_GEMINI_MODELS;
 };
 
-// Dynamic model fetcher from Google Gemini API (Returns model IDs array for generation)
-export const fetchDynamicGeminiModels = async (apiKey?: string): Promise<string[]> => {
-  const key = apiKey || getGeminiKeys()[0];
-  if (!key) return GEMINI_DEFAULT_TIERS;
-
-  const cacheKey = `gemini_${key.slice(0, 8)}`;
-  const cached = modelCache[cacheKey];
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return cached.models;
-  }
-
-  // 1. Immediately use local cached models to avoid blocking user generation requests!
-  const localCached = getCachedGeminiModels();
-  if (localCached && localCached.length > 0) {
-    const ids = localCached.map(m => m.id);
-    modelCache[cacheKey] = { models: ids, timestamp: Date.now() };
-    // Trigger background refresh silently
-    fetchGeminiModelOptions(key).catch(() => {});
-    return ids;
-  }
-
-  // 2. If no cache exists, attempt fast fetch with 2s timeout or fallback to safe defaults
-  try {
-    const options = await Promise.race([
-      fetchGeminiModelOptions(key),
-      new Promise<ModelOption[]>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000))
-    ]);
-    if (options && options.length > 0) {
-      return options.map(o => o.id);
-    }
-  } catch (e) {
-    // Graceful immediate fallback
-  }
-
+// Static model hierarchy for generation (strictly static, no network fetch)
+export const fetchDynamicGeminiModels = async (_apiKey?: string): Promise<string[]> => {
   return GEMINI_DEFAULT_TIERS;
 };
 
-// Gemini generation with dynamic auto-fetched descending smart model tiers + multi-key rotation
+// Gemini generation with official smart model tiers + multi-key rotation
 const callGeminiWithRotation = async (
   prompt: string, 
   requestedModel?: string,
@@ -835,16 +702,8 @@ const callGeminiWithRotation = async (
     candidateModels.push(rawRequested);
   }
 
-  // If fallback is allowed, append backups in descending capability order
+  // If fallback is allowed, append backups in descending capability order (NO dynamic network fetch)
   if (allowFallback) {
-    // Auto-fetch latest dynamic models from Google API (using first key) or fallback gracefully
-    const dynamicModels = await fetchDynamicGeminiModels(keys[0]);
-    for (const m of dynamicModels) {
-      if (!candidateModels.includes(m)) {
-        candidateModels.push(m);
-      }
-    }
-
     for (const tier of GEMINI_DEFAULT_TIERS) {
       if (!candidateModels.includes(tier)) {
         candidateModels.push(tier);
@@ -869,8 +728,11 @@ const callGeminiWithRotation = async (
     for (let keyIndex = 0; keyIndex < keys.length; keyIndex++) {
       const currentKey = keys[keyIndex];
 
-      // Try with 1 automatic retry on temporary 503 / 429
-      for (let attempt = 1; attempt <= 2; attempt++) {
+      // Give top priority / requested models up to 3 retry attempts with progressive backoff
+      const isPrimary = modelIndex === 0 || model === 'gemini-3.8-flash';
+      const maxAttempts = isPrimary ? 3 : 2;
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
           const ai = new GoogleGenAI({ apiKey: currentKey });
           const response = await ai.models.generateContent({
@@ -906,7 +768,7 @@ const callGeminiWithRotation = async (
         } catch (err: any) {
           lastError = err;
           const msg = String(err?.message || "").toLowerCase();
-          console.warn(`[Gemini Fallback] Model ${model} (Key #${keyIndex + 1}/${keys.length}, Lần thử ${attempt}/2) gặp lỗi:`, err?.message || err);
+          console.warn(`[Gemini Fallback] Model ${model} (Key #${keyIndex + 1}/${keys.length}, Lần thử ${attempt}/${maxAttempts}) gặp lỗi:`, err?.message || err);
 
           if (modelIndex === 0 && !primaryModelErrorMsg) {
             if (msg.includes('503') || msg.includes('high demand') || msg.includes('unavailable')) {
@@ -918,9 +780,10 @@ const callGeminiWithRotation = async (
             }
           }
 
-          // If 503 or 429 and attempt 1, wait 900ms and retry once on this same model
-          if (attempt === 1 && (msg.includes('503') || msg.includes('high demand') || msg.includes('429') || msg.includes('unavailable'))) {
-            await waitMs(900);
+          // If 503 or 429 and attempts remain, wait with progressive backoff (1.4s -> 2.5s)
+          if (attempt < maxAttempts && (msg.includes('503') || msg.includes('high demand') || msg.includes('429') || msg.includes('unavailable'))) {
+            const backoffMs = attempt === 1 ? 1400 : 2500;
+            await waitMs(backoffMs);
             continue;
           }
 
@@ -933,6 +796,11 @@ const callGeminiWithRotation = async (
           break;
         }
       }
+    }
+
+    // If user explicitly chose a model and allowFallback is false, never downgrade
+    if (!allowFallback && modelIndex === 0) {
+      throw new Error(primaryModelErrorMsg || `Không thể kết nối đến mô hình Google ${requestedModelName}. Vui lòng bấm "Suy luận lại" để thử lại.`);
     }
 
     // If fallback is disabled by user/admin, do NOT try lower models!

@@ -118,7 +118,7 @@ const ShuffleDeck: React.FC<ShuffleDeckProps> = ({ onDraw, count, isShuffling, d
                 }}
                 transition={
                   isDrawing
-                    ? { type: 'spring', stiffness: 260, damping: 18, bounce: 0.3 }
+                    ? { duration: 0.65, ease: [0.22, 1, 0.36, 1] }
                     : {
                         type: 'spring',
                         stiffness: 220,

@@ -303,8 +303,11 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
       });
       setLaSoData(chart);
 
-      // 2. Request AI Master Interpretation following the detailed prompt
-      const aiResponse = await interpretTuViReading(chart, question.trim());
+      // 2. Request AI Master Interpretation following the detailed prompt with Gemini 3.8 Flash
+      const aiResponse = await interpretTuViReading(chart, question.trim(), {
+        provider: 'gemini',
+        model: 'gemini-3.8-flash',
+      });
       setInterpretation(aiResponse);
 
       // 3. Prepare ReadingResult with fresh unique ID
@@ -419,12 +422,17 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
     }
   };
 
-  const handleReInterpretTuVi = async () => {
+  const handleReInterpretTuVi = async (chosenModel?: string | React.MouseEvent) => {
     if (isReInterpreting || !laSoData) return;
     setIsReInterpreting(true);
     setApiError(null);
     try {
-      const res = await interpretTuViReading(laSoData, question.trim());
+      const modelToUse = typeof chosenModel === 'string' ? chosenModel : 'gemini-3.8-flash';
+      const isOp = modelToUse.startsWith('openrouter');
+      const res = await interpretTuViReading(laSoData, question.trim(), {
+        provider: isOp ? 'openrouter' : 'gemini',
+        model: modelToUse,
+      });
       setInterpretation(res);
       const resultObj: ReadingResult = {
         id: readingId,
@@ -1074,6 +1082,41 @@ export const TuViScreen: React.FC<TuViScreenProps> = ({ initialUserInfo, initial
                   </div>
                 ) : interpretation ? (
                   <div>
+                    {/* Interactive Fallback/Downgrade Notice Card with 1-click Re-inference */}
+                    {interpretation && (interpretation.includes('Lưu ý:') || interpretation.includes('tự động chuyển sang') || interpretation.includes('Flash-Lite')) && (
+                      <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/15 to-amber-500/15 border border-amber-500/40 text-amber-200 shadow-xl not-prose">
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                          <div className="flex items-start gap-3">
+                            <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-300 shrink-0 mt-0.5 border border-amber-500/30">
+                              <RefreshCw className="w-5 h-5 text-amber-300" />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                                <span>Chế độ dự phòng: Google Gemini Flash-Lite</span>
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold font-mono">
+                                  Auto-Fallback
+                                </span>
+                              </h4>
+                              <p className="text-xs text-amber-200/90 mt-1 leading-relaxed">
+                                Bạn đã chọn <strong>Gemini 3.8 Flash</strong>. Lúc gửi yêu cầu, máy chủ Google báo tải cao tạm thời (HTTP 503) nên hệ thống đã tự động chuyển sang bản Flash-Lite để bạn không phải chờ. Hiện máy chủ đã sẵn sàng trở lại!
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0 w-full md:w-auto">
+                            <button
+                              type="button"
+                              disabled={isReInterpreting}
+                              onClick={() => handleReInterpretTuVi('gemini-3.8-flash')}
+                              className="w-full md:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                            >
+                              <RefreshCw className={`w-3.5 h-3.5 ${isReInterpreting ? 'animate-spin' : ''}`} />
+                              <span>✨ Suy luận lại ngay với Gemini 3.8 Flash</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="prose prose-invert prose-purple max-w-none text-left text-purple-100 text-sm sm:text-base leading-relaxed space-y-4">
                       <ReactMarkdown>{interpretation}</ReactMarkdown>
                     </div>

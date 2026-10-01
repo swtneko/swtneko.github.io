@@ -11,9 +11,10 @@ import { UserGuideModal } from './components/UserGuideModal';
 import { AdminPage } from './components/AdminPage';
 import { AnnouncementBanner } from './components/AnnouncementBanner';
 import { LiquidGlassCard } from './components/LiquidGlassCard';
+import { SidebarDrawer } from './components/SidebarDrawer';
 import { PWAFloatingBubble } from './components/PWAFloatingBubble';
 import { OfflineIndicator } from './components/OfflineIndicator';
-import { Sparkles, Settings, History, LogIn, LogOut, User as UserIcon, ShieldCheck, Bell, Lock, BookOpen, AlertCircle, Loader2, Zap, ZapOff } from 'lucide-react';
+import { Sparkles, Settings, History, LogIn, LogOut, User as UserIcon, ShieldCheck, Bell, Lock, BookOpen, AlertCircle, Loader2, Zap, ZapOff, Menu } from 'lucide-react';
 import { DeckType, UserInfo, ReadingResult } from './types';
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -32,6 +33,7 @@ function AppContent() {
   const [isLoadingDirectReading, setIsLoadingDirectReading] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
   const [animationToast, setAnimationToast] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const { settings, toggleEffects } = useSettings();
   const { currentUser, openAuthModal, logout, readings, isAdmin, systemSettings } = useAuth();
@@ -335,7 +337,7 @@ function AppContent() {
       {/* Fixed Top Header (Liquid Glass Floating Bar) */}
       {view !== 'admin' && (
         <header className="fixed top-2 sm:top-3 left-2 sm:left-4 right-2 sm:right-4 z-40 max-w-7xl mx-auto pointer-events-none">
-          <div className="pointer-events-auto">
+          <div className="pointer-events-auto space-y-2">
             {/* Cosmic Announcement Banner (Configured by Admin) */}
             {systemSettings.announcementActive && systemSettings.announcement && (
               <AnnouncementBanner text={systemSettings.announcement} />
@@ -351,11 +353,11 @@ function AppContent() {
               className={`liquid-glass-card transition-all duration-300 w-full ${
                 settings.theme === 'dark' ? 'text-white' : 'text-purple-950 shadow-purple-900/10'
               }`}
-              contentClassName="px-3 sm:px-6 py-2 sm:py-2.5 flex justify-between items-center w-full min-w-0"
+              contentClassName="px-3 sm:px-5 py-2 flex justify-between items-center w-full min-w-0"
             >
-              {/* Brand */}
+              {/* Brand Logo */}
               <div 
-                className="flex items-center cursor-pointer group shrink-0 mr-1 sm:mr-3 relative z-10"
+                className="flex items-center cursor-pointer group shrink-0 relative z-10"
                 onClick={handleNavigateHome}
                 title="Về trang chủ Neko Tarot (/)"
               >
@@ -377,15 +379,15 @@ function AppContent() {
                     }}
                   />
                 </div>
-                <span className={`hidden min-[480px]:inline ml-2.5 text-base sm:text-lg font-serif tracking-wider uppercase whitespace-nowrap transition-colors font-extrabold ${
+                <span className={`ml-2 sm:ml-2.5 text-sm sm:text-base font-serif tracking-wider uppercase whitespace-nowrap transition-colors font-extrabold ${
                   settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'
                 }`}>
                   Neko Tarot
                 </span>
               </div>
-              
-              {/* Actions */}
-              <div className="flex items-center space-x-1 sm:space-x-2 shrink-0 relative z-10">
+
+              {/* Desktop Full Menu (visible on min-width 1024px) */}
+              <div className="hidden lg:flex items-center space-x-1.5 sm:space-x-2 shrink-0 relative z-10">
                 {/* User Guide Button */}
                 <motion.div
                   whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
@@ -399,17 +401,16 @@ function AppContent() {
                     blurIntensity="md"
                     borderIntensity="xs"
                     shadowIntensity="xs"
-                    className="cursor-pointer"
-                    contentClassName={`flex items-center space-x-1 px-2.5 sm:px-3 py-1.5 text-xs font-bold ${
+                    contentClassName={`flex items-center space-x-1 px-3 py-1.5 text-xs font-bold ${
                       settings.theme === 'dark' ? 'text-amber-300' : 'text-amber-800'
                     }`}
                   >
-                    <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
-                    <span className="hidden sm:inline">Hướng Dẫn</span>
+                    <BookOpen className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>Hướng Dẫn</span>
                   </LiquidGlassCard>
                 </motion.div>
 
-                {/* Admin Dashboard Button (Only for admin) */}
+                {/* Admin Dashboard Button */}
                 {isAdmin && (
                   <motion.div
                     whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
@@ -423,13 +424,12 @@ function AppContent() {
                       blurIntensity="md"
                       borderIntensity="xs"
                       shadowIntensity="xs"
-                      className="cursor-pointer"
-                      contentClassName={`flex items-center space-x-1 px-2.5 sm:px-3 py-1.5 text-xs font-bold ${
+                      contentClassName={`flex items-center space-x-1 px-3 py-1.5 text-xs font-bold ${
                         settings.theme === 'dark' ? 'text-amber-300' : 'text-amber-800'
                       }`}
                     >
-                      <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 shrink-0" />
-                      <span className="hidden sm:inline">Quản Trị</span>
+                      <ShieldCheck className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <span>Quản Trị</span>
                     </LiquidGlassCard>
                   </motion.div>
                 )}
@@ -447,13 +447,12 @@ function AppContent() {
                     blurIntensity="md"
                     borderIntensity="xs"
                     shadowIntensity="xs"
-                    className="cursor-pointer"
-                    contentClassName={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-bold ${
+                    contentClassName={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold ${
                       settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'
                     }`}
                   >
-                    <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-600 dark:text-purple-400 shrink-0" />
-                    <span className="hidden md:inline">Lịch sử</span>
+                    <History className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                    <span>Lịch sử</span>
                     {readings.length > 0 && (
                       <span className="px-1.5 py-0.2 rounded-full bg-purple-600/90 text-white text-[10px] font-bold shrink-0 shadow-sm">
                         {readings.length}
@@ -470,7 +469,7 @@ function AppContent() {
                       blurIntensity="md"
                       borderIntensity="xs"
                       shadowIntensity="xs"
-                      contentClassName={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-bold ${
+                      contentClassName={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold ${
                         settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'
                       }`}
                       title={currentUser.displayName || currentUser.email || 'Tài khoản'}
@@ -479,35 +478,28 @@ function AppContent() {
                         <img
                           src={currentUser.photoURL}
                           alt={currentUser.displayName || 'User'}
-                          className="w-4 h-4 sm:w-5 sm:h-5 rounded-full object-cover shrink-0 border border-white/40"
+                          className="w-4 h-4 rounded-full object-cover shrink-0 border border-white/40"
                           referrerPolicy="no-referrer"
                         />
                       ) : (
                         <UserIcon className="w-3.5 h-3.5 text-purple-500 shrink-0" />
                       )}
-                      <span className="hidden sm:inline max-w-[80px] md:max-w-[120px] truncate font-semibold">
+                      <span className="max-w-[100px] truncate font-semibold">
                         {currentUser.displayName || 'Tài khoản'}
                       </span>
-                      {currentUser.isAdmin && (
-                        <span className="hidden md:inline text-[9px] bg-amber-400/20 text-amber-800 dark:text-amber-300 border border-amber-400/30 px-1.5 py-0.2 rounded font-bold uppercase">
-                          Admin
-                        </span>
-                      )}
                     </LiquidGlassCard>
                     <motion.button
-                      whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
-                      whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
+                      whileTap={{ scale: 0.9 }}
                       onClick={logout}
-                      className="p-1.5 sm:p-2 rounded-full hover:bg-red-500/20 text-red-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
+                      className="p-1.5 rounded-full hover:bg-red-500/20 text-red-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
                       title="Đăng xuất"
                     >
-                      <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <LogOut className="w-3.5 h-3.5" />
                     </motion.button>
                   </div>
                 ) : (
                   <motion.div
-                    whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
-                    whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
+                    whileTap={{ scale: 0.94 }}
                     onClick={openAuthModal}
                     className="shrink-0 cursor-pointer"
                     title="Đăng nhập để lưu lịch sử đám mây"
@@ -521,75 +513,157 @@ function AppContent() {
                       contentClassName="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold text-white"
                     >
                       <LogIn className="w-3.5 h-3.5 shrink-0" />
-                      <span className="hidden xs:inline">Đăng nhập</span>
+                      <span>Đăng nhập</span>
                     </LiquidGlassCard>
                   </motion.div>
                 )}
 
-                {/* Direct Animation Toggle Button in Header */}
+                {/* Effect Switch Button */}
                 <motion.div
-                  whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
-                  whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
+                  whileTap={{ scale: 0.9 }}
                   onClick={() => {
                     const nextVal = !settings.effectsEnabled;
                     toggleEffects();
-                    setAnimationToast(nextVal ? 'Đã bật hiệu ứng vũ trụ & chuyển động ✨' : 'Đã tắt animation (Tối ưu hiệu năng mượt nhẹ)');
+                    setAnimationToast(nextVal ? 'Đã bật hiệu ứng vũ trụ ✨' : 'Đã tắt animation (Tối ưu mượt)');
                     setTimeout(() => setAnimationToast(null), 2500);
                   }}
                   className="shrink-0 cursor-pointer"
-                  title={settings.effectsEnabled ? "Hiệu ứng & Animation: ĐANG BẬT (Bấm để tắt và tăng tốc tối đa)" : "Hiệu ứng & Animation: ĐANG TẮT (Bấm để bật hiệu ứng lung linh)"}
+                  title="Bật/Tắt hiệu ứng chuyển động"
                 >
                   <LiquidGlassCard
                     borderRadius="9999px"
                     blurIntensity="md"
                     borderIntensity="xs"
                     shadowIntensity="xs"
-                    className={`cursor-pointer transition-all duration-300 ${
-                      settings.effectsEnabled
-                        ? 'ring-1 ring-purple-400/40 bg-purple-500/15'
-                        : 'opacity-70 hover:opacity-100 bg-black/10'
-                    }`}
-                    contentClassName={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-bold ${
-                      settings.effectsEnabled
-                        ? (settings.theme === 'dark' ? 'text-amber-300' : 'text-purple-700')
-                        : 'text-slate-400 dark:text-slate-500'
+                    contentClassName={`p-2 flex items-center justify-center ${
+                      settings.effectsEnabled ? 'text-amber-400' : 'text-slate-400'
                     }`}
                   >
                     {settings.effectsEnabled ? (
-                      <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 animate-pulse shrink-0" />
+                      <Sparkles className="w-4 h-4 text-amber-400 animate-pulse shrink-0" />
                     ) : (
-                      <ZapOff className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 shrink-0" />
+                      <ZapOff className="w-4 h-4 text-slate-400 shrink-0" />
                     )}
-                    <span className="hidden sm:inline">
-                      {settings.effectsEnabled ? 'Hiệu ứng' : 'Hiệu ứng: Tắt'}
-                    </span>
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                      settings.effectsEnabled
-                        ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]'
-                        : 'bg-slate-400 dark:bg-slate-600'
-                    }`} />
                   </LiquidGlassCard>
                 </motion.div>
 
-                {/* Settings Button */}
+                {/* Settings Modal Button */}
                 <motion.div 
-                  whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
-                  whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
+                  whileTap={{ scale: 0.9 }}
                   onClick={() => setIsSettingsOpen(true)}
                   className="shrink-0 cursor-pointer"
-                  title="Cài đặt hệ thống & cấu hình máy"
+                  title="Cài đặt hệ thống"
                 >
                   <LiquidGlassCard
                     borderRadius="9999px"
                     blurIntensity="md"
                     borderIntensity="xs"
                     shadowIntensity="xs"
-                    className="cursor-pointer"
-                    contentClassName="p-2 flex items-center justify-center text-purple-600 dark:text-purple-300"
+                    contentClassName="p-2 flex items-center justify-center text-purple-300"
                   >
-                    <Settings className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+                    <Settings className="w-4 h-4" />
                   </LiquidGlassCard>
                 </motion.div>
+
+                {/* Sidebar Menu Trigger Button for Desktop */}
+                <motion.div
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="shrink-0 cursor-pointer"
+                  title="Mở Bảng Điều Hướng Sidebar"
+                >
+                  <LiquidGlassCard
+                    borderRadius="9999px"
+                    blurIntensity="md"
+                    borderIntensity="xs"
+                    shadowIntensity="sm"
+                    className="bg-purple-600/30 hover:bg-purple-600/50 border-purple-400/50 text-white"
+                    contentClassName="p-2 flex items-center justify-center text-amber-300"
+                  >
+                    <Menu className="w-4 h-4" />
+                  </LiquidGlassCard>
+                </motion.div>
+              </div>
+
+              {/* Mobile / Tablet Compact Right Action Controls (< 1024px) */}
+              <div className="flex lg:hidden items-center space-x-1.5 shrink-0 relative z-10">
+                {/* History Quick Badge */}
+                <motion.div
+                  whileTap={{ scale: 0.9 }}
+                  onClick={handleOpenHistory}
+                  className="shrink-0 cursor-pointer"
+                  title="Xem lịch sử quẻ bói"
+                >
+                  <LiquidGlassCard
+                    borderRadius="9999px"
+                    blurIntensity="md"
+                    borderIntensity="xs"
+                    shadowIntensity="xs"
+                    contentClassName="p-2 flex items-center justify-center relative text-purple-300"
+                  >
+                    <History className="w-4 h-4 text-purple-400" />
+                    {readings.length > 0 && (
+                      <span className="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-purple-600 text-white text-[9px] font-bold shadow-md">
+                        {readings.length}
+                      </span>
+                    )}
+                  </LiquidGlassCard>
+                </motion.div>
+
+                {/* User Avatar / Login Quick Icon */}
+                {currentUser ? (
+                  <motion.div
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setIsSidebarOpen(true)}
+                    className="shrink-0 cursor-pointer"
+                    title={currentUser.displayName || 'Tài khoản'}
+                  >
+                    <div className="w-8 h-8 rounded-full border border-purple-400/50 p-0.5 bg-purple-600/30 overflow-hidden shrink-0">
+                      {currentUser.photoURL ? (
+                        <img
+                          src={currentUser.photoURL}
+                          alt="Avatar"
+                          className="w-full h-full object-cover rounded-full"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-purple-300">
+                          <UserIcon className="w-4 h-4" />
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    whileTap={{ scale: 0.9 }}
+                    onClick={openAuthModal}
+                    className="shrink-0 cursor-pointer"
+                    title="Đăng nhập"
+                  >
+                    <LiquidGlassCard
+                      borderRadius="9999px"
+                      blurIntensity="md"
+                      borderIntensity="xs"
+                      shadowIntensity="xs"
+                      className="bg-purple-600/80 text-white"
+                      contentClassName="p-2 flex items-center justify-center"
+                    >
+                      <LogIn className="w-4 h-4 text-white" />
+                    </LiquidGlassCard>
+                  </motion.div>
+                )}
+
+                {/* Primary Mobile Menu Sidebar Button (Hamburger Drawer) */}
+                <motion.button
+                  whileTap={{ scale: 0.88 }}
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 rounded-full bg-purple-600/40 hover:bg-purple-600/60 border border-purple-400/60 text-amber-300 shadow-lg shadow-purple-900/40 transition-all cursor-pointer flex items-center justify-center relative group"
+                  title="Mở Menu Sidebar Navigation"
+                >
+                  <Menu className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400" />
+                </motion.button>
               </div>
             </LiquidGlassCard>
           </div>
@@ -674,6 +748,44 @@ function AppContent() {
         onNavigateTuVi={() => {
           handleStartTuVi({ fullName: currentUser?.displayName || 'Tín chủ', request: '' });
         }}
+      />
+
+      {/* Responsive Mobile Navigation Sidebar Drawer */}
+      <SidebarDrawer
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        onNavigateHome={handleNavigateHome}
+        onNavigateTarot={() => {
+          setView('home');
+          setHomeDeckType(DeckType.TAROT);
+          setHomeStep('form');
+          setDeckType(DeckType.TAROT);
+          setSelectedReading(null);
+          navigateTo('/tarot');
+        }}
+        onNavigateBaiTay={() => {
+          setView('home');
+          setHomeDeckType(DeckType.PLAYING_CARDS);
+          setHomeStep('form');
+          setDeckType(DeckType.PLAYING_CARDS);
+          setSelectedReading(null);
+          navigateTo('/bai-tay');
+        }}
+        onNavigateTuVi={() => {
+          setView('tuvi');
+          setDeckType(DeckType.TU_VI);
+          setSelectedReading(null);
+          navigateTo('/tu-vi');
+        }}
+        onOpenGuide={handleOpenGuide}
+        onOpenHistory={handleOpenHistory}
+        onOpenAdmin={handleOpenAdmin}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onToast={(msg) => {
+          setAnimationToast(msg);
+          setTimeout(() => setAnimationToast(null), 2500);
+        }}
+        readingsCount={readings.length}
       />
 
       {/* History Modal */}

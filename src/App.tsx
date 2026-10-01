@@ -755,28 +755,6 @@ function AppContent() {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         onNavigateHome={handleNavigateHome}
-        onNavigateTarot={() => {
-          setView('home');
-          setHomeDeckType(DeckType.TAROT);
-          setHomeStep('form');
-          setDeckType(DeckType.TAROT);
-          setSelectedReading(null);
-          navigateTo('/tarot');
-        }}
-        onNavigateBaiTay={() => {
-          setView('home');
-          setHomeDeckType(DeckType.PLAYING_CARDS);
-          setHomeStep('form');
-          setDeckType(DeckType.PLAYING_CARDS);
-          setSelectedReading(null);
-          navigateTo('/bai-tay');
-        }}
-        onNavigateTuVi={() => {
-          setView('tuvi');
-          setDeckType(DeckType.TU_VI);
-          setSelectedReading(null);
-          navigateTo('/tu-vi');
-        }}
         onOpenGuide={handleOpenGuide}
         onOpenHistory={handleOpenHistory}
         onOpenAdmin={handleOpenAdmin}

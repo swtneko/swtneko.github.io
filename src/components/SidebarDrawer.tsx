@@ -14,13 +14,10 @@ import {
   Zap, 
   ZapOff, 
   Layers, 
-  Compass, 
   ChevronRight,
   Moon,
   Sun
 } from 'lucide-react';
-import { LiquidGlassCard } from './LiquidGlassCard';
-import { DeckType } from '../types';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -28,9 +25,6 @@ interface SidebarDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onNavigateHome: () => void;
-  onNavigateTarot: () => void;
-  onNavigateBaiTay: () => void;
-  onNavigateTuVi: () => void;
   onOpenGuide: () => void;
   onOpenHistory: () => void;
   onOpenAdmin: () => void;
@@ -43,9 +37,6 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
   isOpen,
   onClose,
   onNavigateHome,
-  onNavigateTarot,
-  onNavigateBaiTay,
-  onNavigateTuVi,
   onOpenGuide,
   onOpenHistory,
   onOpenAdmin,
@@ -184,14 +175,14 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
             </div>
 
             {/* Menu List */}
-            <div className="flex-1 p-4 space-y-5 overflow-y-auto">
-              {/* 1. Màn Trải Bài */}
+            <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+              {/* Tiện Ích & Điều Hướng */}
               <div className="space-y-2">
-                <div className="text-[10px] uppercase font-bold tracking-wider text-amber-300/80 px-2 flex items-center gap-1.5">
-                  <Compass className="w-3 h-3 text-amber-400" />
-                  Chế Độ Trải Bài & Bói Toán
+                <div className="text-[10px] uppercase font-bold tracking-wider text-purple-300/80 px-2 flex items-center gap-1.5">
+                  <Layers className="w-3 h-3 text-purple-400" />
+                  Tiện Ích & Điều Hướng
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <button
                     onClick={() => handleAction(onNavigateHome)}
                     className="w-full p-2.5 rounded-2xl bg-white/5 hover:bg-purple-600/30 border border-white/10 hover:border-purple-400/50 text-left transition-all flex items-center justify-between text-xs font-semibold text-white group cursor-pointer"
@@ -205,54 +196,6 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
                     <ChevronRight className="w-4 h-4 text-purple-400/60 group-hover:text-purple-300 group-hover:translate-x-0.5 transition-all" />
                   </button>
 
-                  <button
-                    onClick={() => handleAction(onNavigateTarot)}
-                    className="w-full p-2.5 rounded-2xl bg-white/5 hover:bg-purple-600/30 border border-white/10 hover:border-purple-400/50 text-left transition-all flex items-center justify-between text-xs font-semibold text-white group cursor-pointer"
-                  >
-                    <div className="flex items-center space-x-2.5">
-                      <span className="p-1.5 rounded-xl bg-purple-500/20 text-purple-300 group-hover:scale-110 transition-transform">
-                        🎴
-                      </span>
-                      <span>Bói Bài Tarot chuẩn 78 lá</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-purple-400/60 group-hover:text-purple-300 group-hover:translate-x-0.5 transition-all" />
-                  </button>
-
-                  <button
-                    onClick={() => handleAction(onNavigateBaiTay)}
-                    className="w-full p-2.5 rounded-2xl bg-white/5 hover:bg-purple-600/30 border border-white/10 hover:border-purple-400/50 text-left transition-all flex items-center justify-between text-xs font-semibold text-white group cursor-pointer"
-                  >
-                    <div className="flex items-center space-x-2.5">
-                      <span className="p-1.5 rounded-xl bg-blue-500/20 text-blue-300 group-hover:scale-110 transition-transform">
-                        🃏
-                      </span>
-                      <span>Bói Bài Tây 52 lá</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-purple-400/60 group-hover:text-purple-300 group-hover:translate-x-0.5 transition-all" />
-                  </button>
-
-                  <button
-                    onClick={() => handleAction(onNavigateTuVi)}
-                    className="w-full p-2.5 rounded-2xl bg-white/5 hover:bg-purple-600/30 border border-white/10 hover:border-purple-400/50 text-left transition-all flex items-center justify-between text-xs font-semibold text-white group cursor-pointer"
-                  >
-                    <div className="flex items-center space-x-2.5">
-                      <span className="p-1.5 rounded-xl bg-amber-500/20 text-amber-300 group-hover:scale-110 transition-transform">
-                        📜
-                      </span>
-                      <span>Lập Lá Số Tử Vi Trọn Đời</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-purple-400/60 group-hover:text-purple-300 group-hover:translate-x-0.5 transition-all" />
-                  </button>
-                </div>
-              </div>
-
-              {/* 2. Tiện Ích & Công Cụ */}
-              <div className="space-y-2">
-                <div className="text-[10px] uppercase font-bold tracking-wider text-purple-300/80 px-2 flex items-center gap-1.5">
-                  <Layers className="w-3 h-3 text-purple-400" />
-                  Tiện Ích & Lịch Sử
-                </div>
-                <div className="space-y-1">
                   <button
                     onClick={() => handleAction(onOpenHistory)}
                     className="w-full p-2.5 rounded-2xl bg-white/5 hover:bg-purple-600/30 border border-white/10 hover:border-purple-400/50 text-left transition-all flex items-center justify-between text-xs font-semibold text-white group cursor-pointer"

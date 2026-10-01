@@ -138,24 +138,25 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   return (
-    <div className={`min-h-screen flex flex-col items-center justify-center px-4 pb-20 text-center ${
-      systemSettings.announcementActive && systemSettings.announcement ? 'pt-32 sm:pt-36' : 'pt-24 sm:pt-28'
+    <div className={`min-h-screen flex flex-col items-center justify-center px-4 pb-16 text-center ${
+      systemSettings.announcementActive && systemSettings.announcement ? 'pt-24 sm:pt-28 lg:pt-14' : 'pt-20 sm:pt-24 lg:pt-8'
     }`}>
       <AnimatePresence mode="wait">
         {step === 'welcome' ? (
           <motion.div
             key="welcome"
-            initial={settings.effectsEnabled ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
+            initial={settings.effectsEnabled ? { opacity: 0, y: 16 } : { opacity: 1, y: 0 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={settings.effectsEnabled ? { opacity: 0, y: -20 } : { opacity: 1, y: 0 }}
+            exit={settings.effectsEnabled ? { opacity: 0, y: -16 } : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             className="flex flex-col items-center w-full max-w-2xl mx-auto"
           >
             {/* Celestial Orbit & Mystic Emblem Frame - Dedicated clearance box */}
             <motion.div
-              initial={settings.effectsEnabled ? { opacity: 0, scale: 0.8 } : { opacity: 1, scale: 1 }}
+              initial={settings.effectsEnabled ? { opacity: 0, scale: 0.85 } : { opacity: 1, scale: 1 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.9, ease: 'easeOut' }}
-              className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center my-2 sm:my-4 shrink-0"
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center my-2 sm:my-3 shrink-0"
             >
               {/* Outer Breathing Nebula Aura */}
               {settings.effectsEnabled && (
@@ -169,7 +170,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
-                  className="absolute w-56 h-56 sm:w-64 sm:h-64 rounded-full border border-dashed border-purple-400/40 pointer-events-none"
+                  style={{ willChange: 'transform' }}
+                  className="absolute w-56 h-56 sm:w-64 sm:h-64 rounded-full border border-dashed border-purple-400/40 pointer-events-none transform-gpu"
                 >
                   {/* All 12 Zodiac Signs mathematically placed at 30° increments around the ring perimeter */}
                   {[
@@ -186,7 +188,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     { symbol: '♒', name: 'Bảo Bình', color: 'text-cyan-300 border-cyan-400/30' },
                     { symbol: '♓', name: 'Song Ngư', color: 'text-purple-300 border-purple-400/30' },
                   ].map((zodiac, zIdx) => {
-                    // Position at angle = zIdx * 30 deg, starting from top (-90 deg)
                     const angleRad = (zIdx * 30 - 90) * (Math.PI / 180);
                     const leftPercent = 50 + 50 * Math.cos(angleRad);
                     const topPercent = 50 + 50 * Math.sin(angleRad);
@@ -220,7 +221,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 <motion.div
                   animate={{ rotate: -360 }}
                   transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                  className="absolute w-44 h-44 sm:w-50 sm:h-50 rounded-full border border-purple-400/30 pointer-events-none"
+                  style={{ willChange: 'transform' }}
+                  className="absolute w-44 h-44 sm:w-50 sm:h-50 rounded-full border border-purple-400/30 pointer-events-none transform-gpu"
                 >
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[11px] font-serif text-amber-200 select-none bg-purple-950/70 dark:bg-black/80 px-1 rounded-full border border-amber-300/20">♌</div>
                   <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 text-[11px] font-serif text-purple-200 select-none bg-purple-950/70 dark:bg-black/80 px-1 rounded-full border border-purple-300/20">♒</div>
@@ -231,9 +233,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 
               {/* Central Mystic Emblem with Official Neko Tarot Logo */}
               <motion.div
-                whileHover={settings.effectsEnabled ? { scale: 1.08, rotate: 2 } : { scale: 1.02 }}
+                animate={settings.effectsEnabled ? { y: [0, -3, 0] } : {}}
+                transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+                whileHover={settings.effectsEnabled ? { scale: 1.06, rotate: 2 } : { scale: 1.02 }}
                 whileTap={{ scale: 0.95 }}
-                className={`relative z-10 w-28 h-28 sm:w-34 sm:h-34 rounded-full p-2 border-2 flex items-center justify-center transition-all duration-300 shadow-2xl cursor-pointer group ${
+                className={`relative z-10 w-28 h-28 sm:w-34 sm:h-34 rounded-full p-2 border-2 flex items-center justify-center transition-all duration-300 shadow-2xl cursor-pointer group transform-gpu ${
                   settings.theme === 'dark' 
                     ? 'border-purple-400/50 bg-purple-950/70 shadow-purple-900/60 ring-2 ring-purple-400/20' 
                     : 'border-purple-300 bg-white/95 shadow-purple-500/30 ring-2 ring-purple-200/50'

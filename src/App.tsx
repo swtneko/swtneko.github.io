@@ -11,7 +11,7 @@ import { UserGuideModal } from './components/UserGuideModal';
 import { AdminPage } from './components/AdminPage';
 import { AnnouncementBanner } from './components/AnnouncementBanner';
 import { LiquidGlassCard } from './components/LiquidGlassCard';
-import { SidebarDrawer } from './components/SidebarDrawer';
+import { AppSidebar } from './components/AppSidebar';
 import { PWAFloatingBubble } from './components/PWAFloatingBubble';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { Sparkles, Settings, History, LogIn, LogOut, User as UserIcon, ShieldCheck, Bell, Lock, BookOpen, AlertCircle, Loader2, Zap, ZapOff, Menu } from 'lucide-react';
@@ -34,6 +34,23 @@ function AppContent() {
   const [routeError, setRouteError] = useState<string | null>(null);
   const [animationToast, setAnimationToast] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('neko_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebarCollapse = useCallback(() => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('neko_sidebar_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
 
   const { settings, toggleEffects } = useSettings();
   const { currentUser, openAuthModal, logout, readings, isAdmin, systemSettings } = useAuth();
@@ -334,350 +351,124 @@ function AppContent() {
         </div>
       )}
 
-      {/* Fixed Top Header (Liquid Glass Floating Bar) */}
+      {/* Mobile-Only Top Floating Navigation Bar (< 1024px) */}
       {view !== 'admin' && (
-        <header className="fixed top-2 sm:top-3 left-2 sm:left-4 right-2 sm:right-4 z-40 max-w-7xl mx-auto pointer-events-none">
+        <header className="lg:hidden fixed top-2 left-2 right-2 z-30 pointer-events-none">
           <div className="pointer-events-auto space-y-2">
-            {/* Cosmic Announcement Banner (Configured by Admin) */}
             {systemSettings.announcementActive && systemSettings.announcement && (
               <AnnouncementBanner text={systemSettings.announcement} />
             )}
 
-            {/* Liquid Glass Navbar */}
             <LiquidGlassCard
               borderRadius="9999px"
-              blurIntensity="lg"
-              borderIntensity="sm"
-              shadowIntensity="md"
-              glowIntensity="sm"
-              className={`liquid-glass-card transition-all duration-300 w-full ${
-                settings.theme === 'dark' ? 'text-white' : 'text-purple-950 shadow-purple-900/10'
+              blurIntensity="md"
+              borderIntensity="xs"
+              shadowIntensity="sm"
+              className={`transition-all duration-300 w-full ${
+                settings.theme === 'dark' ? 'text-white' : 'text-purple-950'
               }`}
-              contentClassName="px-3 sm:px-5 py-2 flex justify-between items-center w-full min-w-0"
+              contentClassName="px-3 py-2 flex justify-between items-center w-full"
             >
-              {/* Brand Logo */}
-              <div 
-                className="flex items-center cursor-pointer group shrink-0 relative z-10"
-                onClick={handleNavigateHome}
-                title="Về trang chủ Neko Tarot (/)"
+              {/* Left: Mobile Menu Hamburger Button */}
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setIsSidebarOpen(true)}
+                className="p-1.5 rounded-full bg-purple-600/30 hover:bg-purple-600/50 border border-purple-400/50 text-amber-300 shadow-sm transition-all cursor-pointer flex items-center justify-center shrink-0"
+                title="Mở Bảng Điều Hướng Menu"
               >
-                <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center transition-all duration-300 shrink-0 overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] p-0.5 ${
-                  settings.theme === 'dark' 
-                    ? 'border-white/30 bg-purple-500/20 group-hover:bg-purple-500/30 group-hover:border-purple-300 ring-1 ring-purple-500/30' 
-                    : 'border-purple-300/80 bg-purple-100/60 group-hover:bg-purple-200/80 group-hover:border-purple-400 ring-1 ring-purple-300/40'
-                }`}>
-                  <img
-                    src="/pwa-192x192.png"
-                    alt="Neko Tarot"
-                    className="w-full h-full object-contain rounded-full select-none"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      const target = e.currentTarget;
-                      if (!target.src.includes('pwa-512x512.png')) {
-                        target.src = '/pwa-512x512.png';
-                      }
-                    }}
-                  />
+                <Menu className="w-4 h-4" />
+              </motion.button>
+
+              {/* Center: Brand Logo & Title */}
+              <div
+                className="flex items-center space-x-2 cursor-pointer"
+                onClick={handleNavigateHome}
+              >
+                <div className="w-7 h-7 rounded-full border border-purple-400/40 p-0.5 bg-purple-500/20 overflow-hidden shrink-0">
+                  <img src="/pwa-192x192.png" alt="Neko Tarot" className="w-full h-full object-contain rounded-full" />
                 </div>
-                <span className={`ml-2 sm:ml-2.5 text-sm sm:text-base font-serif tracking-wider uppercase whitespace-nowrap transition-colors font-extrabold ${
+                <span className={`text-sm font-serif font-bold uppercase tracking-wider ${
                   settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'
                 }`}>
                   Neko Tarot
                 </span>
               </div>
 
-              {/* Desktop Full Menu (visible on min-width 1024px) */}
-              <div className="hidden lg:flex items-center space-x-1.5 sm:space-x-2 shrink-0 relative z-10">
-                {/* User Guide Button */}
-                <motion.div
-                  whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
-                  whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
-                  onClick={handleOpenGuide}
-                  className="shrink-0 cursor-pointer"
-                  title="Cẩm nang hướng dẫn sử dụng toàn tập (/huong-dan)"
-                >
-                  <LiquidGlassCard
-                    borderRadius="9999px"
-                    blurIntensity="md"
-                    borderIntensity="xs"
-                    shadowIntensity="xs"
-                    contentClassName={`flex items-center space-x-1 px-3 py-1.5 text-xs font-bold ${
-                      settings.theme === 'dark' ? 'text-amber-300' : 'text-amber-800'
-                    }`}
-                  >
-                    <BookOpen className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span>Hướng Dẫn</span>
-                  </LiquidGlassCard>
-                </motion.div>
-
-                {/* Admin Dashboard Button */}
-                {isAdmin && (
-                  <motion.div
-                    whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
-                    whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
-                    onClick={handleOpenAdmin}
-                    className="shrink-0 cursor-pointer"
-                    title="Mở Trang Quản Trị Hệ Thống (/admin)"
-                  >
-                    <LiquidGlassCard
-                      borderRadius="9999px"
-                      blurIntensity="md"
-                      borderIntensity="xs"
-                      shadowIntensity="xs"
-                      contentClassName={`flex items-center space-x-1 px-3 py-1.5 text-xs font-bold ${
-                        settings.theme === 'dark' ? 'text-amber-300' : 'text-amber-800'
-                      }`}
-                    >
-                      <ShieldCheck className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      <span>Quản Trị</span>
-                    </LiquidGlassCard>
-                  </motion.div>
-                )}
-
-                {/* History Button */}
-                <motion.div
-                  whileTap={settings.effectsEnabled ? { scale: 0.88, rotate: -1.5, transition: { type: "spring", stiffness: 450, damping: 10 } } : { scale: 0.94 }}
-                  whileHover={settings.effectsEnabled ? { scale: 1.05 } : {}}
-                  onClick={handleOpenHistory}
-                  className="shrink-0 cursor-pointer"
-                  title="Xem lịch sử các quẻ bài đã hỏi (/lich-su)"
-                >
-                  <LiquidGlassCard
-                    borderRadius="9999px"
-                    blurIntensity="md"
-                    borderIntensity="xs"
-                    shadowIntensity="xs"
-                    contentClassName={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold ${
-                      settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'
-                    }`}
-                  >
-                    <History className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                    <span>Lịch sử</span>
-                    {readings.length > 0 && (
-                      <span className="px-1.5 py-0.2 rounded-full bg-purple-600/90 text-white text-[10px] font-bold shrink-0 shadow-sm">
-                        {readings.length}
-                      </span>
-                    )}
-                  </LiquidGlassCard>
-                </motion.div>
-
-                {/* User / Login Button */}
-                {currentUser ? (
-                  <div className="flex items-center space-x-1 shrink-0">
-                    <LiquidGlassCard
-                      borderRadius="9999px"
-                      blurIntensity="md"
-                      borderIntensity="xs"
-                      shadowIntensity="xs"
-                      contentClassName={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold ${
-                        settings.theme === 'dark' ? 'text-purple-100' : 'text-purple-950'
-                      }`}
-                      title={currentUser.displayName || currentUser.email || 'Tài khoản'}
-                    >
-                      {currentUser.photoURL ? (
-                        <img
-                          src={currentUser.photoURL}
-                          alt={currentUser.displayName || 'User'}
-                          className="w-4 h-4 rounded-full object-cover shrink-0 border border-white/40"
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <UserIcon className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-                      )}
-                      <span className="max-w-[100px] truncate font-semibold">
-                        {currentUser.displayName || 'Tài khoản'}
-                      </span>
-                    </LiquidGlassCard>
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      onClick={logout}
-                      className="p-1.5 rounded-full hover:bg-red-500/20 text-red-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
-                      title="Đăng xuất"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                    </motion.button>
-                  </div>
-                ) : (
-                  <motion.div
-                    whileTap={{ scale: 0.94 }}
-                    onClick={openAuthModal}
-                    className="shrink-0 cursor-pointer"
-                    title="Đăng nhập để lưu lịch sử đám mây"
-                  >
-                    <LiquidGlassCard
-                      borderRadius="9999px"
-                      blurIntensity="md"
-                      borderIntensity="xs"
-                      shadowIntensity="sm"
-                      className="cursor-pointer bg-purple-600/80 hover:bg-purple-600 text-white"
-                      contentClassName="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold text-white"
-                    >
-                      <LogIn className="w-3.5 h-3.5 shrink-0" />
-                      <span>Đăng nhập</span>
-                    </LiquidGlassCard>
-                  </motion.div>
-                )}
-
-                {/* Effect Switch Button */}
-                <motion.div
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => {
-                    const nextVal = !settings.effectsEnabled;
-                    toggleEffects();
-                    setAnimationToast(nextVal ? 'Đã bật hiệu ứng vũ trụ ✨' : 'Đã tắt animation (Tối ưu mượt)');
-                    setTimeout(() => setAnimationToast(null), 2500);
-                  }}
-                  className="shrink-0 cursor-pointer"
-                  title="Bật/Tắt hiệu ứng chuyển động"
-                >
-                  <LiquidGlassCard
-                    borderRadius="9999px"
-                    blurIntensity="md"
-                    borderIntensity="xs"
-                    shadowIntensity="xs"
-                    contentClassName={`p-2 flex items-center justify-center ${
-                      settings.effectsEnabled ? 'text-amber-400' : 'text-slate-400'
-                    }`}
-                  >
-                    {settings.effectsEnabled ? (
-                      <Sparkles className="w-4 h-4 text-amber-400 animate-pulse shrink-0" />
-                    ) : (
-                      <ZapOff className="w-4 h-4 text-slate-400 shrink-0" />
-                    )}
-                  </LiquidGlassCard>
-                </motion.div>
-
-                {/* Settings Modal Button */}
-                <motion.div 
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setIsSettingsOpen(true)}
-                  className="shrink-0 cursor-pointer"
-                  title="Cài đặt hệ thống"
-                >
-                  <LiquidGlassCard
-                    borderRadius="9999px"
-                    blurIntensity="md"
-                    borderIntensity="xs"
-                    shadowIntensity="xs"
-                    contentClassName="p-2 flex items-center justify-center text-purple-300"
-                  >
-                    <Settings className="w-4 h-4" />
-                  </LiquidGlassCard>
-                </motion.div>
-
-                {/* Sidebar Menu Trigger Button for Desktop */}
-                <motion.div
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setIsSidebarOpen(true)}
-                  className="shrink-0 cursor-pointer"
-                  title="Mở Bảng Điều Hướng Sidebar"
-                >
-                  <LiquidGlassCard
-                    borderRadius="9999px"
-                    blurIntensity="md"
-                    borderIntensity="xs"
-                    shadowIntensity="sm"
-                    className="bg-purple-600/30 hover:bg-purple-600/50 border-purple-400/50 text-white"
-                    contentClassName="p-2 flex items-center justify-center text-amber-300"
-                  >
-                    <Menu className="w-4 h-4" />
-                  </LiquidGlassCard>
-                </motion.div>
-              </div>
-
-              {/* Mobile / Tablet Compact Right Action Controls (< 1024px) */}
-              <div className="flex lg:hidden items-center space-x-1.5 shrink-0 relative z-10">
-                {/* History Quick Badge */}
+              {/* Right: Quick History & Profile */}
+              <div className="flex items-center space-x-1.5 shrink-0">
                 <motion.div
                   whileTap={{ scale: 0.9 }}
                   onClick={handleOpenHistory}
-                  className="shrink-0 cursor-pointer"
-                  title="Xem lịch sử quẻ bói"
+                  className="shrink-0 cursor-pointer p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-purple-300 relative"
+                  title="Lịch sử quẻ bài"
                 >
-                  <LiquidGlassCard
-                    borderRadius="9999px"
-                    blurIntensity="md"
-                    borderIntensity="xs"
-                    shadowIntensity="xs"
-                    contentClassName="p-2 flex items-center justify-center relative text-purple-300"
-                  >
-                    <History className="w-4 h-4 text-purple-400" />
-                    {readings.length > 0 && (
-                      <span className="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-purple-600 text-white text-[9px] font-bold shadow-md">
-                        {readings.length}
-                      </span>
-                    )}
-                  </LiquidGlassCard>
+                  <History className="w-4 h-4" />
+                  {readings.length > 0 && (
+                    <span className="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-purple-600 text-white text-[9px] font-bold shadow-md">
+                      {readings.length}
+                    </span>
+                  )}
                 </motion.div>
-
-                {/* User Avatar / Login Quick Icon */}
                 {currentUser ? (
                   <motion.div
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setIsSidebarOpen(true)}
-                    className="shrink-0 cursor-pointer"
+                    className="w-7 h-7 rounded-full border border-purple-400/50 p-0.5 bg-purple-600/30 overflow-hidden shrink-0 cursor-pointer"
                     title={currentUser.displayName || 'Tài khoản'}
                   >
-                    <div className="w-8 h-8 rounded-full border border-purple-400/50 p-0.5 bg-purple-600/30 overflow-hidden shrink-0">
-                      {currentUser.photoURL ? (
-                        <img
-                          src={currentUser.photoURL}
-                          alt="Avatar"
-                          className="w-full h-full object-cover rounded-full"
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-purple-300">
-                          <UserIcon className="w-4 h-4" />
-                        </div>
-                      )}
-                    </div>
+                    {currentUser.photoURL ? (
+                      <img src={currentUser.photoURL} alt="Avatar" className="w-full h-full object-cover rounded-full" referrerPolicy="no-referrer" />
+                    ) : (
+                      <UserIcon className="w-full h-full text-purple-300 p-0.5" />
+                    )}
                   </motion.div>
                 ) : (
-                  <motion.div
+                  <motion.button
                     whileTap={{ scale: 0.9 }}
                     onClick={openAuthModal}
-                    className="shrink-0 cursor-pointer"
+                    className="p-1.5 rounded-full bg-purple-600 hover:bg-purple-500 text-white shadow-sm cursor-pointer"
                     title="Đăng nhập"
                   >
-                    <LiquidGlassCard
-                      borderRadius="9999px"
-                      blurIntensity="md"
-                      borderIntensity="xs"
-                      shadowIntensity="xs"
-                      className="bg-purple-600/80 text-white"
-                      contentClassName="p-2 flex items-center justify-center"
-                    >
-                      <LogIn className="w-4 h-4 text-white" />
-                    </LiquidGlassCard>
-                  </motion.div>
+                    <LogIn className="w-3.5 h-3.5" />
+                  </motion.button>
                 )}
-
-                {/* Primary Mobile Menu Sidebar Button (Hamburger Drawer) */}
-                <motion.button
-                  whileTap={{ scale: 0.88 }}
-                  onClick={() => setIsSidebarOpen(true)}
-                  className="p-2 rounded-full bg-purple-600/40 hover:bg-purple-600/60 border border-purple-400/60 text-amber-300 shadow-lg shadow-purple-900/40 transition-all cursor-pointer flex items-center justify-center relative group"
-                  title="Mở Menu Sidebar Navigation"
-                >
-                  <Menu className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400" />
-                </motion.button>
               </div>
             </LiquidGlassCard>
           </div>
         </header>
       )}
 
-      <main className="relative min-h-screen">
+      {/* Desktop Announcement Banner (Visible on >= 1024px, smoothly adjusted to sidebar width) */}
+      {view !== 'admin' && systemSettings.announcementActive && systemSettings.announcement && (
+        <motion.div
+          layout
+          transition={{ type: 'spring', stiffness: 300, damping: 24, mass: 0.75 }}
+          className={`hidden lg:block fixed top-3 right-4 z-30 pointer-events-auto ${
+            isSidebarCollapsed ? 'left-24' : 'left-72'
+          }`}
+        >
+          <div className="max-w-4xl mx-auto">
+            <AnnouncementBanner text={systemSettings.announcement} />
+          </div>
+        </motion.div>
+      )}
+
+      {/* Main Content Stage - Dedicated viewport area, zero overlap with desktop sidebar */}
+      <motion.main
+        layout
+        transition={{ type: 'spring', stiffness: 300, damping: 24, mass: 0.75 }}
+        className={`relative min-h-screen ${
+          isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'
+        }`}
+      >
         <AnimatePresence mode="wait">
           {view === 'home' && (
             <motion.div
               key="home"
-              initial={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
-              animate={{ opacity: 1 }}
-              exit={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
+              initial={settings.effectsEnabled ? { opacity: 0, y: 10 } : { opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={settings.effectsEnabled ? { opacity: 0, y: -10 } : { opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               className="liquid-glass-card-wrapper w-full"
             >
               <HomeScreen 
@@ -694,9 +485,10 @@ function AppContent() {
           {view === 'reading' && (userInfo || selectedReading) && (
             <motion.div
               key={selectedReading ? selectedReading.id : 'reading'}
-              initial={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
-              animate={{ opacity: 1 }}
-              exit={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
+              initial={settings.effectsEnabled ? { opacity: 0, y: 10 } : { opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={settings.effectsEnabled ? { opacity: 0, y: -10 } : { opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               className="liquid-glass-card-wrapper w-full"
             >
               <ReadingScreen 
@@ -711,9 +503,10 @@ function AppContent() {
           {view === 'tuvi' && (
             <motion.div
               key={selectedReading ? selectedReading.id : 'tuvi'}
-              initial={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
-              animate={{ opacity: 1 }}
-              exit={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
+              initial={settings.effectsEnabled ? { opacity: 0, y: 10 } : { opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={settings.effectsEnabled ? { opacity: 0, y: -10 } : { opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               className="liquid-glass-card-wrapper w-full"
             >
               <TuViScreen
@@ -727,16 +520,17 @@ function AppContent() {
           {view === 'admin' && (
             <motion.div
               key="admin"
-              initial={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
-              animate={{ opacity: 1 }}
-              exit={settings.effectsEnabled ? { opacity: 0 } : { opacity: 1 }}
+              initial={settings.effectsEnabled ? { opacity: 0, y: 10 } : { opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={settings.effectsEnabled ? { opacity: 0, y: -10 } : { opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               className="liquid-glass-card-wrapper w-full"
             >
               <AdminPage onBack={handleNavigateHome} />
             </motion.div>
           )}
         </AnimatePresence>
-      </main>
+      </motion.main>
 
       {/* User Guide Modal */}
       <UserGuideModal
@@ -750,20 +544,23 @@ function AppContent() {
         }}
       />
 
-      {/* Responsive Mobile Navigation Sidebar Drawer */}
-      <SidebarDrawer
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
+      {/* Unified Responsive AppSidebar (Desktop Left Navigation & Mobile Drawer) */}
+      <AppSidebar
+        currentView={view}
+        isMobileOpen={isSidebarOpen}
+        onMobileClose={() => setIsSidebarOpen(false)}
         onNavigateHome={handleNavigateHome}
         onOpenGuide={handleOpenGuide}
         onOpenHistory={handleOpenHistory}
         onOpenAdmin={handleOpenAdmin}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        readingsCount={readings.length}
         onToast={(msg) => {
           setAnimationToast(msg);
           setTimeout(() => setAnimationToast(null), 2500);
         }}
-        readingsCount={readings.length}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={toggleSidebarCollapse}
       />
 
       {/* History Modal */}
